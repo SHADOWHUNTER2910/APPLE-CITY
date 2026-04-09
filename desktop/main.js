@@ -1,8 +1,9 @@
-const { app, BrowserWindow, Menu, ipcMain, powerSaveBlocker } = require('electron');
+const { app, BrowserWindow, Menu, ipcMain, powerSaveBlocker, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
 const http = require('http');
+const { autoUpdater } = require('electron-updater');
 
 let phpServer = null;
 let mainWindow = null;
@@ -69,7 +70,57 @@ ipcMain.handle('get-log-dates', async () => {
 writeLog({ level: 'INFO', category: 'APP', message: 'ShelfSense application started' });
 // ─────────────────────────────────────────────────────────────────
 
-function checkServerReady(callback, attempts = 0) {
+// ─── Auto Updater ────────────────────────────────────────────────
+function setupAutoUpdater() {
+  if (!app.isPackaged) return; // Only run in production
+
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
+
+  autoUpdater.on('checking-for-update', () => {
+    writeLog({ level: 'INFO', category: 'UPDATER', message: 'Checking for updates...' });
+  });
+
+  autoUpdater.on('update-available', (info) => {
+    writeLog({ level: 'INFO', category: 'UPDATER', message: `Update available: ${info.version}` });
+    dialog.showMessageBox(mainWindow, {
+      type: 'info',
+      title: 'Update Available',
+      message: `Version ${info.version} is available.`,
+      detail: 'Downloading update in the background. You will be notified when it\'s ready to install.',
+      buttons: ['OK']
+    });
+  });
+
+  autoUpdater.on('update-not-available', () => {
+    writeLog({ level: 'INFO', category: 'UPDATER', message: 'App is up to date.' });
+  });
+
+  autoUpdater.on('update-downloaded', (info) => {
+    writeLog({ level: 'INFO', category: 'UPDATER', message: `Update downloaded: ${info.version}` });
+    dialog.showMessageBox(mainWindow, {
+      type: 'info',
+      title: 'Update Ready',
+      message: `Version ${info.version} has been downloaded.`,
+      detail: 'The update will be installed when you restart the app. Restart now?',
+      buttons: ['Restart Now', 'Later']
+    }).then(result => {
+      if (result.response === 0) {
+        autoUpdater.quitAndInstall();
+      }
+    });
+  });
+
+  autoUpdater.on('error', (err) => {
+    writeLog({ level: 'ERROR', category: 'UPDATER', message: `Update error: ${err.message}` });
+  });
+
+  // Check for updates 5 seconds after app is ready
+  setTimeout(() => autoUpdater.checkForUpdates(), 5000);
+}
+// ─────────────────────────────────────────────────────────────────
+
+
   if (serverCheckInProgress) {
     console.log('Server check already in progress, skipping...');
     return;
@@ -476,39 +527,35 @@ function createWindow() {
     }, 1000);
   });
   
-  // Clear all caches before loading
+  // Clear only cache (not storage/cookies) before loading to preserve sessions
   mainWindow.webContents.session.clearCache().then(() => {
     console.log('Cache cleared successfully');
     
-    // Also clear storage data
-    mainWindow.webContents.session.clearStorageData({
-      storages: ['appcache', 'cookies', 'filesystem', 'indexdb', 'localstorage', 'shadercache', 'websql', 'serviceworkers', 'cachestorage']
-    }).then(() => {
-      console.log('Storage data cleared successfully');
-      
-  // Load URL with cache-busting parameter
-      const urlWithCacheBuster = `${serverUrl}?t=${Date.now()}`;
-      console.log('Loading URL with cache buster:', urlWithCacheBuster);
-      
-      // Set a basic CSP to reduce warnings (development only)
-      mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
-        callback({
-          responseHeaders: {
-            ...details.responseHeaders,
-            'Content-Security-Policy': ['default-src \'self\' \'unsafe-inline\' \'unsafe-eval\' data: http://127.0.0.1:8000 http://localhost:8000; img-src \'self\' data: http://127.0.0.1:8000 http://localhost:8000;']
-          }
-        });
+    // Load URL with cache-busting parameter
+    const urlWithCacheBuster = `${serverUrl}?t=${Date.now()}`;
+    console.log('Loading URL with cache buster:', urlWithCacheBuster);
+    
+    // Set a basic CSP to reduce warnings (development only)
+    mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+      callback({
+        responseHeaders: {
+          ...details.responseHeaders,
+          'Content-Security-Policy': ['default-src \'self\' \'unsafe-inline\' \'unsafe-eval\' data: http://127.0.0.1:8000 http://localhost:8000; img-src \'self\' data: http://127.0.0.1:8000 http://localhost:8000;']
+        }
       });
-      
-      mainWindow.loadURL(urlWithCacheBuster);
     });
+    
+    mainWindow.loadURL(urlWithCacheBuster);
   });
   
   mainWindow.webContents.on('did-finish-load', () => {
     console.log('Window loaded successfully');
-    mainWindow.show();
-    mainWindow.focus();
-    mainWindow.webContents.focus();
+    // Only show the window on first load, don't steal focus on subsequent navigations
+    if (!mainWindow.isVisible()) {
+      mainWindow.show();
+      mainWindow.focus();
+      mainWindow.webContents.focus();
+    }
   });
 
   mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
@@ -601,6 +648,8 @@ app.whenReady().then(() => {
   // CRITICAL: Prevent system from throttling the app
   powerSaveBlockerId = powerSaveBlocker.start('prevent-app-suspension');
   console.log('Power save blocker started:', powerSaveBlocker.isStarted(powerSaveBlockerId));
+
+  setupAutoUpdater();
   
   // Create application menu with refresh option
   const template = [
@@ -614,12 +663,8 @@ app.whenReady().then(() => {
             if (mainWindow && !mainWindow.isDestroyed()) {
               console.log('Menu refresh requested, clearing cache and reloading...');
               mainWindow.webContents.session.clearCache().then(() => {
-                mainWindow.webContents.session.clearStorageData({
-                  storages: ['appcache', 'cookies', 'filesystem', 'indexdb', 'localstorage', 'shadercache', 'websql', 'serviceworkers', 'cachestorage']
-                }).then(() => {
-                  const refreshUrl = `${serverUrl}?menu_refresh=${Date.now()}`;
-                  mainWindow.loadURL(refreshUrl);
-                });
+                const refreshUrl = `${serverUrl}?menu_refresh=${Date.now()}`;
+                mainWindow.loadURL(refreshUrl);
               });
             }
           }

@@ -6,7 +6,7 @@
 
 Name "ShelfSense POS"
 OutFile "dist\ShelfSense POS-Setup-1.0.0.exe"
-Icon "company-icon.ico"
+Icon "shelfsense.ico"
 RequestExecutionLevel admin
 ShowInstDetails nevershow
 

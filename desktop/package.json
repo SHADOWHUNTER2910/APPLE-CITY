@@ -16,18 +16,26 @@
   "build": {
     "appId": "com.shelfsense.pos",
     "productName": "ShelfSense POS",
+    "publish": {
+      "provider": "github",
+      "owner": "SHADOWHUNTER2910",
+      "repo": "SHELFSENSE",
+      "private": false
+    },
     "directories": {
       "output": "dist/internal"
     },
     "extraResources": [
-      { 
-        "from": "php", 
+      {
+        "from": "php",
         "to": "php",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       },
-      { 
-        "from": "..", 
-        "to": "app", 
+      {
+        "from": "..",
+        "to": "app",
         "filter": [
           "api/**/*",
           "index.html",
@@ -36,18 +44,22 @@
           "sql/**/*",
           "assets/**/*",
           "data/**/*"
-        ] 
+        ]
       }
     ],
     "win": {
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         },
         {
           "target": "portable",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "icon": "shelfsense.ico",
@@ -83,6 +95,9 @@
         "role": "Editor"
       }
     ]
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.3"
   },
   "devDependencies": {
     "electron": "^28.2.0",

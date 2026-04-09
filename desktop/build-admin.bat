@@ -43,11 +43,29 @@ echo.
 call npm run build-all
 
 echo.
+echo Compiling password-protected installer...
+echo.
+"C:\Program Files (x86)\NSIS\makensis.exe" launcher.nsi
+if %errorlevel% NEQ 0 (
+    echo.
+    echo ERROR: NSIS compilation failed. Make sure NSIS is installed and makensis is in your PATH.
+    echo Download NSIS from: https://nsis.sourceforge.io/Download
+    echo.
+    pause
+    exit /B 1
+)
+
+echo.
+echo Cleaning up intermediate build files...
+if exist "dist\internal\" ( rmdir /s /q "dist\internal" )
+if exist "dist\win-unpacked\" ( rmdir /s /q "dist\win-unpacked" )
+
+echo.
 echo ========================================
 echo Build Complete!
 echo ========================================
 echo.
-echo Your files are in: desktop\dist\
+echo Your installer is in: desktop\dist\
 echo.
 echo Press any key to open dist folder...
 pause >nul
