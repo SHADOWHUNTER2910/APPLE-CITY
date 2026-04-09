@@ -50,7 +50,7 @@
           "arch": ["x64"]
         }
       ],
-      "icon": "company-icon.ico",
+      "icon": "shelfsense.ico",
       "publisherName": "ShelfSense",
       "requestedExecutionLevel": "asInvoker"
     },
@@ -60,9 +60,9 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "ShelfSense POS",
-      "installerIcon": "company-icon.ico",
-      "uninstallerIcon": "company-icon.ico",
-      "installerHeaderIcon": "company-icon.ico",
+      "installerIcon": "shelfsense.ico",
+      "uninstallerIcon": "shelfsense.ico",
+      "installerHeaderIcon": "shelfsense.ico",
       "artifactName": "setup-core.${ext}",
       "deleteAppDataOnUninstall": false
     },
@@ -73,7 +73,7 @@
       "main.js",
       "preload.js",
       "package.json",
-      "company-icon.ico",
+      "shelfsense.ico",
       "node_modules/**/*"
     ],
     "fileAssociations": [

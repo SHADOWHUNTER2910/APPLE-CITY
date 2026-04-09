@@ -12,6 +12,34 @@ let windowCreated = false;
 let serverCheckInProgress = false;
 let powerSaveBlockerId = null;
 
+// ─── Logging Setup ───────────────────────────────────────────────
+const logDir = path.join(app.getPath('userData'), 'logs');
+if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true });
+
+function getLogFilePath() {
+  const date = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+  return path.join(logDir, `shelfsense-${date}.log`);
+}
+
+function writeLog(entry) {
+  try {
+    const timestamp = new Date().toISOString().replace('T', ' ').split('.')[0];
+    const line = `[${timestamp}] [${entry.level || 'INFO'}] [${entry.category || 'APP'}] ${entry.message}\n`;
+    fs.appendFileSync(getLogFilePath(), line, 'utf8');
+  } catch (e) {
+    console.error('Failed to write log:', e);
+  }
+}
+
+// IPC handler for logging from renderer
+ipcMain.handle('write-log', async (event, entry) => {
+  writeLog(entry);
+});
+
+// Log app start
+writeLog({ level: 'INFO', category: 'APP', message: 'ShelfSense application started' });
+// ─────────────────────────────────────────────────────────────────
+
 function checkServerReady(callback, attempts = 0) {
   if (serverCheckInProgress) {
     console.log('Server check already in progress, skipping...');
@@ -616,6 +644,7 @@ app.on('window-all-closed', () => {
       powerSaveBlocker.stop(powerSaveBlockerId);
       console.log('Power save blocker stopped');
     }
+    writeLog({ level: 'INFO', category: 'APP', message: 'ShelfSense application closed' });
     stopPhpServer();
     isServerStarting = false;
     windowCreated = false;

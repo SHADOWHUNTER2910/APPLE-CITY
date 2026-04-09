@@ -2256,6 +2256,69 @@
     //<![CDATA[
     /* eslint-disable */
     /* stylelint-disable */
+
+    // ─── Activity Logger ─────────────────────────────────────────────
+    const AppLogger = {
+      log(category, message, level = 'INFO') {
+        if (window.electronAPI && window.electronAPI.writeLog) {
+          window.electronAPI.writeLog({ level, category, message });
+        }
+        console.log(`[${level}] [${category}] ${message}`);
+      },
+      info:  (cat, msg) => AppLogger.log(cat, msg, 'INFO'),
+      warn:  (cat, msg) => AppLogger.log(cat, msg, 'WARN'),
+      error: (cat, msg) => AppLogger.log(cat, msg, 'ERROR'),
+      action:(cat, msg) => AppLogger.log(cat, msg, 'ACTION')
+    };
+
+    // Track button clicks
+    document.addEventListener('click', function(e) {
+      const el = e.target.closest('button, a[href], [onclick], .nav-link, .page-link');
+      if (!el) return;
+      const label = (el.textContent || el.title || el.id || el.className).trim().replace(/\s+/g, ' ').substring(0, 80);
+      AppLogger.action('CLICK', `${el.tagName} clicked: "${label}"`);
+    }, true);
+
+    // Track input field focus
+    document.addEventListener('focusin', function(e) {
+      const el = e.target;
+      if (!['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName)) return;
+      const name = el.name || el.id || el.placeholder || el.tagName;
+      AppLogger.info('FOCUS', `Field focused: "${name}" (type: ${el.type || el.tagName})`);
+    }, true);
+
+    // Track form submissions
+    document.addEventListener('submit', function(e) {
+      const form = e.target;
+      const name = form.id || form.name || 'unknown form';
+      AppLogger.action('FORM', `Form submitted: "${name}"`);
+    }, true);
+
+    // Track section navigation
+    function logNavigation(section) {
+      AppLogger.action('NAV', `Navigated to section: "${section}"`);
+    }
+
+    // Track modal open/close
+    document.addEventListener('show.bs.modal', function(e) {
+      const id = e.target.id || 'unknown modal';
+      AppLogger.action('MODAL', `Modal opened: "${id}"`);
+    }, true);
+
+    document.addEventListener('hide.bs.modal', function(e) {
+      const id = e.target.id || 'unknown modal';
+      AppLogger.info('MODAL', `Modal closed: "${id}"`);
+    }, true);
+
+    // Track select/dropdown changes
+    document.addEventListener('change', function(e) {
+      const el = e.target;
+      if (el.tagName !== 'SELECT') return;
+      const name = el.name || el.id || 'unknown';
+      AppLogger.action('SELECT', `Dropdown changed: "${name}" → "${el.options[el.selectedIndex]?.text}"`);
+    }, true);
+    // ─────────────────────────────────────────────────────────────────
+
     // Global variables
     let currentUser = null;
     let receiptItems = [];
@@ -2418,6 +2481,7 @@
     }
 
     async function logout() {
+      AppLogger.action('AUTH', `User logged out: "${currentUser?.username || 'unknown'}"`);
       await apiCall('api/logout.php', { method: 'POST' });
       currentUser = null;
       showLoginScreen();
@@ -2428,10 +2492,10 @@
         const data = await apiCall('api/me.php');
         if (data.authenticated) {
           currentUser = data;
+          AppLogger.action('AUTH', `User logged in: "${data.username}" (role: ${data.role})`);
           showDashboard();
           return true;
         } else if (data.reason === 'account_deactivated') {
-          // Show message that account was deactivated
           showLoginScreen();
           showMessage('login-status', 'Your account has been deactivated. Please contact the administrator.', 'danger');
           return false;
@@ -2498,6 +2562,8 @@
     }
 
     function showSection(sectionName) {
+      AppLogger.action('NAV', `Navigated to section: "${sectionName}"`);
+      
       // Hide all sections
       document.querySelectorAll('.content-section').forEach(section => {
         section.classList.add('hidden');
@@ -2716,6 +2782,7 @@
         loadDashboard(); // Refresh dashboard
         
         alert('Batch added successfully! Stock quantity updated.');
+        AppLogger.action('BATCH', `Batch added for product ID: ${batchData.product_id} | Batch: ${batchData.batch_number} | Qty: ${batchData.quantity} | Expiry: ${batchData.expiry_date}`);
       } catch (error) {
         alert('Failed to add batch: ' + error.message);
       }
@@ -3422,14 +3489,20 @@
         const product = data.item;
         
         if (product) {
-          const form = document.getElementById('form-edit-product');
-          form.querySelector('input[name="product_id"]').value = product.id;
-          form.querySelector('input[name="sku"]').value = product.sku;
-          form.querySelector('input[name="name"]').value = product.name;
-          form.querySelector('input[name="unit_price"]').value = product.unit_price;
-          form.querySelector('input[name="has_expiry"]').checked = product.has_expiry == 1;
-          
           const modal = new bootstrap.Modal(document.getElementById('editProductModal'));
+          
+          // Populate AFTER modal is shown to prevent universal fix from clearing fields
+          document.getElementById('editProductModal').addEventListener('shown.bs.modal', function handler() {
+            const form = document.getElementById('form-edit-product');
+            form.querySelector('input[name="product_id"]').value = product.id;
+            form.querySelector('input[name="sku"]').value = product.sku;
+            form.querySelector('input[name="name"]').value = product.name;
+            form.querySelector('input[name="unit_price"]').value = product.unit_price;
+            form.querySelector('input[name="has_expiry"]').checked = product.has_expiry == 1;
+            // Remove listener after first use
+            document.getElementById('editProductModal').removeEventListener('shown.bs.modal', handler);
+          });
+          
           modal.show();
         }
       } catch (error) {
@@ -5180,44 +5253,20 @@
       const allModals = document.querySelectorAll('.modal');
       
       allModals.forEach(modal => {
-        // When modal is about to be shown
-        modal.addEventListener('show.bs.modal', function() {
-          // Clear and enable all inputs inside the modal
-          // EXCEPT: readonly fields, date fields, hidden fields, and batch number
-          modal.querySelectorAll('input, textarea').forEach(field => {
-            const isBatchNumber = field.id === 'batch-number-input';
-            const isProductId = field.id === 'batch-product-id';
-            const isReadonly = field.readOnly;
-            const isDate = field.type === 'date';
-            const isHidden = field.type === 'hidden';
-            
-            // Don't clear these fields
-            if (!isBatchNumber && !isProductId && !isReadonly && !isDate && !isHidden) {
-              field.value = '';
-            }
-            
-            // Enable all fields except truly readonly ones
-            if (!isReadonly && !isDate && !isHidden) {
-              field.disabled = false;
-            }
-          });
-        });
-        
-        // When modal is fully shown
+        // Only focus first input when modal is fully shown - NO clearing of fields
+        // (clearing was causing edit modals to lose their pre-populated data)
         modal.addEventListener('shown.bs.modal', function() {
           setTimeout(() => {
-            // Focus the first input/textarea inside the modal
-            // Exclude file inputs (they open file picker), hidden, date, and readonly fields
             const firstField = modal.querySelector(
               'input:not([readonly]):not([type="date"]):not([type="hidden"]):not([type="file"]), textarea:not([readonly])'
             );
             if (firstField) {
               firstField.disabled = false;
               firstField.focus();
-              firstField.click(); // Extra trigger for Electron
-              if (firstField.select) firstField.select(); // Select text if applicable
+              firstField.click();
+              if (firstField.select) firstField.select();
             }
-          }, 150);
+          }, 200);
         });
       });
       
@@ -5384,18 +5433,24 @@
     // Edit user
     async function editUser(userId) {
       try {
-        const data = await apiCall(`api/users.php?id=${userId}`);
-        const user = data.item;
+        const data = await apiCall('api/users.php');
+        const user = data.items.find(u => u.id === userId);
         
         if (user) {
-          const form = document.getElementById('form-edit-user');
-          form.querySelector('input[name="user_id"]').value = user.id;
-          form.querySelector('input[name="username"]').value = user.username;
-          form.querySelector('select[name="role"]').value = user.role;
-          form.querySelector('select[name="status"]').value = user.status || 'active';
-          form.querySelector('input[name="password"]').value = '';
-          
           const modal = new bootstrap.Modal(document.getElementById('editUserModal'));
+          
+          // Populate AFTER modal is shown to prevent universal fix from clearing fields
+          document.getElementById('editUserModal').addEventListener('shown.bs.modal', function handler() {
+            const form = document.getElementById('form-edit-user');
+            form.querySelector('input[name="user_id"]').value = user.id;
+            form.querySelector('input[name="username"]').value = user.username;
+            form.querySelector('select[name="role"]').value = user.role;
+            form.querySelector('select[name="status"]').value = user.status || 'active';
+            form.querySelector('input[name="password"]').value = '';
+            // Remove listener after first use
+            document.getElementById('editUserModal').removeEventListener('shown.bs.modal', handler);
+          });
+          
           modal.show();
         }
       } catch (error) {
@@ -6363,6 +6418,7 @@
           // Clear the SKU field for next product
           document.querySelector('input[name="sku"]').value = '';
           loadProducts();
+          AppLogger.action('PRODUCT', `Product added: "${productData.name}" | SKU: ${productData.sku} | Price: GH₵${productData.unit_price}`);
           alert('Product added successfully!');
         } catch (error) {
           // Check if it's a duplicate name error
@@ -6464,6 +6520,7 @@
           
           // Show success message with options
           const printNow = confirm('Receipt created successfully!\n\nWould you like to view and print it now?');
+          AppLogger.action('RECEIPT', `Receipt created: #${result.invoice_number || result.id} | Total: ${receiptData.items?.length || 0} items | Amount: GH₵${receiptData.items?.reduce((s,i) => s + i.total_price, 0).toFixed(2) || '0.00'} | Customer: ${receiptData.customer_name}`);
           
           if (printNow && result.id) {
             // View and print the newly created receipt
