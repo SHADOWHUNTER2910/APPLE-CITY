@@ -1,0 +1,17 @@
+# Desktop build output
+desktop/dist/
+desktop/node_modules/
+
+# Database (don't push live data)
+data/stocktracker.sqlite
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.kiro/
+
+# Logs
+*.log

@@ -1,0 +1,91 @@
+{
+  "name": "shelfsense-pos",
+  "version": "1.0.0",
+  "description": "ShelfSense POS - Smart retail management system that helps businesses track stock, monitor sales, and prevent losses from expired products.",
+  "main": "main.js",
+  "private": true,
+  "author": "ShelfSense",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder",
+    "build-win": "electron-builder --win",
+    "build-portable": "electron-builder --win portable",
+    "build-installer": "electron-builder --win nsis",
+    "build-all": "electron-builder --win nsis --win portable"
+  },
+  "build": {
+    "appId": "com.shelfsense.pos",
+    "productName": "ShelfSense POS",
+    "directories": {
+      "output": "dist/internal"
+    },
+    "extraResources": [
+      { 
+        "from": "php", 
+        "to": "php",
+        "filter": ["**/*"]
+      },
+      { 
+        "from": "..", 
+        "to": "app", 
+        "filter": [
+          "api/**/*",
+          "index.html",
+          "src/**/*",
+          "config.php",
+          "sql/**/*",
+          "assets/**/*",
+          "data/**/*"
+        ] 
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "company-icon.ico",
+      "publisherName": "ShelfSense",
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "ShelfSense POS",
+      "installerIcon": "company-icon.ico",
+      "uninstallerIcon": "company-icon.ico",
+      "installerHeaderIcon": "company-icon.ico",
+      "artifactName": "setup-core.${ext}",
+      "deleteAppDataOnUninstall": false
+    },
+    "portable": {
+      "artifactName": "${productName}-Portable-${version}.${ext}"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "package.json",
+      "company-icon.ico",
+      "node_modules/**/*"
+    ],
+    "fileAssociations": [
+      {
+        "ext": "sqlite",
+        "name": "Stock Manager Database",
+        "role": "Editor"
+      }
+    ]
+  },
+  "devDependencies": {
+    "electron": "^28.2.0",
+    "electron-builder": "^24.9.1"
+  }
+}
