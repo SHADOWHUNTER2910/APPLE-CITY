@@ -120,7 +120,7 @@ function setupAutoUpdater() {
 }
 // ─────────────────────────────────────────────────────────────────
 
-
+function checkServerReady(callback, attempts = 0) {
   if (serverCheckInProgress) {
     console.log('Server check already in progress, skipping...');
     return;
@@ -462,7 +462,7 @@ function createWindow() {
         keepAlive();
         mainWindow.webContents.focus();
       }
-    }, 30000); // Every 30 seconds
+    }, 5000); // Every 5 seconds
   });
 
   mainWindow.on('blur', () => {
@@ -472,7 +472,7 @@ function createWindow() {
         if (mainWindow && !mainWindow.isDestroyed()) {
           keepAlive();
         }
-      }, 30000);
+      }, 5000);
     }
   });
 
@@ -490,38 +490,23 @@ function createWindow() {
     setTimeout(() => {
       mainWindow.webContents.executeJavaScript(`
         // ── Renderer Keep-Alive ──────────────────────────────────────
-        // Re-enable pointer events on all non-disabled elements every 20s
+        // Re-enable pointer events on ALL inputs every 3 seconds
         setInterval(() => {
-          document.querySelectorAll('input:not([disabled]), textarea:not([disabled]), select:not([disabled]), button:not([disabled])').forEach(el => {
-            if (el.style.pointerEvents === 'none') {
+          document.querySelectorAll('input, textarea, select').forEach(el => {
+            if (!el.disabled && el.type !== 'hidden') {
               el.style.pointerEvents = 'auto';
+              el.style.userSelect = 'auto';
+              el.removeAttribute('inert');
             }
           });
+        }, 3000);
 
-          // If a modal is open, re-focus its first input
-          const openModal = document.querySelector('.modal.show');
-          if (openModal) {
-            const field = openModal.querySelector('input:not([readonly]):not([type="hidden"]):not([type="date"]), textarea:not([readonly])');
-            if (field && document.activeElement !== field) {
-              field.focus();
-            }
-          }
-        }, 20000);
-
-        // Dispatch a resize event every 25s to force Electron repaint
+        // Dispatch a resize event every 10s to force Electron repaint
         setInterval(() => {
           window.dispatchEvent(new Event('resize'));
-        }, 25000);
+        }, 10000);
 
-        // Re-attach focus when user clicks anywhere on the page
-        document.addEventListener('mousedown', () => {
-          const el = document.activeElement;
-          if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT')) {
-            el.focus();
-          }
-        }, true);
-
-        console.log('ShelfSense: Keep-alive and input fix active');
+        console.log('ShelfSense: Input stability fix active');
         // ─────────────────────────────────────────────────────────────
       `).catch(err => console.error('Keep-alive script error:', err));
     }, 1000);

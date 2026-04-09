@@ -132,33 +132,51 @@ async function deleteUnit(unitId) {
 async function editUnit(unitId) {
   const unit = currentProductUnits.find(u => u.id === unitId);
   if (!unit) return;
-  
-  const newName = prompt('Unit Name:', unit.unit_name);
-  if (!newName) return;
-  
-  const newAbbr = prompt('Abbreviation:', unit.unit_abbreviation);
-  if (!newAbbr) return;
-  
-  const newConversion = prompt('Conversion Factor:', unit.conversion_factor);
-  if (!newConversion) return;
-  
-  const newPrice = prompt('Unit Price:', unit.unit_price);
-  if (!newPrice) return;
-  
+
+  // Populate the edit modal
+  document.getElementById('edit-unit-id').value = unit.id;
+  document.getElementById('edit-unit-name').value = unit.unit_name;
+  document.getElementById('edit-unit-abbreviation').value = unit.unit_abbreviation;
+  document.getElementById('edit-unit-conversion').value = unit.conversion_factor;
+  document.getElementById('edit-unit-price').value = unit.unit_price;
+
+  // Hide manage modal, show edit modal
+  bootstrap.Modal.getInstance(document.getElementById('manageUnitsModal'))?.hide();
+  setTimeout(() => {
+    new bootstrap.Modal(document.getElementById('editUnitModal')).show();
+  }, 300);
+}
+
+async function saveEditUnit() {
+  const unitId = document.getElementById('edit-unit-id').value;
+  const newName = document.getElementById('edit-unit-name').value.trim();
+  const newAbbr = document.getElementById('edit-unit-abbreviation').value.trim();
+  const newConversion = parseFloat(document.getElementById('edit-unit-conversion').value);
+  const newPrice = parseFloat(document.getElementById('edit-unit-price').value);
+
+  if (!newName || !newAbbr || isNaN(newConversion) || isNaN(newPrice)) {
+    alert('Please fill in all fields.');
+    return;
+  }
+
   try {
     await apiCall(`api/product-units.php?id=${unitId}`, {
       method: 'PUT',
       body: JSON.stringify({
         unit_name: newName,
         unit_abbreviation: newAbbr,
-        conversion_factor: parseFloat(newConversion),
-        unit_price: parseFloat(newPrice)
+        conversion_factor: newConversion,
+        unit_price: newPrice
       })
     });
-    
+
+    // Close edit modal and reopen manage modal
+    bootstrap.Modal.getInstance(document.getElementById('editUnitModal'))?.hide();
     const productId = document.getElementById('units-product-id').value;
-    await loadProductUnits(productId);
-    alert('Unit updated successfully!');
+    setTimeout(() => {
+      loadProductUnits(productId);
+      new bootstrap.Modal(document.getElementById('manageUnitsModal')).show();
+    }, 300);
   } catch (error) {
     alert('Failed to update unit: ' + error.message);
   }
