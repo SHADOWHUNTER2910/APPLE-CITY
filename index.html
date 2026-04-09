@@ -425,6 +425,10 @@
               <i class="bi bi-gear"></i>
               System Settings
             </a>
+            <a class="nav-link admin-only hidden" href="#" data-section="logs">
+              <i class="bi bi-journal-text"></i>
+              Activity Logs
+            </a>
           </nav>
         </div>
 
@@ -2219,6 +2223,70 @@
               </div>
             </div>
           </div>
+
+          <!-- Activity Logs Section (Admin Only) -->
+          <div id="section-logs" class="content-section hidden">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+              <h2><i class="bi bi-journal-text"></i> Activity Logs</h2>
+              <div class="d-flex gap-2">
+                <button class="btn btn-outline-secondary" onclick="loadLogs()">
+                  <i class="bi bi-arrow-clockwise"></i> Refresh
+                </button>
+                <button class="btn btn-outline-danger" onclick="clearLogView()">
+                  <i class="bi bi-x-circle"></i> Clear View
+                </button>
+              </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="card mb-3">
+              <div class="card-body py-2">
+                <div class="row g-2 align-items-center">
+                  <div class="col-md-3">
+                    <select class="form-select form-select-sm" id="log-level-filter" onchange="filterLogs()">
+                      <option value="all">All Levels</option>
+                      <option value="ACTION">Actions</option>
+                      <option value="INFO">Info</option>
+                      <option value="WARN">Warnings</option>
+                      <option value="ERROR">Errors</option>
+                    </select>
+                  </div>
+                  <div class="col-md-3">
+                    <select class="form-select form-select-sm" id="log-category-filter" onchange="filterLogs()">
+                      <option value="all">All Categories</option>
+                      <option value="AUTH">Auth (Login/Logout)</option>
+                      <option value="NAV">Navigation</option>
+                      <option value="CLICK">Button Clicks</option>
+                      <option value="FORM">Form Submissions</option>
+                      <option value="MODAL">Modals</option>
+                      <option value="RECEIPT">Receipts</option>
+                      <option value="PRODUCT">Products</option>
+                      <option value="BATCH">Batches</option>
+                      <option value="APP">App Events</option>
+                    </select>
+                  </div>
+                  <div class="col-md-4">
+                    <input type="text" class="form-control form-control-sm" id="log-search" placeholder="Search logs..." oninput="filterLogs()">
+                  </div>
+                  <div class="col-md-2">
+                    <span class="text-muted small" id="log-count">0 entries</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Log Viewer -->
+            <div class="card">
+              <div class="card-body p-0">
+                <div id="log-viewer" style="height: 550px; overflow-y: auto; background: #1e1e1e; border-radius: 0.375rem; font-family: 'Courier New', monospace; font-size: 12px; padding: 12px;">
+                  <div class="text-muted text-center py-4" style="color: #888 !important;">
+                    <i class="bi bi-journal-text" style="font-size: 2rem;"></i>
+                    <p class="mt-2">Click Refresh to load logs</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -2606,6 +2674,9 @@
           break;
         case 'settings':
           loadCompanySettings();
+          break;
+        case 'logs':
+          loadLogs();
           break;
         case 'analytics':
           // Set default date to the most recent receipt date or today
@@ -5510,6 +5581,114 @@
         alert(`Failed to ${action} user: ` + error.message);
       }
     }
+
+    // ─── Log Viewer Functions ─────────────────────────────────────────
+    let allLogLines = [];
+
+    async function loadLogs() {
+      const viewer = document.getElementById('log-viewer');
+      viewer.innerHTML = '<div style="color:#888; text-align:center; padding:20px;">Loading logs...</div>';
+
+      try {
+        if (!window.electronAPI || !window.electronAPI.readLogs) {
+          viewer.innerHTML = '<div style="color:#f88; padding:12px;">Log viewer is only available in the desktop app.</div>';
+          return;
+        }
+
+        // Get available log dates and populate date selector if needed
+        const dates = await window.electronAPI.getLogDates();
+        const today = new Date().toISOString().split('T')[0];
+        const dateToLoad = dates.includes(today) ? today : (dates[0] || today);
+
+        allLogLines = await window.electronAPI.readLogs(dateToLoad);
+        document.getElementById('log-count').textContent = `${allLogLines.length} entries`;
+        renderLogs(allLogLines);
+      } catch (e) {
+        viewer.innerHTML = `<div style="color:#f88; padding:12px;">Failed to load logs: ${e.message}</div>`;
+      }
+    }
+
+    function renderLogs(lines) {
+      const viewer = document.getElementById('log-viewer');
+
+      if (lines.length === 0) {
+        viewer.innerHTML = '<div style="color:#888; text-align:center; padding:20px;"><i class="bi bi-journal-x"></i> No log entries found.</div>';
+        return;
+      }
+
+      const html = lines.map(line => {
+        // Parse: [2026-04-09 10:30:00] [ACTION] [RECEIPT] message
+        const match = line.match(/^\[(.+?)\] \[(.+?)\] \[(.+?)\] (.+)$/);
+        if (!match) return `<div style="color:#888; padding:1px 0;">${escapeHtml(line)}</div>`;
+
+        const [, timestamp, level, category, message] = match;
+
+        const levelColors = {
+          'ACTION': '#4fc3f7',
+          'INFO':   '#81c784',
+          'WARN':   '#ffb74d',
+          'ERROR':  '#e57373'
+        };
+        const catColors = {
+          'AUTH':    '#ce93d8',
+          'RECEIPT': '#80cbc4',
+          'PRODUCT': '#a5d6a7',
+          'BATCH':   '#ffe082',
+          'NAV':     '#90caf9',
+          'CLICK':   '#b0bec5',
+          'FORM':    '#f48fb1',
+          'MODAL':   '#bcaaa4',
+          'APP':     '#ef9a9a',
+          'SELECT':  '#b0bec5',
+          'FOCUS':   '#546e7a'
+        };
+
+        const lc = levelColors[level] || '#ccc';
+        const cc = catColors[category] || '#aaa';
+
+        return `<div style="padding:2px 0; border-bottom:1px solid #2a2a2a; line-height:1.5;">
+          <span style="color:#666;">${escapeHtml(timestamp)}</span>
+          <span style="color:${lc}; font-weight:bold; margin:0 6px;">[${level}]</span>
+          <span style="color:${cc}; margin-right:6px;">[${category}]</span>
+          <span style="color:#e0e0e0;">${escapeHtml(message)}</span>
+        </div>`;
+      }).join('');
+
+      viewer.innerHTML = html;
+      // Scroll to bottom (most recent)
+      viewer.scrollTop = viewer.scrollHeight;
+    }
+
+    function filterLogs() {
+      const level = document.getElementById('log-level-filter').value;
+      const category = document.getElementById('log-category-filter').value;
+      const search = document.getElementById('log-search').value.toLowerCase();
+
+      const filtered = allLogLines.filter(line => {
+        const matchLevel = level === 'all' || line.includes(`[${level}]`);
+        const matchCat = category === 'all' || line.includes(`[${category}]`);
+        const matchSearch = search === '' || line.toLowerCase().includes(search);
+        return matchLevel && matchCat && matchSearch;
+      });
+
+      document.getElementById('log-count').textContent = `${filtered.length} of ${allLogLines.length} entries`;
+      renderLogs(filtered);
+    }
+
+    function clearLogView() {
+      allLogLines = [];
+      document.getElementById('log-count').textContent = '0 entries';
+      document.getElementById('log-viewer').innerHTML = '<div style="color:#888; text-align:center; padding:20px;">Log view cleared. Click Refresh to reload.</div>';
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+    // ─────────────────────────────────────────────────────────────────
 
     // Company settings management
     async function loadCompanySettings() {

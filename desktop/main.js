@@ -36,6 +36,35 @@ ipcMain.handle('write-log', async (event, entry) => {
   writeLog(entry);
 });
 
+// IPC handler to read logs
+ipcMain.handle('read-logs', async (event, date) => {
+  try {
+    const logFile = date 
+      ? path.join(logDir, `shelfsense-${date}.log`)
+      : getLogFilePath();
+    if (!fs.existsSync(logFile)) return [];
+    const content = fs.readFileSync(logFile, 'utf8');
+    return content.split('\n').filter(line => line.trim() !== '');
+  } catch (e) {
+    return [];
+  }
+});
+
+// IPC handler to get available log dates
+ipcMain.handle('get-log-dates', async () => {
+  try {
+    if (!fs.existsSync(logDir)) return [];
+    const files = fs.readdirSync(logDir)
+      .filter(f => f.startsWith('shelfsense-') && f.endsWith('.log'))
+      .map(f => f.replace('shelfsense-', '').replace('.log', ''))
+      .sort()
+      .reverse(); // Most recent first
+    return files;
+  } catch (e) {
+    return [];
+  }
+});
+
 // Log app start
 writeLog({ level: 'INFO', category: 'APP', message: 'ShelfSense application started' });
 // ─────────────────────────────────────────────────────────────────
@@ -343,73 +372,110 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
-    show: false, // Don't show until ready
+    show: false,
     title: "ShelfSense POS",
-    icon: path.join(__dirname, '..', 'assets', 'logo.png'), // Use logo.png
+    icon: path.join(__dirname, '..', 'assets', 'logo.png'),
     webPreferences: { 
       nodeIntegration: false, 
       contextIsolation: true,
-      preload: path.join(__dirname, 'preload.js'), // Add preload script
-      webSecurity: false, // Allow local file access
-      allowRunningInsecureContent: true, // Allow HTTP content
-      cache: false, // Disable cache to always get fresh content
-      backgroundThrottling: false, // CRITICAL: Prevent throttling when window loses focus
-      offscreen: false, // Ensure proper rendering
-      disableBlinkFeatures: '', // Don't disable any features
-      enableBlinkFeatures: '' // Don't enable problematic features
+      preload: path.join(__dirname, 'preload.js'),
+      webSecurity: false,
+      allowRunningInsecureContent: true,
+      backgroundThrottling: false, // CRITICAL: prevent throttling
+      offscreen: false,
     }
   });
 
-  // Fix focus issues - ensure window can receive input
+  // ── Focus & Input Fix ──────────────────────────────────────────────
+  // Inject a script that keeps inputs alive by simulating a tiny
+  // window resize every 30 seconds. This forces Electron to repaint
+  // and re-attach input handlers without any visible effect.
+  function keepAlive() {
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+    try {
+      const [w, h] = mainWindow.getSize();
+      mainWindow.setSize(w + 1, h);
+      mainWindow.setSize(w, h);
+    } catch (e) {}
+  }
+
+  // Also forcefully re-focus the webContents every 30 seconds when idle
+  let keepAliveInterval = null;
+
   mainWindow.on('focus', () => {
-    console.log('Window focused');
     mainWindow.webContents.focus();
+    // Clear any existing interval and restart
+    if (keepAliveInterval) clearInterval(keepAliveInterval);
+    keepAliveInterval = setInterval(() => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        keepAlive();
+        mainWindow.webContents.focus();
+      }
+    }, 30000); // Every 30 seconds
   });
 
   mainWindow.on('blur', () => {
-    console.log('Window blurred');
+    // Keep the interval running even when blurred
+    if (!keepAliveInterval) {
+      keepAliveInterval = setInterval(() => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          keepAlive();
+        }
+      }, 30000);
+    }
   });
 
-  // Force focus when window is shown
+  mainWindow.on('closed', () => {
+    if (keepAliveInterval) clearInterval(keepAliveInterval);
+  });
+  // ──────────────────────────────────────────────────────────────────
+
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
     mainWindow.focus();
     mainWindow.webContents.focus();
-    
-    // Simple, non-intrusive input activation
+
+    // Inject renderer-side fix
     setTimeout(() => {
       mainWindow.webContents.executeJavaScript(`
-        console.log('Electron: Activating inputs with non-intrusive approach...');
-        
-        // Simple periodic check to ensure inputs stay enabled
-        // This doesn't block legitimate disabled states, just prevents Electron throttling
+        // ── Renderer Keep-Alive ──────────────────────────────────────
+        // Re-enable pointer events on all non-disabled elements every 20s
         setInterval(() => {
-          // Only re-enable inputs that don't have explicit disabled attribute
           document.querySelectorAll('input:not([disabled]), textarea:not([disabled]), select:not([disabled]), button:not([disabled])').forEach(el => {
-            // Just ensure pointer events are enabled
             if (el.style.pointerEvents === 'none') {
               el.style.pointerEvents = 'auto';
             }
           });
-        }, 10000); // Check every 10 seconds, not too aggressive
-        
-        console.log('Electron: Input activation complete');
-      `).catch(err => console.error('Failed to execute input activation script:', err));
-    }, 500);
+
+          // If a modal is open, re-focus its first input
+          const openModal = document.querySelector('.modal.show');
+          if (openModal) {
+            const field = openModal.querySelector('input:not([readonly]):not([type="hidden"]):not([type="date"]), textarea:not([readonly])');
+            if (field && document.activeElement !== field) {
+              field.focus();
+            }
+          }
+        }, 20000);
+
+        // Dispatch a resize event every 25s to force Electron repaint
+        setInterval(() => {
+          window.dispatchEvent(new Event('resize'));
+        }, 25000);
+
+        // Re-attach focus when user clicks anywhere on the page
+        document.addEventListener('mousedown', () => {
+          const el = document.activeElement;
+          if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT')) {
+            el.focus();
+          }
+        }, true);
+
+        console.log('ShelfSense: Keep-alive and input fix active');
+        // ─────────────────────────────────────────────────────────────
+      `).catch(err => console.error('Keep-alive script error:', err));
+    }, 1000);
   });
   
-  // Also re-enable pointer events when window regains focus
-  mainWindow.on('focus', () => {
-    console.log('Window focused - ensuring pointer events are active');
-    mainWindow.webContents.executeJavaScript(`
-      document.querySelectorAll('input:not([disabled]), textarea:not([disabled]), select:not([disabled]), button:not([disabled])').forEach(el => {
-        if (el.style.pointerEvents === 'none') {
-          el.style.pointerEvents = 'auto';
-        }
-      });
-    `).catch(err => console.error('Failed to fix pointer events on focus:', err));
-  });
-
   // Clear all caches before loading
   mainWindow.webContents.session.clearCache().then(() => {
     console.log('Cache cleared successfully');
