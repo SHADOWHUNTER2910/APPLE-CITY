@@ -417,6 +417,11 @@
               <i class="bi bi-graph-up"></i>
               Analytics & Reports
             </a>
+            <a class="nav-link admin-only hidden" href="#" data-section="antitheft">
+              <i class="bi bi-shield-exclamation"></i>
+              Anti-Theft Monitor
+              <span id="antitheft-badge" class="badge bg-danger ms-1" style="display:none;">!</span>
+            </a>
             <a class="nav-link admin-only hidden" href="#" data-section="users">
               <i class="bi bi-people"></i>
               User Management
@@ -2266,6 +2271,188 @@
             </div>
           </div>
 
+          <!-- Anti-Theft Monitor Section (Admin Only) -->
+          <div id="section-antitheft" class="content-section hidden">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+              <h2><i class="bi bi-shield-exclamation text-danger"></i> Anti-Theft Monitor</h2>
+              <div class="d-flex align-items-center gap-2">
+                <select class="form-select form-select-sm" id="antitheft-period" onchange="loadAntiTheft()" style="width:auto;">
+                  <option value="7">Last 7 days</option>
+                  <option value="30" selected>Last 30 days</option>
+                  <option value="90">Last 90 days</option>
+                  <option value="365">Last year</option>
+                </select>
+                <button class="btn btn-outline-primary btn-sm" onclick="refreshWithFeedback(this, loadAntiTheft)">
+                  <i class="bi bi-arrow-clockwise"></i> Refresh
+                </button>
+              </div>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="row mb-4">
+              <div class="col-md-3">
+                <div class="stat-card danger">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <h3 id="at-missing-count" class="mb-0">0</h3>
+                      <p class="mb-0">Products with Missing Stock</p>
+                    </div>
+                    <i class="bi bi-box-seam display-4 opacity-50"></i>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="stat-card warning">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <h3 id="at-missing-units" class="mb-0">0</h3>
+                      <p class="mb-0">Total Missing Units</p>
+                    </div>
+                    <i class="bi bi-exclamation-triangle display-4 opacity-50"></i>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="stat-card danger">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <h3 id="at-suspicious-count" class="mb-0">0</h3>
+                      <p class="mb-0">Suspicious Activities</p>
+                    </div>
+                    <i class="bi bi-eye display-4 opacity-50"></i>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="stat-card success">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <h3 id="at-ok-count" class="mb-0">0</h3>
+                      <p class="mb-0">Products Balanced</p>
+                    </div>
+                    <i class="bi bi-check-circle display-4 opacity-50"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tabs -->
+            <ul class="nav nav-tabs mb-3" id="antitheft-tabs">
+              <li class="nav-item">
+                <button class="nav-link active" onclick="showAntiTheftTab('variance')">
+                  <i class="bi bi-bar-chart text-danger"></i> Stock Variance
+                </button>
+              </li>
+              <li class="nav-item">
+                <button class="nav-link" onclick="showAntiTheftTab('suspicious')">
+                  <i class="bi bi-exclamation-triangle text-warning"></i> Suspicious Activity
+                </button>
+              </li>
+              <li class="nav-item">
+                <button class="nav-link" onclick="showAntiTheftTab('daily')">
+                  <i class="bi bi-calendar-x text-danger"></i> Daily Loss Log
+                </button>
+              </li>
+            </ul>
+
+            <!-- Stock Variance Tab -->
+            <div id="at-tab-variance">
+              <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                  <h5 class="mb-0">Expected vs Actual Stock</h5>
+                  <div class="d-flex gap-2">
+                    <select class="form-select form-select-sm" id="variance-filter" onchange="filterVarianceTable()" style="width:auto;">
+                      <option value="all">All Products</option>
+                      <option value="missing" selected>Missing Stock Only</option>
+                      <option value="surplus">Surplus Only</option>
+                      <option value="ok">Balanced Only</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="card-body p-0">
+                  <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                      <thead class="table-dark">
+                        <tr>
+                          <th>Product</th>
+                          <th>SKU</th>
+                          <th>Initial</th>
+                          <th>Added</th>
+                          <th>Sold</th>
+                          <th>Manual Deductions</th>
+                          <th>Expected</th>
+                          <th>Actual</th>
+                          <th>Variance</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody id="tbl-variance"></tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Suspicious Activity Tab -->
+            <div id="at-tab-suspicious" style="display:none;">
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="card mb-3">
+                    <div class="card-header bg-danger text-white">
+                      <h6 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Manual Stock Deductions & Large Adjustments</h6>
+                    </div>
+                    <div class="card-body p-0">
+                      <div class="table-responsive">
+                        <table class="table table-sm table-hover mb-0">
+                          <thead class="table-light">
+                            <tr><th>Date</th><th>Product</th><th>Qty</th><th>Type</th><th>By</th><th>Notes</th></tr>
+                          </thead>
+                          <tbody id="tbl-manual-deductions"></tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="card mb-3">
+                    <div class="card-header bg-warning text-dark">
+                      <h6 class="mb-0"><i class="bi bi-cart-x"></i> Unusually Large Receipt Deductions (≥20 units)</h6>
+                    </div>
+                    <div class="card-body p-0">
+                      <div class="table-responsive">
+                        <table class="table table-sm table-hover mb-0">
+                          <thead class="table-light">
+                            <tr><th>Date</th><th>Product</th><th>Qty</th><th>Receipt</th><th>By</th></tr>
+                          </thead>
+                          <tbody id="tbl-large-deductions"></tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Daily Loss Log Tab -->
+            <div id="at-tab-daily" style="display:none;">
+              <div class="card">
+                <div class="card-header">
+                  <h5 class="mb-0"><i class="bi bi-calendar-x text-danger"></i> Daily Unexplained Stock Loss</h5>
+                </div>
+                <div class="card-body p-0">
+                  <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                      <thead class="table-dark">
+                        <tr><th>Date</th><th>Products Affected</th><th>Units Lost</th><th>Products</th></tr>
+                      </thead>
+                      <tbody id="tbl-daily-loss"></tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Credit & Debt Section -->
           <div id="section-credit" class="content-section hidden">
             <div class="d-flex justify-content-between align-items-center mb-4">
@@ -3027,6 +3214,9 @@
           break;
         case 'logs':
           loadLogs();
+          break;
+        case 'antitheft':
+          loadAntiTheft();
           break;
         case 'credit':
           loadCreditSection();
@@ -7184,6 +7374,160 @@
       
       // Product selection event listener is now handled in initializeProductSearch()
     });
+
+    // ============================================================
+    // ANTI-THEFT MONITOR
+    // ============================================================
+
+    let varianceData = [];
+
+    async function loadAntiTheft() {
+      const days = document.getElementById('antitheft-period').value;
+      await Promise.all([
+        loadVarianceReport(),
+        loadSuspiciousActivity(days),
+        loadDailyLoss(days)
+      ]);
+    }
+
+    async function loadVarianceReport() {
+      try {
+        const data = await apiCall('api/stock-variance.php?action=variance');
+        varianceData = data.items || [];
+
+        // Update summary cards
+        document.getElementById('at-missing-count').textContent = data.summary.missing_count;
+        document.getElementById('at-missing-units').textContent = data.summary.total_missing;
+        document.getElementById('at-ok-count').textContent = data.summary.ok_count;
+
+        // Update badge
+        const badge = document.getElementById('antitheft-badge');
+        if (badge) {
+          badge.textContent = '!';
+          badge.style.display = data.summary.missing_count > 0 ? 'inline' : 'none';
+        }
+
+        filterVarianceTable();
+      } catch (e) {
+        console.error('Failed to load variance:', e);
+      }
+    }
+
+    function filterVarianceTable() {
+      const filter = document.getElementById('variance-filter').value;
+      const filtered = filter === 'all' ? varianceData
+        : varianceData.filter(r => r.status === filter);
+
+      const tbody = document.getElementById('tbl-variance');
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="10" class="text-center text-muted py-4">
+          <i class="bi bi-check-circle text-success fs-3 d-block mb-2"></i>No issues found</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(r => {
+        const statusBadge = r.status === 'missing'
+          ? '<span class="badge bg-danger">Missing</span>'
+          : r.status === 'surplus'
+          ? '<span class="badge bg-info">Surplus</span>'
+          : '<span class="badge bg-success">OK</span>';
+
+        const varianceClass = r.variance > 0 ? 'text-danger fw-bold'
+          : r.variance < 0 ? 'text-info' : 'text-success';
+
+        return `<tr class="${r.variance > 0 ? 'table-danger' : ''}">
+          <td><strong>${r.name}</strong></td>
+          <td><small class="text-muted">${r.sku}</small></td>
+          <td>${r.initial_qty}</td>
+          <td class="text-success">+${r.total_added}</td>
+          <td class="text-primary">-${r.sold_qty}</td>
+          <td class="${r.manual_deductions > 0 ? 'text-danger fw-bold' : ''}">${r.manual_deductions > 0 ? '-' + r.manual_deductions : '0'}</td>
+          <td><strong>${r.expected_qty}</strong></td>
+          <td>${r.actual_qty}</td>
+          <td class="${varianceClass}">${r.variance > 0 ? '-' + r.variance : r.variance < 0 ? '+' + Math.abs(r.variance) : '0'}</td>
+          <td>${statusBadge}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    async function loadSuspiciousActivity(days) {
+      try {
+        const data = await apiCall(`api/stock-variance.php?action=suspicious&days=${days}`);
+
+        // Update suspicious count card
+        const total = (data.manual_deductions || []).length + (data.large_deductions || []).length;
+        document.getElementById('at-suspicious-count').textContent = total;
+
+        // Manual deductions table
+        const manualTbody = document.getElementById('tbl-manual-deductions');
+        const manual = data.manual_deductions || [];
+        if (manual.length === 0) {
+          manualTbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-3"><i class="bi bi-check-circle text-success"></i> No manual deductions</td></tr>';
+        } else {
+          manualTbody.innerHTML = manual.map(m => `
+            <tr class="table-danger">
+              <td><small>${formatDate(m.created_at)}</small></td>
+              <td>${m.product_name}</td>
+              <td class="text-danger fw-bold">-${m.quantity}</td>
+              <td><span class="badge bg-secondary">${m.movement_type}</span></td>
+              <td>${m.done_by || '—'}</td>
+              <td><small>${m.notes || '—'}</small></td>
+            </tr>
+          `).join('');
+        }
+
+        // Large deductions table
+        const largeTbody = document.getElementById('tbl-large-deductions');
+        const large = data.large_deductions || [];
+        if (large.length === 0) {
+          largeTbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3"><i class="bi bi-check-circle text-success"></i> No large deductions</td></tr>';
+        } else {
+          largeTbody.innerHTML = large.map(l => `
+            <tr class="table-warning">
+              <td><small>${formatDate(l.created_at)}</small></td>
+              <td>${l.product_name}</td>
+              <td class="fw-bold">${l.quantity}</td>
+              <td><small>#${l.reference_id || '—'}</small></td>
+              <td>${l.done_by || '—'}</td>
+            </tr>
+          `).join('');
+        }
+      } catch (e) {
+        console.error('Failed to load suspicious activity:', e);
+      }
+    }
+
+    async function loadDailyLoss(days) {
+      try {
+        const data = await apiCall(`api/stock-variance.php?action=daily_loss&days=${days}`);
+        const tbody = document.getElementById('tbl-daily-loss');
+        const items = data.items || [];
+        if (items.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4"><i class="bi bi-check-circle text-success fs-3 d-block mb-2"></i>No unexplained losses recorded</td></tr>';
+          return;
+        }
+        tbody.innerHTML = items.map(i => `
+          <tr class="table-danger">
+            <td><strong>${i.date}</strong></td>
+            <td><span class="badge bg-warning text-dark">${i.products_affected}</span></td>
+            <td class="text-danger fw-bold">${i.total_units_lost} units</td>
+            <td><small>${i.products}</small></td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        console.error('Failed to load daily loss:', e);
+      }
+    }
+
+    function showAntiTheftTab(tab) {
+      ['variance', 'suspicious', 'daily'].forEach(t => {
+        document.getElementById(`at-tab-${t}`).style.display = t === tab ? '' : 'none';
+      });
+      document.querySelectorAll('#antitheft-tabs .nav-link').forEach((btn, i) => {
+        const tabs = ['variance', 'suspicious', 'daily'];
+        btn.classList.toggle('active', tabs[i] === tab);
+      });
+    }
 
     // ============================================================
     // CREDIT & DEBT MANAGEMENT
