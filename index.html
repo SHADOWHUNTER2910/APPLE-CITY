@@ -421,6 +421,11 @@
               <i class="bi bi-people"></i>
               User Management
             </a>
+            <a class="nav-link" href="#" data-section="credit">
+              <i class="bi bi-credit-card-2-front"></i>
+              Credit & Debt
+              <span id="credit-badge" class="badge bg-danger ms-1" style="display:none;">0</span>
+            </a>
             <a class="nav-link admin-only hidden" href="#" data-section="settings">
               <i class="bi bi-gear"></i>
               System Settings
@@ -2261,6 +2266,303 @@
             </div>
           </div>
 
+          <!-- Credit & Debt Section -->
+          <div id="section-credit" class="content-section hidden">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+              <h2><i class="bi bi-credit-card-2-front"></i> Credit & Debt</h2>
+              <div>
+                <button class="btn btn-success me-2" onclick="openAddCustomerModal()">
+                  <i class="bi bi-person-plus"></i> Add Customer
+                </button>
+                <button class="btn btn-warning me-2" onclick="openRecordCreditModal()">
+                  <i class="bi bi-plus-circle"></i> Record Credit Sale
+                </button>
+                <button class="btn btn-outline-primary" onclick="refreshWithFeedback(this, loadCreditSection)">
+                  <i class="bi bi-arrow-clockwise"></i> Refresh
+                </button>
+              </div>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="row mb-4">
+              <div class="col-md-4">
+                <div class="stat-card danger">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <h3 id="credit-total-debt" class="mb-0">GH₵0.00</h3>
+                      <p class="mb-0">Total Outstanding Debt</p>
+                    </div>
+                    <i class="bi bi-exclamation-triangle display-4 opacity-50"></i>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="stat-card warning">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <h3 id="credit-total-debtors" class="mb-0">0</h3>
+                      <p class="mb-0">Customers with Debt</p>
+                    </div>
+                    <i class="bi bi-people display-4 opacity-50"></i>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="stat-card info">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <h3 id="credit-total-customers" class="mb-0">0</h3>
+                      <p class="mb-0">Total Customers</p>
+                    </div>
+                    <i class="bi bi-person-check display-4 opacity-50"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tabs -->
+            <ul class="nav nav-tabs mb-3" id="credit-tabs">
+              <li class="nav-item">
+                <button class="nav-link active" onclick="showCreditTab('debtors')">
+                  <i class="bi bi-exclamation-circle text-danger"></i> Who Owes
+                </button>
+              </li>
+              <li class="nav-item">
+                <button class="nav-link" onclick="showCreditTab('customers')">
+                  <i class="bi bi-people"></i> All Customers
+                </button>
+              </li>
+            </ul>
+
+            <!-- Debtors Tab -->
+            <div id="credit-tab-debtors">
+              <div class="card">
+                <div class="card-header">
+                  <h5 class="mb-0"><i class="bi bi-exclamation-circle text-danger"></i> Outstanding Debts</h5>
+                </div>
+                <div class="card-body p-0">
+                  <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                      <thead class="table-dark">
+                        <tr>
+                          <th>Customer</th>
+                          <th>Phone</th>
+                          <th>Credit Sales</th>
+                          <th>Total Owed</th>
+                          <th>Total Paid</th>
+                          <th>Balance</th>
+                          <th>Last Sale</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody id="tbl-debtors"></tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- All Customers Tab -->
+            <div id="credit-tab-customers" style="display:none;">
+              <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                  <h5 class="mb-0"><i class="bi bi-people"></i> All Customers</h5>
+                  <input type="text" class="form-control w-25" id="customer-search" placeholder="Search customers..." oninput="filterCustomers()">
+                </div>
+                <div class="card-body p-0">
+                  <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                      <thead class="table-dark">
+                        <tr>
+                          <th>Name</th>
+                          <th>Phone</th>
+                          <th>Address</th>
+                          <th>Outstanding Debt</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody id="tbl-customers"></tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Add Customer Modal -->
+          <div class="modal fade" id="addCustomerModal" tabindex="-1">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title"><i class="bi bi-person-plus"></i> Add Customer</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                  <div class="mb-3">
+                    <label class="form-label">Full Name <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="new-customer-name" autocomplete="off">
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">Phone Number</label>
+                    <input type="tel" class="form-control" id="new-customer-phone" autocomplete="off">
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">Address</label>
+                    <input type="text" class="form-control" id="new-customer-address" autocomplete="off">
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">Credit Limit (GH₵) <small class="text-muted">0 = no limit</small></label>
+                    <input type="number" step="0.01" class="form-control" id="new-customer-credit-limit" value="0" autocomplete="off">
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">Notes</label>
+                    <textarea class="form-control" id="new-customer-notes" rows="2"></textarea>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                  <button type="button" class="btn btn-success" onclick="saveNewCustomer()">
+                    <i class="bi bi-check-circle"></i> Save Customer
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Record Credit Sale Modal -->
+          <div class="modal fade" id="recordCreditModal" tabindex="-1">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title"><i class="bi bi-plus-circle"></i> Record Credit Sale</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                  <div class="mb-3">
+                    <label class="form-label">Customer <span class="text-danger">*</span></label>
+                    <select class="form-select" id="credit-customer-select"></select>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">Amount Owed (GH₵) <span class="text-danger">*</span></label>
+                    <input type="number" step="0.01" class="form-control" id="credit-amount-owed" autocomplete="off">
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">Invoice / Receipt Number</label>
+                    <input type="text" class="form-control" id="credit-invoice-number" autocomplete="off">
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">Due Date</label>
+                    <input type="date" class="form-control" id="credit-due-date">
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">Notes</label>
+                    <textarea class="form-control" id="credit-notes" rows="2"></textarea>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                  <button type="button" class="btn btn-warning" onclick="saveRecordCredit()">
+                    <i class="bi bi-check-circle"></i> Record Credit
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Customer Detail Modal -->
+          <div class="modal fade" id="customerDetailModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title"><i class="bi bi-person"></i> <span id="detail-customer-name"></span></h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                  <div class="row mb-3">
+                    <div class="col-md-4">
+                      <small class="text-muted">Phone</small>
+                      <div id="detail-customer-phone" class="fw-semibold">—</div>
+                    </div>
+                    <div class="col-md-4">
+                      <small class="text-muted">Address</small>
+                      <div id="detail-customer-address" class="fw-semibold">—</div>
+                    </div>
+                    <div class="col-md-4">
+                      <small class="text-muted">Total Outstanding</small>
+                      <div id="detail-customer-debt" class="fw-semibold text-danger fs-5">GH₵0.00</div>
+                    </div>
+                  </div>
+                  <h6>Credit Sales</h6>
+                  <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                      <thead class="table-light">
+                        <tr>
+                          <th>Invoice</th>
+                          <th>Date</th>
+                          <th>Owed</th>
+                          <th>Paid</th>
+                          <th>Balance</th>
+                          <th>Status</th>
+                          <th>Action</th>
+                        </tr>
+                      </thead>
+                      <tbody id="tbl-customer-credit-sales"></tbody>
+                    </table>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Record Payment Modal -->
+          <div class="modal fade" id="recordPaymentModal" tabindex="-1">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title"><i class="bi bi-cash-coin"></i> Record Payment</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                  <input type="hidden" id="pay-credit-sale-id">
+                  <div class="alert alert-info">
+                    <strong>Invoice:</strong> <span id="pay-invoice-number"></span><br>
+                    <strong>Balance:</strong> <span id="pay-balance" class="text-danger fw-bold"></span>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">Amount Paying (GH₵) <span class="text-danger">*</span></label>
+                    <input type="number" step="0.01" class="form-control" id="pay-amount" autocomplete="off">
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">Payment Method</label>
+                    <select class="form-select" id="pay-method">
+                      <option value="cash">Cash</option>
+                      <option value="momo">Mobile Money</option>
+                      <option value="bank">Bank Transfer</option>
+                      <option value="card">Card</option>
+                    </select>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">Reference / Transaction ID</label>
+                    <input type="text" class="form-control" id="pay-reference" autocomplete="off">
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">Notes</label>
+                    <textarea class="form-control" id="pay-notes" rows="2"></textarea>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                  <button type="button" class="btn btn-success" onclick="savePayment()">
+                    <i class="bi bi-check-circle"></i> Record Payment
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Activity Logs Section (Admin Only) -->
           <div id="section-logs" class="content-section hidden">
             <div class="d-flex justify-content-between align-items-center mb-4">
@@ -2725,6 +3027,9 @@
           break;
         case 'logs':
           loadLogs();
+          break;
+        case 'credit':
+          loadCreditSection();
           break;
         case 'analytics':
           // Set default date to the most recent receipt date or today
@@ -6845,6 +7150,315 @@
       
       // Product selection event listener is now handled in initializeProductSearch()
     });
+
+    // ============================================================
+    // CREDIT & DEBT MANAGEMENT
+    // ============================================================
+
+    let allCustomers = [];
+
+    async function loadCreditSection() {
+      await Promise.all([loadDebtors(), loadAllCustomers()]);
+      updateCreditBadge();
+    }
+
+    async function loadDebtors() {
+      try {
+        const data = await apiCall('api/customers.php?action=debtors');
+        const debtors = data.items || [];
+
+        // Update summary cards
+        const totalDebt = debtors.reduce((s, d) => s + parseFloat(d.total_balance), 0);
+        document.getElementById('credit-total-debt').textContent = formatCurrency(totalDebt);
+        document.getElementById('credit-total-debtors').textContent = debtors.length;
+
+        const tbody = document.getElementById('tbl-debtors');
+        if (debtors.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4"><i class="bi bi-check-circle text-success fs-3 d-block mb-2"></i>No outstanding debts</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = debtors.map(d => `
+          <tr>
+            <td><strong>${d.name}</strong></td>
+            <td>${d.phone || '—'}</td>
+            <td><span class="badge bg-secondary">${d.total_credit_sales}</span></td>
+            <td>${formatCurrency(d.total_owed)}</td>
+            <td class="text-success">${formatCurrency(d.total_paid)}</td>
+            <td class="text-danger fw-bold">${formatCurrency(d.total_balance)}</td>
+            <td><small>${d.last_sale_date ? formatDate(d.last_sale_date) : '—'}</small></td>
+            <td>
+              <button class="btn btn-sm btn-primary" onclick="viewCustomerDetail(${d.id})">
+                <i class="bi bi-eye"></i> View
+              </button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        console.error('Failed to load debtors:', e);
+      }
+    }
+
+    async function loadAllCustomers() {
+      try {
+        const data = await apiCall('api/customers.php');
+        allCustomers = data.items || [];
+        document.getElementById('credit-total-customers').textContent = allCustomers.length;
+        renderCustomersTable(allCustomers);
+      } catch (e) {
+        console.error('Failed to load customers:', e);
+      }
+    }
+
+    function renderCustomersTable(customers) {
+      const tbody = document.getElementById('tbl-customers');
+      if (customers.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">No customers found</td></tr>';
+        return;
+      }
+      tbody.innerHTML = customers.map(c => `
+        <tr>
+          <td><strong>${c.name}</strong></td>
+          <td>${c.phone || '—'}</td>
+          <td>${c.address || '—'}</td>
+          <td class="${parseFloat(c.total_debt) > 0 ? 'text-danger fw-bold' : 'text-success'}">
+            ${formatCurrency(c.total_debt)}
+          </td>
+          <td>
+            <button class="btn btn-sm btn-primary me-1" onclick="viewCustomerDetail(${c.id})">
+              <i class="bi bi-eye"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-warning me-1" onclick="openEditCustomerModal(${c.id})">
+              <i class="bi bi-pencil"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-danger" onclick="deleteCustomer(${c.id}, '${c.name.replace(/'/g, "\\'")}')">
+              <i class="bi bi-trash"></i>
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function filterCustomers() {
+      const q = document.getElementById('customer-search').value.toLowerCase();
+      const filtered = allCustomers.filter(c =>
+        c.name.toLowerCase().includes(q) ||
+        (c.phone || '').toLowerCase().includes(q) ||
+        (c.address || '').toLowerCase().includes(q)
+      );
+      renderCustomersTable(filtered);
+    }
+
+    function showCreditTab(tab) {
+      document.getElementById('credit-tab-debtors').style.display = tab === 'debtors' ? '' : 'none';
+      document.getElementById('credit-tab-customers').style.display = tab === 'customers' ? '' : 'none';
+      document.querySelectorAll('#credit-tabs .nav-link').forEach((btn, i) => {
+        btn.classList.toggle('active', (tab === 'debtors' && i === 0) || (tab === 'customers' && i === 1));
+      });
+    }
+
+    function updateCreditBadge() {
+      const debtors = document.getElementById('tbl-debtors');
+      const count = debtors ? debtors.querySelectorAll('tr[class!=""]').length : 0;
+      const badge = document.getElementById('credit-badge');
+      const totalDebt = document.getElementById('credit-total-debtors');
+      const n = parseInt(totalDebt?.textContent || '0');
+      if (badge) {
+        badge.textContent = n;
+        badge.style.display = n > 0 ? 'inline' : 'none';
+      }
+    }
+
+    // ── Add Customer ─────────────────────────────────────────────
+    function openAddCustomerModal() {
+      document.getElementById('new-customer-name').value = '';
+      document.getElementById('new-customer-phone').value = '';
+      document.getElementById('new-customer-address').value = '';
+      document.getElementById('new-customer-credit-limit').value = '0';
+      document.getElementById('new-customer-notes').value = '';
+      new bootstrap.Modal(document.getElementById('addCustomerModal')).show();
+    }
+
+    async function saveNewCustomer() {
+      const name = document.getElementById('new-customer-name').value.trim();
+      if (!name) { alert('Customer name is required.'); return; }
+
+      try {
+        await apiCall('api/customers.php', {
+          method: 'POST',
+          body: JSON.stringify({
+            name,
+            phone: document.getElementById('new-customer-phone').value.trim(),
+            address: document.getElementById('new-customer-address').value.trim(),
+            credit_limit: parseFloat(document.getElementById('new-customer-credit-limit').value) || 0,
+            notes: document.getElementById('new-customer-notes').value.trim()
+          })
+        });
+        bootstrap.Modal.getInstance(document.getElementById('addCustomerModal'))?.hide();
+        await loadCreditSection();
+      } catch (e) {
+        alert('Failed to save customer: ' + e.message);
+      }
+    }
+
+    // ── Edit Customer ─────────────────────────────────────────────
+    async function openEditCustomerModal(id) {
+      const customer = allCustomers.find(c => c.id === id);
+      if (!customer) return;
+      document.getElementById('new-customer-name').value = customer.name;
+      document.getElementById('new-customer-phone').value = customer.phone || '';
+      document.getElementById('new-customer-address').value = customer.address || '';
+      document.getElementById('new-customer-credit-limit').value = customer.credit_limit || 0;
+      document.getElementById('new-customer-notes').value = customer.notes || '';
+
+      // Reuse add modal but change button to update
+      const modal = document.getElementById('addCustomerModal');
+      modal.querySelector('.modal-title').innerHTML = '<i class="bi bi-pencil"></i> Edit Customer';
+      const saveBtn = modal.querySelector('.btn-success');
+      saveBtn.textContent = 'Update Customer';
+      saveBtn.onclick = async () => {
+        const name = document.getElementById('new-customer-name').value.trim();
+        if (!name) { alert('Name required'); return; }
+        try {
+          await apiCall(`api/customers.php?id=${id}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+              name,
+              phone: document.getElementById('new-customer-phone').value.trim(),
+              address: document.getElementById('new-customer-address').value.trim(),
+              credit_limit: parseFloat(document.getElementById('new-customer-credit-limit').value) || 0,
+              notes: document.getElementById('new-customer-notes').value.trim()
+            })
+          });
+          bootstrap.Modal.getInstance(modal)?.hide();
+          // Reset modal title/button
+          modal.querySelector('.modal-title').innerHTML = '<i class="bi bi-person-plus"></i> Add Customer';
+          saveBtn.textContent = 'Save Customer';
+          saveBtn.onclick = saveNewCustomer;
+          await loadCreditSection();
+        } catch (e) { alert('Failed to update: ' + e.message); }
+      };
+      new bootstrap.Modal(modal).show();
+    }
+
+    async function deleteCustomer(id, name) {
+      if (!confirm(`Delete customer "${name}"? This will also delete all their credit records.`)) return;
+      try {
+        await apiCall(`api/customers.php?id=${id}`, { method: 'DELETE' });
+        await loadCreditSection();
+      } catch (e) { alert('Failed to delete: ' + e.message); }
+    }
+
+    // ── Record Credit Sale ────────────────────────────────────────
+    async function openRecordCreditModal() {
+      // Populate customer dropdown
+      const sel = document.getElementById('credit-customer-select');
+      sel.innerHTML = '<option value="">Select customer...</option>' +
+        allCustomers.map(c => `<option value="${c.id}">${c.name}${c.phone ? ' - ' + c.phone : ''}</option>`).join('');
+      document.getElementById('credit-amount-owed').value = '';
+      document.getElementById('credit-invoice-number').value = '';
+      document.getElementById('credit-due-date').value = '';
+      document.getElementById('credit-notes').value = '';
+      new bootstrap.Modal(document.getElementById('recordCreditModal')).show();
+    }
+
+    async function saveRecordCredit() {
+      const customerId = parseInt(document.getElementById('credit-customer-select').value);
+      const amountOwed = parseFloat(document.getElementById('credit-amount-owed').value);
+      if (!customerId) { alert('Please select a customer.'); return; }
+      if (!amountOwed || amountOwed <= 0) { alert('Please enter a valid amount.'); return; }
+
+      try {
+        await apiCall('api/customers.php?action=credit_sale', {
+          method: 'PUT',
+          body: JSON.stringify({
+            customer_id: customerId,
+            amount_owed: amountOwed,
+            invoice_number: document.getElementById('credit-invoice-number').value.trim(),
+            due_date: document.getElementById('credit-due-date').value,
+            notes: document.getElementById('credit-notes').value.trim()
+          })
+        });
+        bootstrap.Modal.getInstance(document.getElementById('recordCreditModal'))?.hide();
+        await loadCreditSection();
+      } catch (e) { alert('Failed to record credit: ' + e.message); }
+    }
+
+    // ── Customer Detail ───────────────────────────────────────────
+    async function viewCustomerDetail(id) {
+      try {
+        const customer = await apiCall(`api/customers.php?id=${id}`);
+        document.getElementById('detail-customer-name').textContent = customer.name;
+        document.getElementById('detail-customer-phone').textContent = customer.phone || '—';
+        document.getElementById('detail-customer-address').textContent = customer.address || '—';
+        document.getElementById('detail-customer-debt').textContent = formatCurrency(customer.total_debt);
+
+        const sales = customer.credit_sales || [];
+        const tbody = document.getElementById('tbl-customer-credit-sales');
+        if (sales.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No credit sales</td></tr>';
+        } else {
+          tbody.innerHTML = sales.map(s => `
+            <tr>
+              <td>${s.invoice_number || '—'}</td>
+              <td><small>${formatDate(s.sale_date)}</small></td>
+              <td>${formatCurrency(s.amount_owed)}</td>
+              <td class="text-success">${formatCurrency(s.amount_paid)}</td>
+              <td class="${parseFloat(s.balance) > 0 ? 'text-danger fw-bold' : 'text-success'}">${formatCurrency(s.balance)}</td>
+              <td>
+                <span class="badge ${s.status === 'paid' ? 'bg-success' : s.status === 'partial' ? 'bg-warning text-dark' : 'bg-danger'}">
+                  ${s.status}
+                </span>
+              </td>
+              <td>
+                ${s.status !== 'paid' ? `
+                  <button class="btn btn-sm btn-success" onclick="openPaymentModal(${s.id}, '${s.invoice_number || 'N/A'}', ${s.balance})">
+                    <i class="bi bi-cash-coin"></i> Pay
+                  </button>` : '<span class="text-success"><i class="bi bi-check-circle"></i> Settled</span>'}
+              </td>
+            </tr>
+          `).join('');
+        }
+
+        new bootstrap.Modal(document.getElementById('customerDetailModal')).show();
+      } catch (e) { alert('Failed to load customer: ' + e.message); }
+    }
+
+    // ── Record Payment ────────────────────────────────────────────
+    function openPaymentModal(creditSaleId, invoiceNumber, balance) {
+      document.getElementById('pay-credit-sale-id').value = creditSaleId;
+      document.getElementById('pay-invoice-number').textContent = invoiceNumber;
+      document.getElementById('pay-balance').textContent = formatCurrency(balance);
+      document.getElementById('pay-amount').value = balance;
+      document.getElementById('pay-method').value = 'cash';
+      document.getElementById('pay-reference').value = '';
+      document.getElementById('pay-notes').value = '';
+      // Close detail modal first, then open payment modal
+      bootstrap.Modal.getInstance(document.getElementById('customerDetailModal'))?.hide();
+      setTimeout(() => new bootstrap.Modal(document.getElementById('recordPaymentModal')).show(), 350);
+    }
+
+    async function savePayment() {
+      const csid = parseInt(document.getElementById('pay-credit-sale-id').value);
+      const amount = parseFloat(document.getElementById('pay-amount').value);
+      if (!amount || amount <= 0) { alert('Please enter a valid amount.'); return; }
+
+      try {
+        await apiCall('api/customers.php?action=pay', {
+          method: 'POST',
+          body: JSON.stringify({
+            credit_sale_id: csid,
+            amount,
+            payment_method: document.getElementById('pay-method').value,
+            payment_reference: document.getElementById('pay-reference').value.trim(),
+            notes: document.getElementById('pay-notes').value.trim()
+          })
+        });
+        bootstrap.Modal.getInstance(document.getElementById('recordPaymentModal'))?.hide();
+        await loadCreditSection();
+      } catch (e) { alert('Failed to record payment: ' + e.message); }
+    }
+
     //]]>
   </script>
   <!-- End of JavaScript -->
