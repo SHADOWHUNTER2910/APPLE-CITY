@@ -7054,6 +7054,41 @@
           // Show success message with options
           const printNow = confirm('Receipt created successfully!\n\nWould you like to view and print it now?');
           AppLogger.action('RECEIPT', `Receipt created: #${result.invoice_number || result.id} | Total: ${receiptData.items?.length || 0} items | Amount: GH₵${receiptData.items?.reduce((s,i) => s + i.total_price, 0).toFixed(2) || '0.00'} | Customer: ${receiptData.customer_name}`);
+
+          // Auto-create credit sale record if payment method is credit
+          if (paymentMethod === 'credit' && customerName) {
+            try {
+              // Find or create customer by phone/name
+              const customersData = await apiCall('api/customers.php');
+              let customer = (customersData.items || []).find(c =>
+                (customerPhone && c.phone === customerPhone) || c.name.toLowerCase() === customerName.toLowerCase()
+              );
+
+              if (!customer) {
+                // Auto-create customer from receipt info
+                const newCust = await apiCall('api/customers.php', {
+                  method: 'POST',
+                  body: JSON.stringify({ name: customerName, phone: customerPhone, address: customerAddress })
+                });
+                customer = { id: newCust.id };
+              }
+
+              // Record the credit sale
+              await apiCall('api/customers.php?action=credit_sale', {
+                method: 'PUT',
+                body: JSON.stringify({
+                  customer_id: customer.id,
+                  receipt_id: result.id,
+                  invoice_number: receiptData.invoice_number,
+                  amount_owed: total,
+                  notes: `Credit sale from receipt #${receiptData.invoice_number}`
+                })
+              });
+            } catch (creditErr) {
+              console.error('Failed to auto-record credit sale:', creditErr);
+              // Don't block the receipt — just log it
+            }
+          }
           
           if (printNow && result.id) {
             // View and print the newly created receipt
