@@ -10,9 +10,9 @@
     body{background:#0f172a;color:#f1f5f9;font-family:'Segoe UI',sans-serif;padding-bottom:80px;}
     .top-bar{background:linear-gradient(135deg,#1e3c72,#2a5298);padding:14px 16px;position:sticky;top:0;z-index:100;}
     .top-bar h1{font-size:17px;font-weight:700;margin:0;}
-    .card-dark{background:#1e293b;border-radius:12px;padding:14px;margin-bottom:10px;border:1px solid #334155;}
-    .stat-val{font-size:26px;font-weight:800;}
-    .stat-label{font-size:11px;color:#94a3b8;margin-top:2px;}
+    .card-dark{background:#1e293b;border-radius:12px;padding:12px;margin-bottom:10px;border:1px solid #334155;}
+    .stat-val{font-size:18px;font-weight:800;word-break:break-all;line-height:1.2;}
+    .stat-label{font-size:10px;color:#94a3b8;margin-top:2px;}
     .section-title{font-size:12px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin:14px 0 6px;}
     .list-item{background:#1e293b;border-radius:8px;padding:10px 12px;margin-bottom:6px;border:1px solid #334155;font-size:13px;}
     .list-item .name{font-weight:600;}
@@ -72,26 +72,26 @@
     <div id="tab-overview" class="tab-content-owner active">
       <div class="row g-2 mb-2">
         <div class="col-6"><div class="card-dark">
+          <div class="stat-label">Revenue</div>
           <div class="stat-val text-success" id="ov-revenue">GH₵0</div>
-          <div class="stat-label">Today Revenue</div>
-          <div id="ov-rev-trend" style="font-size:11px;margin-top:4px;"></div>
+          <div id="ov-rev-trend" style="font-size:10px;margin-top:4px;"></div>
         </div></div>
         <div class="col-6"><div class="card-dark">
+          <div class="stat-label">Profit</div>
           <div class="stat-val text-info" id="ov-profit">GH₵0</div>
-          <div class="stat-label">Today Profit</div>
-          <div id="ov-prof-trend" style="font-size:11px;margin-top:4px;"></div>
+          <div id="ov-prof-trend" style="font-size:10px;margin-top:4px;"></div>
         </div></div>
         <div class="col-4"><div class="card-dark text-center">
-          <div class="stat-val" style="font-size:22px;" id="ov-receipts">0</div>
           <div class="stat-label">Receipts</div>
+          <div class="stat-val" id="ov-receipts">0</div>
         </div></div>
         <div class="col-4"><div class="card-dark text-center">
-          <div class="stat-val text-warning" style="font-size:22px;" id="ov-margin">0%</div>
           <div class="stat-label">Margin</div>
+          <div class="stat-val text-warning" id="ov-margin">0%</div>
         </div></div>
         <div class="col-4"><div class="card-dark text-center">
-          <div class="stat-val text-danger" style="font-size:22px;" id="ov-debt">GH₵0</div>
           <div class="stat-label">Debt</div>
+          <div class="stat-val text-danger" id="ov-debt">GH₵0</div>
         </div></div>
       </div>
 
@@ -329,11 +329,11 @@ async function loadPnl(){
   const s = d.summary||{};
   document.getElementById('pnl-content').innerHTML = `
     <div class="row g-2 mb-3">
-      <div class="col-6"><div class="card-dark"><div class="stat-val text-success">${fmt(s.revenue)}</div><div class="stat-label">Revenue</div></div></div>
-      <div class="col-6"><div class="card-dark"><div class="stat-val text-info">${fmt(s.profit)}</div><div class="stat-label">Profit</div></div></div>
-      <div class="col-4"><div class="card-dark text-center"><div class="stat-val" style="font-size:20px;">${s.receipts||0}</div><div class="stat-label">Receipts</div></div></div>
-      <div class="col-4"><div class="card-dark text-center"><div class="stat-val text-warning" style="font-size:20px;">${s.margin||0}%</div><div class="stat-label">Margin</div></div></div>
-      <div class="col-4"><div class="card-dark text-center"><div class="stat-val text-danger" style="font-size:20px;">${fmt(s.total_discount)}</div><div class="stat-label">Discounts</div></div></div>
+      <div class="col-6"><div class="card-dark"><div class="stat-label">Revenue</div><div class="stat-val text-success">${fmt(s.revenue)}</div></div></div>
+      <div class="col-6"><div class="card-dark"><div class="stat-label">Profit</div><div class="stat-val text-info">${fmt(s.profit)}</div></div></div>
+      <div class="col-4"><div class="card-dark text-center"><div class="stat-label">Receipts</div><div class="stat-val">${s.receipts||0}</div></div></div>
+      <div class="col-4"><div class="card-dark text-center"><div class="stat-label">Margin</div><div class="stat-val text-warning">${s.margin||0}%</div></div></div>
+      <div class="col-4"><div class="card-dark text-center"><div class="stat-label">Discounts</div><div class="stat-val text-danger">${fmt(s.total_discount)}</div></div></div>
     </div>
     <div class="section-title">Payment Breakdown</div>
     <div class="card-dark">
