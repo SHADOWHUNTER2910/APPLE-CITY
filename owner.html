@@ -431,15 +431,15 @@ async function loadAlerts(){
     el.innerHTML='<div class="list-item" style="color:#22c55e;"><i class="bi bi-check-circle"></i> No alerts right now</div>';
     return;
   }
-  const icons = {large_sale:'💰',credit_sale:'💳',no_sale_gap:'⏰',stock_variance:'📦',overdue_debt:'⚠️'};
+  const icons = {large_sale:'💰',credit_sale:'💳',no_sale_gap:'⏰',stock_variance:'📦',overdue_debt:'⚠️',debt_paid:'✅'};
   el.innerHTML = d.alerts.map(a=>`
-    <div class="list-item" style="border-left:3px solid ${a.severity==='danger'?'#ef4444':'#f59e0b'};">
+    <div class="list-item" style="border-left:3px solid ${a.severity==='danger'?'#ef4444':a.severity==='info'?'#22c55e':'#f59e0b'};">
       <div class="d-flex justify-content-between align-items-start">
         <div>
           <div class="name">${icons[a.type]||'🔔'} ${a.title}</div>
           <div class="sub">${a.detail}</div>
         </div>
-        <span class="badge-pill" style="background:${a.severity==='danger'?'#ef4444':'#f59e0b'};color:${a.severity==='danger'?'white':'#000'};">${a.severity}</span>
+        <span class="badge-pill" style="background:${a.severity==='danger'?'#ef4444':a.severity==='info'?'#22c55e':'#f59e0b'};color:${a.severity==='warning'?'#000':'white'};">${a.severity==='info'?'paid':a.severity}</span>
       </div>
     </div>`).join('');
 }

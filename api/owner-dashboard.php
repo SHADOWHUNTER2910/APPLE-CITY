@@ -160,6 +160,14 @@ try {
             $alerts[] = ['type'=>'credit_sale','severity'=>'danger','title'=>'Credit Sale: '.$r['invoice_number'],'detail'=>($r['customer']??'Unknown').' owes GH₵'.number_format($r['amount_owed'],2),'time'=>$r['sale_date']];
         }
 
+        // 2b. Debt payments received today
+        $stmt = $pdo->prepare('SELECT cp.amount, cp.payment_method, cp.paid_at, c.name as customer, cs.invoice_number, cs.status FROM credit_payments cp JOIN credit_sales cs ON cp.credit_sale_id = cs.id LEFT JOIN customers c ON cp.customer_id = c.id WHERE DATE(cp.paid_at) = ? ORDER BY cp.paid_at DESC');
+        $stmt->execute([$today]);
+        foreach ($stmt->fetchAll() as $r) {
+            $fullyPaid = $r['status'] === 'paid';
+            $alerts[] = ['type'=>'debt_paid','severity'=>'info','title'=>($fullyPaid ? '✅ Debt Fully Settled: ' : '💵 Partial Payment: ').$r['invoice_number'],'detail'=>($r['customer']??'Unknown').' paid GH₵'.number_format($r['amount'],2).' via '.$r['payment_method'].($fullyPaid?' — FULLY PAID':' — partial'),'time'=>$r['paid_at']];
+        }
+
         // 3. No-sale gap (2+ hours with no receipts today)
         $stmt = $pdo->prepare('SELECT created_at FROM receipts WHERE DATE(created_at) = ? ORDER BY created_at ASC');
         $stmt->execute([$today]);
