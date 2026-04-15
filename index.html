@@ -7476,12 +7476,17 @@
       checkAuth();
       
       // Add lazy loading for analytics tabs
+      // Use mousedown instead of relying solely on Bootstrap click (fixes Electron tab switching delay)
       const analyticsTabs = document.querySelectorAll('#analytics-tabs button[data-bs-toggle="tab"]');
       analyticsTabs.forEach(tab => {
+        // Force Bootstrap tab activation on mousedown so it fires before Electron focus issues
+        tab.addEventListener('mousedown', function() {
+          const bsTab = bootstrap.Tab.getOrCreateInstance(this);
+          bsTab.show();
+        });
+
         tab.addEventListener('shown.bs.tab', function(event) {
           const targetId = event.target.getAttribute('data-bs-target');
-          
-          // Load data only when tab is shown
           if (targetId === '#products-analytics') {
             loadProductPerformance();
           } else if (targetId === '#profit-analytics') {
@@ -7496,6 +7501,17 @@
         });
       });
       
+      // Fix Bootstrap tab switching in Electron — use mousedown for ALL tabs globally
+      document.addEventListener('mousedown', function(e) {
+        const btn = e.target.closest('[data-bs-toggle="tab"]');
+        if (btn) {
+          setTimeout(() => {
+            const bsTab = bootstrap.Tab.getOrCreateInstance(btn);
+            bsTab.show();
+          }, 0);
+        }
+      }, true);
+
       // Load company settings from database
       initializeCompanySettings();
       initializeCompanySettings();
