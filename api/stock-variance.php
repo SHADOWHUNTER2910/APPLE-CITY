@@ -167,6 +167,145 @@ try {
         exit;
     }
 
+    // ── 4. NO-SALE ACTIVITY DETECTION ───────────────────────────────
+    // Find hours today (and recent days) where no receipts were recorded
+    if ($action === 'no_sale') {
+        $thresholdHours = max(1, (int)($_GET['threshold'] ?? 2));
+        $checkDays      = max(1, min(7, (int)($_GET['days'] ?? 3)));
+
+        $gaps = [];
+
+        for ($d = 0; $d < $checkDays; $d++) {
+            $date = date('Y-m-d', strtotime("-{$d} days"));
+
+            // Get all receipts for this day ordered by time
+            $stmt = $pdo->prepare('
+                SELECT strftime("%H", created_at) AS hour,
+                       COUNT(*) AS receipt_count,
+                       MIN(created_at) AS first_sale,
+                       MAX(created_at) AS last_sale
+                FROM receipts
+                WHERE DATE(created_at) = ?
+                GROUP BY strftime("%H", created_at)
+                ORDER BY hour ASC
+            ');
+            $stmt->execute([$date]);
+            $hourly = $stmt->fetchAll();
+
+            // Get first and last receipt time for the day
+            $dayStmt = $pdo->prepare('
+                SELECT MIN(created_at) AS first, MAX(created_at) AS last, COUNT(*) AS total
+                FROM receipts WHERE DATE(created_at) = ?
+            ');
+            $dayStmt->execute([$date]);
+            $daySummary = $dayStmt->fetch();
+
+            if ((int)$daySummary['total'] === 0) {
+                // No sales at all today
+                if ($d === 0) { // Only flag today as a full no-sale day
+                    $gaps[] = [
+                        'date'       => $date,
+                        'type'       => 'no_sales_today',
+                        'message'    => 'No sales recorded today',
+                        'severity'   => 'high',
+                        'gap_hours'  => null,
+                    ];
+                }
+                continue;
+            }
+
+            // Find gaps between consecutive receipts > threshold
+            $allReceipts = $pdo->prepare('
+                SELECT created_at FROM receipts
+                WHERE DATE(created_at) = ?
+                ORDER BY created_at ASC
+            ');
+            $allReceipts->execute([$date]);
+            $times = array_column($allReceipts->fetchAll(), 'created_at');
+
+            for ($i = 1; $i < count($times); $i++) {
+                $prev = strtotime($times[$i - 1]);
+                $curr = strtotime($times[$i]);
+                $gapHours = ($curr - $prev) / 3600;
+
+                if ($gapHours >= $thresholdHours) {
+                    $gaps[] = [
+                        'date'       => $date,
+                        'type'       => 'sale_gap',
+                        'from_time'  => $times[$i - 1],
+                        'to_time'    => $times[$i],
+                        'gap_hours'  => round($gapHours, 1),
+                        'severity'   => $gapHours >= 4 ? 'high' : 'medium',
+                        'message'    => round($gapHours, 1) . ' hour gap with no sales on ' . $date,
+                    ];
+                }
+            }
+        }
+
+        // Today's last sale time — how long ago was it?
+        $lastSaleStmt = $pdo->query('SELECT MAX(created_at) as last FROM receipts WHERE DATE(created_at) = DATE("now")');
+        $lastSale = $lastSaleStmt->fetchColumn();
+        $hoursSinceLast = $lastSale
+            ? round((time() - strtotime($lastSale)) / 3600, 1)
+            : null;
+
+        echo json_encode([
+            'gaps'              => $gaps,
+            'last_sale_time'    => $lastSale,
+            'hours_since_last'  => $hoursSinceLast,
+            'threshold_hours'   => $thresholdHours,
+        ]);
+        exit;
+    }
+
+    // ── 5. DAILY SALES CHECK ─────────────────────────────────────────
+    // Compare each day's sales vs 7-day rolling average
+    if ($action === 'daily_check') {
+        // Get last 30 days of daily sales
+        $stmt = $pdo->prepare('
+            SELECT
+                DATE(created_at)    AS date,
+                COUNT(*)            AS receipt_count,
+                COALESCE(SUM(total), 0) AS total_sales,
+                COALESCE(SUM(total_profit), 0) AS total_profit
+            FROM receipts
+            WHERE DATE(created_at) >= ?
+            GROUP BY DATE(created_at)
+            ORDER BY date DESC
+        ');
+        $stmt->execute([$since]);
+        $daily = $stmt->fetchAll();
+
+        // Calculate 7-day rolling average (excluding today)
+        $totals = array_column($daily, 'total_sales');
+        $counts = array_column($daily, 'receipt_count');
+        $avgSales   = count($totals) > 1 ? array_sum(array_slice($totals, 1, 7)) / min(7, count($totals) - 1) : 0;
+        $avgReceipts = count($counts) > 1 ? array_sum(array_slice($counts, 1, 7)) / min(7, count($counts) - 1) : 0;
+
+        $flagged = [];
+        foreach ($daily as $day) {
+            $pctOfAvg = $avgSales > 0 ? ($day['total_sales'] / $avgSales) * 100 : 100;
+            if ($pctOfAvg < 50 && $avgSales > 0) {
+                $flagged[] = [
+                    'date'         => $day['date'],
+                    'sales'        => (float)$day['total_sales'],
+                    'receipts'     => (int)$day['receipt_count'],
+                    'avg_sales'    => round($avgSales, 2),
+                    'pct_of_avg'   => round($pctOfAvg, 1),
+                    'severity'     => $pctOfAvg < 25 ? 'high' : 'medium',
+                ];
+            }
+        }
+
+        echo json_encode([
+            'daily'         => $daily,
+            'flagged_days'  => $flagged,
+            'avg_daily_sales'    => round($avgSales, 2),
+            'avg_daily_receipts' => round($avgReceipts, 1),
+        ]);
+        exit;
+    }
+
     http_response_code(400);
     echo json_encode(['error' => 'Unknown action']);
 
@@ -174,3 +313,4 @@ try {
     http_response_code(500);
     echo json_encode(['error' => $e->getMessage()]);
 }
+

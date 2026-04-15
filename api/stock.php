@@ -113,6 +113,26 @@ try {
         $quantity = isset($data['quantity']) ? (int)$data['quantity'] : null;
         $quantityToAdd = isset($data['quantity_to_add']) ? (int)$data['quantity_to_add'] : null;
         $notes = trim((string)($data['notes'] ?? ''));
+
+        // MANDATORY RECEIPT ENFORCEMENT
+        // Regular users can only ADD stock (restocking). Only admins can do manual deductions/adjustments.
+        $userRole = $_SESSION['role'] ?? 'user';
+        if ($userRole !== 'admin') {
+            // Detect if this is a deduction (setting quantity lower than current)
+            if ($quantity !== null) {
+                $checkStmt = $pdo->prepare('SELECT quantity FROM stock WHERE product_id = ?');
+                $checkStmt->execute([$id]);
+                $currentQty = (int)($checkStmt->fetchColumn() ?? 0);
+                if ($quantity < $currentQty) {
+                    http_response_code(403);
+                    echo json_encode([
+                        'error' => 'Stock deductions require a receipt. Please use Create Receipt to record sales.',
+                        'enforcement' => true
+                    ]);
+                    exit;
+                }
+            }
+        }
         
         try {
             $pdo->beginTransaction();

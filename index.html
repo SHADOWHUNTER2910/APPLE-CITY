@@ -2401,6 +2401,16 @@
                   <i class="bi bi-calendar-x text-danger"></i> Daily Loss Log
                 </button>
               </li>
+              <li class="nav-item">
+                <button class="nav-link" onclick="showAntiTheftTab('nosale')">
+                  <i class="bi bi-clock text-danger"></i> No-Sale Gaps
+                </button>
+              </li>
+              <li class="nav-item">
+                <button class="nav-link" onclick="showAntiTheftTab('salescheck')">
+                  <i class="bi bi-graph-down text-warning"></i> Daily Sales Check
+                </button>
+              </li>
             </ul>
 
             <!-- Stock Variance Tab -->
@@ -2495,6 +2505,65 @@
                         <tr><th>Date</th><th>Products Affected</th><th>Units Lost</th><th>Products</th></tr>
                       </thead>
                       <tbody id="tbl-daily-loss"></tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- No-Sale Gaps Tab -->
+            <div id="at-tab-nosale" style="display:none;">
+              <div class="card mb-3">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                  <h5 class="mb-0"><i class="bi bi-clock text-danger"></i> No-Sale Activity Gaps</h5>
+                  <div class="d-flex align-items-center gap-2">
+                    <label class="mb-0 small">Flag gaps longer than</label>
+                    <select class="form-select form-select-sm" id="nosale-threshold" onchange="loadNoSaleGaps()" style="width:auto;">
+                      <option value="1">1 hour</option>
+                      <option value="2" selected>2 hours</option>
+                      <option value="3">3 hours</option>
+                      <option value="4">4 hours</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="card-body">
+                  <div id="nosale-last-sale" class="alert alert-info mb-3"></div>
+                  <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                      <thead class="table-dark">
+                        <tr><th>Date</th><th>Gap From</th><th>Gap To</th><th>Duration</th><th>Severity</th></tr>
+                      </thead>
+                      <tbody id="tbl-nosale-gaps"></tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Daily Sales Check Tab -->
+            <div id="at-tab-salescheck" style="display:none;">
+              <div class="card">
+                <div class="card-header">
+                  <h5 class="mb-0"><i class="bi bi-graph-down text-warning"></i> Daily Sales Performance Check</h5>
+                </div>
+                <div class="card-body">
+                  <div id="salescheck-summary" class="row mb-3"></div>
+                  <h6 class="text-danger"><i class="bi bi-flag"></i> Flagged Days (below 50% of average)</h6>
+                  <div class="table-responsive mb-4">
+                    <table class="table table-hover mb-0">
+                      <thead class="table-dark">
+                        <tr><th>Date</th><th>Sales</th><th>Receipts</th><th>7-Day Avg</th><th>% of Average</th><th>Severity</th></tr>
+                      </thead>
+                      <tbody id="tbl-flagged-days"></tbody>
+                    </table>
+                  </div>
+                  <h6><i class="bi bi-calendar3"></i> Last 30 Days</h6>
+                  <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0">
+                      <thead class="table-light">
+                        <tr><th>Date</th><th>Receipts</th><th>Total Sales</th><th>Profit</th></tr>
+                      </thead>
+                      <tbody id="tbl-daily-sales"></tbody>
                     </table>
                   </div>
                 </div>
@@ -7482,7 +7551,9 @@
       await Promise.all([
         loadVarianceReport(),
         loadSuspiciousActivity(days),
-        loadDailyLoss(days)
+        loadDailyLoss(days),
+        loadNoSaleGaps(),
+        loadDailySalesCheck(days)
       ]);
     }
 
@@ -7619,12 +7690,116 @@
       }
     }
 
+    async function loadNoSaleGaps() {
+      try {
+        const threshold = document.getElementById('nosale-threshold')?.value || 2;
+        const data = await apiCall(`api/stock-variance.php?action=no_sale&threshold=${threshold}&days=3`);
+
+        // Last sale info
+        const lastSaleDiv = document.getElementById('nosale-last-sale');
+        if (data.last_sale_time) {
+          const hrs = data.hours_since_last;
+          const color = hrs >= 4 ? 'danger' : hrs >= 2 ? 'warning' : 'success';
+          lastSaleDiv.className = `alert alert-${color} mb-3`;
+          lastSaleDiv.innerHTML = `<i class="bi bi-clock"></i> Last sale recorded: <strong>${formatDate(data.last_sale_time)}</strong> — <strong>${hrs} hour${hrs !== 1 ? 's' : ''} ago</strong>`;
+        } else {
+          lastSaleDiv.className = 'alert alert-danger mb-3';
+          lastSaleDiv.innerHTML = '<i class="bi bi-exclamation-triangle"></i> <strong>No sales recorded today.</strong>';
+        }
+
+        const tbody = document.getElementById('tbl-nosale-gaps');
+        const gaps = data.gaps || [];
+        if (gaps.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-4">
+            <i class="bi bi-check-circle text-success fs-3 d-block mb-2"></i>No suspicious gaps detected</td></tr>`;
+          return;
+        }
+        tbody.innerHTML = gaps.map(g => `
+          <tr class="${g.severity === 'high' ? 'table-danger' : 'table-warning'}">
+            <td><strong>${g.date}</strong></td>
+            <td>${g.from_time ? formatDate(g.from_time) : '—'}</td>
+            <td>${g.to_time ? formatDate(g.to_time) : '—'}</td>
+            <td class="fw-bold">${g.gap_hours ? g.gap_hours + ' hrs' : 'All day'}</td>
+            <td><span class="badge bg-${g.severity === 'high' ? 'danger' : 'warning text-dark'}">${g.severity.toUpperCase()}</span></td>
+          </tr>`).join('');
+      } catch (e) {
+        console.error('Failed to load no-sale gaps:', e);
+      }
+    }
+
+    async function loadDailySalesCheck(days) {
+      try {
+        const data = await apiCall(`api/stock-variance.php?action=daily_check&days=${days || 30}`);
+
+        // Summary
+        document.getElementById('salescheck-summary').innerHTML = `
+          <div class="col-md-4">
+            <div class="card border-primary">
+              <div class="card-body text-center">
+                <h4 class="text-primary">${formatCurrency(data.avg_daily_sales)}</h4>
+                <small class="text-muted">7-Day Avg Daily Sales</small>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card border-warning">
+              <div class="card-body text-center">
+                <h4 class="text-warning">${data.avg_daily_receipts}</h4>
+                <small class="text-muted">Avg Daily Receipts</small>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card border-danger">
+              <div class="card-body text-center">
+                <h4 class="text-danger">${(data.flagged_days || []).length}</h4>
+                <small class="text-muted">Flagged Low Days</small>
+              </div>
+            </div>
+          </div>`;
+
+        // Flagged days
+        const flaggedTbody = document.getElementById('tbl-flagged-days');
+        const flagged = data.flagged_days || [];
+        if (flagged.length === 0) {
+          flaggedTbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-3"><i class="bi bi-check-circle text-success"></i> No unusually low days detected</td></tr>';
+        } else {
+          flaggedTbody.innerHTML = flagged.map(f => `
+            <tr class="${f.severity === 'high' ? 'table-danger' : 'table-warning'}">
+              <td><strong>${f.date}</strong></td>
+              <td>${formatCurrency(f.sales)}</td>
+              <td>${f.receipts}</td>
+              <td>${formatCurrency(f.avg_sales)}</td>
+              <td class="fw-bold">${f.pct_of_avg}%</td>
+              <td><span class="badge bg-${f.severity === 'high' ? 'danger' : 'warning text-dark'}">${f.severity.toUpperCase()}</span></td>
+            </tr>`).join('');
+        }
+
+        // All daily sales
+        const dailyTbody = document.getElementById('tbl-daily-sales');
+        const daily = data.daily || [];
+        if (daily.length === 0) {
+          dailyTbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No sales data</td></tr>';
+        } else {
+          dailyTbody.innerHTML = daily.map(d => `
+            <tr>
+              <td>${d.date}</td>
+              <td>${d.receipt_count}</td>
+              <td>${formatCurrency(d.total_sales)}</td>
+              <td class="text-success">${formatCurrency(d.total_profit)}</td>
+            </tr>`).join('');
+        }
+      } catch (e) {
+        console.error('Failed to load daily sales check:', e);
+      }
+    }
+
     function showAntiTheftTab(tab) {
-      ['variance', 'suspicious', 'daily'].forEach(t => {
+      ['variance', 'suspicious', 'daily', 'nosale', 'salescheck'].forEach(t => {
         document.getElementById(`at-tab-${t}`).style.display = t === tab ? '' : 'none';
       });
+      const tabs = ['variance', 'suspicious', 'daily', 'nosale', 'salescheck'];
       document.querySelectorAll('#antitheft-tabs .nav-link').forEach((btn, i) => {
-        const tabs = ['variance', 'suspicious', 'daily'];
         btn.classList.toggle('active', tabs[i] === tab);
       });
     }
