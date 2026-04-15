@@ -186,7 +186,7 @@ try {
         }
 
         // 5. Overdue debts (credit sales unpaid for 7+ days)
-        $stmt = $pdo->query('SELECT c.name, cs.invoice_number, cs.balance, cs.sale_date FROM credit_sales cs LEFT JOIN customers c ON c.id = cs.customer_id WHERE cs.status != "paid" AND julianday("now") - julianday(cs.sale_date) >= 7 ORDER BY cs.balance DESC LIMIT 10');
+        $stmt = $pdo->query('SELECT c.name, cs.invoice_number, cs.balance, cs.sale_date FROM credit_sales cs LEFT JOIN customers c ON c.id = cs.customer_id WHERE cs.status != "paid" AND cs.balance > 0 AND julianday("now") - julianday(cs.sale_date) >= 7 ORDER BY cs.balance DESC LIMIT 10');
         foreach ($stmt->fetchAll() as $r) {
             $days = (int)((time() - strtotime($r['sale_date'])) / 86400);
             $alerts[] = ['type'=>'overdue_debt','severity'=>'warning','title'=>'Overdue debt: '.($r['name']??'Unknown'),'detail'=>'GH₵'.number_format($r['balance'],2).' unpaid for '.$days.' days ('.$r['invoice_number'].')','time'=>$r['sale_date']];
