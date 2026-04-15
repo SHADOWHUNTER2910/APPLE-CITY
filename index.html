@@ -2361,6 +2361,7 @@
                 <div class="card-header d-flex justify-content-between align-items-center">
                   <h5 class="mb-0">Expected vs Actual Stock</h5>
                   <div class="d-flex gap-2">
+                    <input type="text" class="form-control form-control-sm" id="variance-search" placeholder="Search product..." oninput="filterVarianceTable()" style="width:200px;">
                     <select class="form-select form-select-sm" id="variance-filter" onchange="filterVarianceTable()" style="width:auto;">
                       <option value="all">All Products</option>
                       <option value="missing" selected>Missing Stock Only</option>
@@ -7415,8 +7416,12 @@
 
     function filterVarianceTable() {
       const filter = document.getElementById('variance-filter').value;
-      const filtered = filter === 'all' ? varianceData
-        : varianceData.filter(r => r.status === filter);
+      const search = (document.getElementById('variance-search').value || '').toLowerCase();
+      const filtered = varianceData.filter(r => {
+        const matchesFilter = filter === 'all' || r.status === filter;
+        const matchesSearch = !search || r.name.toLowerCase().includes(search) || r.sku.toLowerCase().includes(search);
+        return matchesFilter && matchesSearch;
+      });
 
       const tbody = document.getElementById('tbl-variance');
       if (filtered.length === 0) {
