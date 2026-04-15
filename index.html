@@ -4976,19 +4976,45 @@
             currentFilteredProducts = data.items || [];
             
             if (currentFilteredProducts.length > 0) {
-              suggestionsDiv.innerHTML = currentFilteredProducts.map(product => 
-                `<div class="suggestion-item p-2 border-bottom" style="cursor: pointer;" 
+              suggestionsDiv.innerHTML = currentFilteredProducts.map(product => {
+                const expiryBadge = product.has_expiry ? '<span class="badge bg-warning text-dark ms-1" style="font-size:10px;"><i class="bi bi-clock"></i> Expiry Tracked</span>' : '';
+                return `<div class="suggestion-item p-2 border-bottom" style="cursor: pointer;" 
                       data-id="${product.id}" 
                       data-name="${product.name}" 
                       data-price="${product.unit_price}"
                       data-has-expiry="${product.has_expiry}">
-                  <strong>${product.name}</strong> (${product.sku})<br>
+                  <strong>${product.name}</strong> <small class="text-muted">(${product.sku})</small>${expiryBadge}<br>
                   <small class="text-muted">GH₵${product.unit_price}</small>
-                  ${product.has_expiry ? '<span class="badge bg-warning text-dark ms-1" style="font-size:10px;">Expiry Tracked</span>' : ''}
-                </div>`
-              ).join('');
+                  <span id="expiry-hint-${product.id}" class="ms-2"></span>
+                </div>`;
+              }).join('');
               suggestionsDiv.style.display = 'block';
-              
+
+              // Load FIFO expiry hints for expiry-tracked products (async, non-blocking)
+              currentFilteredProducts.forEach(product => {
+                if (product.has_expiry) {
+                  apiCall(`api/batches.php?product_id=${product.id}`).then(batchData => {
+                    const batches = (batchData.items || []).filter(b => b.status !== 'expired' && b.quantity > 0);
+                    const hint = document.getElementById(`expiry-hint-${product.id}`);
+                    if (!hint) return;
+                    if (batches.length === 0) {
+                      hint.innerHTML = '<span class="badge bg-danger" style="font-size:10px;">No valid stock</span>';
+                      return;
+                    }
+                    const soonest = batches[0]; // FIFO — oldest expiry first
+                    const days = soonest.days_until_expiry;
+                    const discount = getExpiryDiscountSuggestion(days, soonest.status);
+                    let color = 'success', icon = 'check-circle';
+                    if (days <= 7)  { color = 'danger';  icon = 'exclamation-triangle'; }
+                    else if (days <= 30) { color = 'warning text-dark'; icon = 'clock'; }
+                    hint.innerHTML = `<span class="badge bg-${color}" style="font-size:10px;">
+                      <i class="bi bi-${icon}"></i> Sell first: ${days}d left · ${soonest.quantity} units
+                      ${discount ? ` · ${discount}% off suggested` : ''}
+                    </span>`;
+                  }).catch(() => {});
+                }
+              });
+
               // Add click and hover handlers to suggestions
               suggestionsDiv.querySelectorAll('.suggestion-item').forEach((item, index) => {
                 item.addEventListener('mouseenter', function() {
