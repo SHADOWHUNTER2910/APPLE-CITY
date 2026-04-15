@@ -141,7 +141,139 @@ try {
         exit;
     }
 
-    // ── MAIN DASHBOARD ────────────────────────────────────────────
+    // ── ALERTS TAB ────────────────────────────────────────────────
+    if ($action === 'alerts') {
+        $today = date('Y-m-d');
+        $alerts = [];
+
+        // 1. Large sale alerts (receipts over GH₵500 today)
+        $stmt = $pdo->prepare('SELECT invoice_number, customer_name, total, created_by_username, created_at FROM receipts WHERE DATE(created_at) = ? AND total >= 500 ORDER BY total DESC');
+        $stmt->execute([$today]);
+        foreach ($stmt->fetchAll() as $r) {
+            $alerts[] = ['type'=>'large_sale','severity'=>'warning','title'=>'Large Sale: '.$r['invoice_number'],'detail'=>$r['customer_name'].' — GH₵'.number_format($r['total'],2).' by '.$r['created_by_username'],'time'=>$r['created_at']];
+        }
+
+        // 2. New credit sales today
+        $stmt = $pdo->prepare('SELECT cs.invoice_number, c.name as customer, cs.amount_owed, cs.sale_date FROM credit_sales cs LEFT JOIN customers c ON c.id = cs.customer_id WHERE DATE(cs.sale_date) = ? ORDER BY cs.sale_date DESC');
+        $stmt->execute([$today]);
+        foreach ($stmt->fetchAll() as $r) {
+            $alerts[] = ['type'=>'credit_sale','severity'=>'danger','title'=>'Credit Sale: '.$r['invoice_number'],'detail'=>($r['customer']??'Unknown').' owes GH₵'.number_format($r['amount_owed'],2),'time'=>$r['sale_date']];
+        }
+
+        // 3. No-sale gap (2+ hours with no receipts today)
+        $stmt = $pdo->prepare('SELECT created_at FROM receipts WHERE DATE(created_at) = ? ORDER BY created_at ASC');
+        $stmt->execute([$today]);
+        $times = array_column($stmt->fetchAll(), 'created_at');
+        for ($i = 1; $i < count($times); $i++) {
+            $gap = (strtotime($times[$i]) - strtotime($times[$i-1])) / 3600;
+            if ($gap >= 2) {
+                $alerts[] = ['type'=>'no_sale_gap','severity'=>'danger','title'=>round($gap,1).'h gap with no sales','detail'=>'From '.date('H:i',strtotime($times[$i-1])).' to '.date('H:i',strtotime($times[$i])),'time'=>$times[$i-1]];
+            }
+        }
+        // Check last sale to now
+        if (!empty($times)) {
+            $hoursSinceLast = (time() - strtotime(end($times))) / 3600;
+            if ($hoursSinceLast >= 2) {
+                $alerts[] = ['type'=>'no_sale_gap','severity'=>'danger','title'=>round($hoursSinceLast,1).'h since last sale','detail'=>'Last sale at '.date('H:i',strtotime(end($times))),'time'=>end($times)];
+            }
+        }
+
+        // 4. Stock variance (stock dropped without receipt today)
+        $stmt = $pdo->prepare('SELECT sm.quantity, p.name, u.username FROM stock_movements sm JOIN products p ON sm.product_id = p.id LEFT JOIN users u ON sm.created_by = u.id WHERE DATE(sm.created_at) = ? AND sm.movement_type = "deduction" AND (sm.reference_type = "manual" OR sm.reference_type IS NULL) ORDER BY sm.created_at DESC LIMIT 10');
+        $stmt->execute([$today]);
+        foreach ($stmt->fetchAll() as $r) {
+            $alerts[] = ['type'=>'stock_variance','severity'=>'danger','title'=>'Manual stock deduction: '.$r['name'],'detail'=>$r['quantity'].' units removed by '.($r['username']??'Unknown').' without a receipt','time'=>$today];
+        }
+
+        // 5. Overdue debts (credit sales unpaid for 7+ days)
+        $stmt = $pdo->query('SELECT c.name, cs.invoice_number, cs.balance, cs.sale_date FROM credit_sales cs LEFT JOIN customers c ON c.id = cs.customer_id WHERE cs.status != "paid" AND julianday("now") - julianday(cs.sale_date) >= 7 ORDER BY cs.balance DESC LIMIT 10');
+        foreach ($stmt->fetchAll() as $r) {
+            $days = (int)((time() - strtotime($r['sale_date'])) / 86400);
+            $alerts[] = ['type'=>'overdue_debt','severity'=>'warning','title'=>'Overdue debt: '.($r['name']??'Unknown'),'detail'=>'GH₵'.number_format($r['balance'],2).' unpaid for '.$days.' days ('.$r['invoice_number'].')','time'=>$r['sale_date']];
+        }
+
+        // Sort by severity then time
+        usort($alerts, fn($a,$b) => ($a['severity']==='danger'?0:1) - ($b['severity']==='danger'?0:1));
+        echo json_encode(['alerts' => $alerts, 'count' => count($alerts)]);
+        exit;
+    }
+
+    // ── CASH RECONCILIATION ───────────────────────────────────────
+    if ($action === 'cash_recon') {
+        $date = $_GET['date'] ?? date('Y-m-d');
+        $stmt = $pdo->prepare('
+            SELECT COALESCE(SUM(CASE WHEN payment_method="cash" THEN total ELSE 0 END),0) as expected_cash,
+                   COALESCE(SUM(CASE WHEN payment_method="mobile_money" THEN total ELSE 0 END),0) as momo,
+                   COALESCE(SUM(CASE WHEN payment_method="card" THEN total ELSE 0 END),0) as card,
+                   COALESCE(SUM(CASE WHEN payment_method="credit" THEN total ELSE 0 END),0) as credit,
+                   COUNT(*) as total_receipts,
+                   COALESCE(SUM(total),0) as total_revenue
+            FROM receipts WHERE DATE(created_at) = ?
+        ');
+        $stmt->execute([$date]);
+        echo json_encode($stmt->fetch());
+        exit;
+    }
+
+    // ── CREDIT LIMITS ─────────────────────────────────────────────
+    if ($action === 'customers') {
+        $stmt = $pdo->query('SELECT c.id, c.name, c.phone, c.credit_limit, COALESCE(SUM(CASE WHEN cs.status!="paid" THEN cs.balance ELSE 0 END),0) as total_debt FROM customers c LEFT JOIN credit_sales cs ON cs.customer_id = c.id GROUP BY c.id ORDER BY total_debt DESC LIMIT 50');
+        echo json_encode(['items' => $stmt->fetchAll()]);
+        exit;
+    }
+
+    if ($action === 'update_credit_limit' && $method === 'POST') {
+        $data = json_decode(file_get_contents('php://input'), true) ?? [];
+        $cid   = (int)($data['customer_id'] ?? 0);
+        $limit = (float)($data['credit_limit'] ?? 0);
+        if ($cid <= 0) { http_response_code(400); echo json_encode(['error' => 'Invalid customer']); exit; }
+        $pdo->prepare('UPDATE customers SET credit_limit = ? WHERE id = ?')->execute([$limit, $cid]);
+        echo json_encode(['success' => true]);
+        exit;
+    }
+
+    // ── DELETE SUSPICIOUS RECEIPT ─────────────────────────────────
+    if ($action === 'delete_receipt' && $method === 'POST') {
+        $data = json_decode(file_get_contents('php://input'), true) ?? [];
+        $rid  = (int)($data['receipt_id'] ?? 0);
+        if ($rid <= 0) { http_response_code(400); echo json_encode(['error' => 'Invalid receipt']); exit; }
+        $pdo->beginTransaction();
+        $pdo->prepare('DELETE FROM receipt_items WHERE receipt_id = ?')->execute([$rid]);
+        $pdo->prepare('DELETE FROM receipts WHERE id = ?')->execute([$rid]);
+        $pdo->commit();
+        echo json_encode(['success' => true]);
+        exit;
+    }
+
+    // ── STAFF ACTIVITY LOG ────────────────────────────────────────
+    if ($action === 'staff_activity') {
+        $date = $_GET['date'] ?? date('Y-m-d');
+        // Sales activity per staff
+        $stmt = $pdo->prepare('
+            SELECT created_by_username as username,
+                   MIN(created_at) as first_sale,
+                   MAX(created_at) as last_sale,
+                   COUNT(*) as receipts,
+                   SUM(total) as total_sales
+            FROM receipts WHERE DATE(created_at) = ?
+            GROUP BY created_by ORDER BY first_sale ASC
+        ');
+        $stmt->execute([$date]);
+        $activity = $stmt->fetchAll();
+
+        // Stock movements by staff today
+        $stmt = $pdo->prepare('
+            SELECT u.username, sm.movement_type, COUNT(*) as count, SUM(sm.quantity) as total_qty
+            FROM stock_movements sm LEFT JOIN users u ON sm.created_by = u.id
+            WHERE DATE(sm.created_at) = ?
+            GROUP BY sm.created_by, sm.movement_type ORDER BY u.username
+        ');
+        $stmt->execute([$date]);
+        $movements = $stmt->fetchAll();
+
+        echo json_encode(['activity' => $activity, 'movements' => $movements, 'date' => $date]);
+        exit;
+    }
     $today = date('Y-m-d');
     $stmt = $pdo->prepare('SELECT COUNT(*) as receipts, COALESCE(SUM(total),0) as revenue, COALESCE(SUM(total_profit),0) as profit, COALESCE(SUM(total_cost),0) as cost, CASE WHEN SUM(total)>0 THEN ROUND((SUM(total_profit)/SUM(total))*100,1) ELSE 0 END as margin FROM receipts WHERE DATE(created_at) = ?');
     $stmt->execute([$today]); $today_summary = $stmt->fetch();

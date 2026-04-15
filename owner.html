@@ -150,6 +150,30 @@
       <div id="staff-list"></div>
     </div>
 
+    <!-- ── TAB: ALERTS ── -->
+    <div id="tab-alerts" class="tab-content-owner">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <div style="font-size:13px;"><span class="live-dot"></span> <strong>Live Alerts</strong></div>
+        <button class="btn-sm-dark" onclick="loadAlerts()"><i class="bi bi-arrow-clockwise"></i></button>
+      </div>
+      <div id="alerts-list"></div>
+    </div>
+
+    <!-- ── TAB: FINANCIAL ── -->
+    <div id="tab-financial" class="tab-content-owner">
+      <div class="section-title">Cash Reconciliation</div>
+      <div id="cash-recon-content"></div>
+
+      <div class="section-title">Outstanding Debts</div>
+      <div id="customers-debt-list"></div>
+
+      <div class="section-title">Staff Activity Log</div>
+      <div class="d-flex gap-2 mb-2">
+        <input type="date" id="activity-date" class="input-dark" style="flex:1;" onchange="loadStaffActivity()">
+      </div>
+      <div id="staff-activity-content"></div>
+    </div>
+
   </div><!-- /container -->
 
   <!-- Bottom Nav -->
@@ -159,6 +183,12 @@
     </button>
     <button onclick="switchTab('live')" id="nav-live">
       <i class="bi bi-receipt"></i><span>Live</span>
+    </button>
+    <button onclick="switchTab('alerts')" id="nav-alerts">
+      <i class="bi bi-bell"></i><span>Alerts</span>
+    </button>
+    <button onclick="switchTab('financial')" id="nav-financial">
+      <i class="bi bi-cash-coin"></i><span>Finance</span>
     </button>
     <button onclick="switchTab('pnl')" id="nav-pnl">
       <i class="bi bi-graph-up"></i><span>P&L</span>
@@ -213,6 +243,8 @@ function loadCurrentTab(){
   else if(currentTab==='pnl') loadPnl();
   else if(currentTab==='prices') searchProducts();
   else if(currentTab==='staff') loadStaff();
+  else if(currentTab==='alerts') loadAlerts();
+  else if(currentTab==='financial') loadFinancial();
 }
 
 // ── OVERVIEW ─────────────────────────────────────────────────────
@@ -282,6 +314,7 @@ async function loadLiveReceipts(){
           <div style="text-align:right;">
             <div style="color:#22c55e;font-weight:700;">${fmt(r.total)}</div>
             <div style="color:#94a3b8;font-size:11px;">profit: ${fmt(r.total_profit)}</div>
+            <button class="btn-dark-danger mt-1" style="padding:3px 8px;font-size:11px;" onclick="deleteReceipt(${r.id},'${r.invoice_number}')">🗑 Delete</button>
           </div>
         </div>
       </div>`).join('');
@@ -389,8 +422,121 @@ function copySummary(){
   setTimeout(()=>{ window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank'); },1500);
 }
 
+// ── ALERTS ───────────────────────────────────────────────────────
+async function loadAlerts(){
+  const d = await api('alerts');
+  if(!d) return;
+  const el = document.getElementById('alerts-list');
+  if(!d.alerts||d.alerts.length===0){
+    el.innerHTML='<div class="list-item" style="color:#22c55e;"><i class="bi bi-check-circle"></i> No alerts right now</div>';
+    return;
+  }
+  const icons = {large_sale:'💰',credit_sale:'💳',no_sale_gap:'⏰',stock_variance:'📦',overdue_debt:'⚠️'};
+  el.innerHTML = d.alerts.map(a=>`
+    <div class="list-item" style="border-left:3px solid ${a.severity==='danger'?'#ef4444':'#f59e0b'};">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="name">${icons[a.type]||'🔔'} ${a.title}</div>
+          <div class="sub">${a.detail}</div>
+        </div>
+        <span class="badge-pill" style="background:${a.severity==='danger'?'#ef4444':'#f59e0b'};color:${a.severity==='danger'?'white':'#000'};">${a.severity}</span>
+      </div>
+    </div>`).join('');
+}
+
+// ── FINANCIAL ────────────────────────────────────────────────────
+async function loadFinancial(){
+  await Promise.all([loadCashRecon(), loadCustomersDebt(), loadStaffActivity()]);
+}
+
+async function loadCashRecon(){
+  const date = new Date().toISOString().split('T')[0];
+  const d = await api('cash_recon&date='+date);
+  if(!d) return;
+  document.getElementById('cash-recon-content').innerHTML = `
+    <div class="card-dark">
+      <div class="d-flex justify-content-between mb-2">
+        <span style="color:#94a3b8;">Expected Cash in Till</span>
+        <span style="color:#22c55e;font-weight:700;">${fmt(d.expected_cash)}</span>
+      </div>
+      <div class="d-flex justify-content-between mb-2">
+        <span style="color:#94a3b8;">Mobile Money</span>
+        <span style="color:#3b82f6;font-weight:700;">${fmt(d.momo)}</span>
+      </div>
+      <div class="d-flex justify-content-between mb-2">
+        <span style="color:#94a3b8;">Card Payments</span>
+        <span style="color:#f59e0b;font-weight:700;">${fmt(d.card)}</span>
+      </div>
+      <div class="d-flex justify-content-between mb-2">
+        <span style="color:#94a3b8;">Credit (Owed)</span>
+        <span style="color:#ef4444;font-weight:700;">${fmt(d.credit)}</span>
+      </div>
+      <hr style="border-color:#334155;">
+      <div class="d-flex justify-content-between">
+        <span style="font-weight:700;">Total Revenue</span>
+        <span style="color:#22c55e;font-weight:800;font-size:16px;">${fmt(d.total_revenue)}</span>
+      </div>
+      <div class="sub mt-1">${d.total_receipts} receipts today</div>
+    </div>`;
+}
+
+async function loadCustomersDebt(){
+  const d = await api('customers');
+  if(!d) return;
+  const debtors = (d.items||[]).filter(c=>parseFloat(c.total_debt)>0);
+  const el = document.getElementById('customers-debt-list');
+  if(debtors.length===0){ el.innerHTML='<div class="list-item" style="color:#22c55e;"><i class="bi bi-check-circle"></i> No outstanding debts</div>'; return; }
+  el.innerHTML = debtors.map(c=>`
+    <div class="list-item">
+      <div class="d-flex justify-content-between align-items-center mb-1">
+        <div><div class="name">${c.name}</div><div class="sub">${c.phone||'No phone'}</div></div>
+        <div style="color:#ef4444;font-weight:700;">${fmt(c.total_debt)}</div>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <span style="color:#94a3b8;font-size:11px;">Credit limit:</span>
+        <input type="number" step="0.01" value="${parseFloat(c.credit_limit||0).toFixed(2)}"
+          id="climit-${c.id}" class="input-dark" style="width:90px;padding:4px 8px;font-size:12px;">
+        <button class="btn-sm-dark" onclick="updateCreditLimit(${c.id})" style="font-size:11px;">Set</button>
+      </div>
+    </div>`).join('');
+}
+
+async function updateCreditLimit(cid){
+  const val = parseFloat(document.getElementById('climit-'+cid).value)||0;
+  const d = await api('update_credit_limit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({customer_id:cid,credit_limit:val})});
+  if(d?.success){ const btn=document.querySelector(`button[onclick="updateCreditLimit(${cid})"]`); if(btn){btn.textContent='✓';setTimeout(()=>btn.textContent='Set',2000);} }
+}
+
+async function loadStaffActivity(){
+  const date = document.getElementById('activity-date').value || new Date().toISOString().split('T')[0];
+  document.getElementById('activity-date').value = date;
+  const d = await api('staff_activity&date='+date);
+  if(!d) return;
+  const el = document.getElementById('staff-activity-content');
+  if(!d.activity||d.activity.length===0){ el.innerHTML='<div class="list-item" style="color:#64748b;">No activity on this date</div>'; return; }
+  el.innerHTML = d.activity.map(a=>`
+    <div class="list-item">
+      <div class="name"><i class="bi bi-person-circle"></i> ${a.username}</div>
+      <div class="sub">First sale: ${a.first_sale ? new Date(a.first_sale).toLocaleTimeString('en',{hour:'2-digit',minute:'2-digit'}) : '—'}</div>
+      <div class="sub">Last sale: ${a.last_sale ? new Date(a.last_sale).toLocaleTimeString('en',{hour:'2-digit',minute:'2-digit'}) : '—'}</div>
+      <div class="d-flex gap-3 mt-1">
+        <span style="color:#3b82f6;font-size:12px;">${a.receipts} receipts</span>
+        <span style="color:#22c55e;font-size:12px;">${fmt(a.total_sales)}</span>
+      </div>
+    </div>`).join('');
+}
+
+// ── DELETE RECEIPT ────────────────────────────────────────────────
+async function deleteReceipt(rid, invoice){
+  if(!confirm('Delete receipt '+invoice+'? This cannot be undone.')) return;
+  const d = await api('delete_receipt',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({receipt_id:rid})});
+  if(d?.success) loadLiveReceipts();
+  else alert(d?.error||'Failed');
+}
+
 // ── INIT ──────────────────────────────────────────────────────────
 document.getElementById('pnl-date').value = new Date().toISOString().split('T')[0];
+document.getElementById('activity-date').value = new Date().toISOString().split('T')[0];
 setInterval(()=>{ if(document.getElementById('app').style.display!=='none') loadCurrentTab(); },120000);
 </script>
 </body>
