@@ -417,6 +417,15 @@
               <i class="bi bi-graph-up"></i>
               Analytics & Reports
             </a>
+            <a class="nav-link admin-only hidden" href="#" data-section="predictions">
+              <i class="bi bi-cpu"></i>
+              Inventory Predictions
+              <span id="predictions-badge" class="badge bg-danger ms-1" style="display:none;">0</span>
+            </a>
+            <a class="nav-link admin-only hidden" href="#" data-section="advanced-analytics">
+              <i class="bi bi-bar-chart-line"></i>
+              Advanced Analytics
+            </a>
             <a class="nav-link admin-only hidden" href="#" data-section="antitheft">
               <i class="bi bi-shield-exclamation"></i>
               Anti-Theft Monitor
@@ -2355,6 +2364,188 @@
             </div>
           </div>
 
+          <!-- Inventory Predictions Section (Admin Only) -->
+          <div id="section-predictions" class="content-section hidden">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+              <h2><i class="bi bi-cpu"></i> Inventory Predictions</h2>
+              <button class="btn btn-outline-primary" onclick="refreshWithFeedback(this, loadPredictions)">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+              </button>
+            </div>
+
+            <div class="alert alert-info">
+              <i class="bi bi-info-circle"></i>
+              Based on your last 30 days of sales. Products with no recent sales are not shown.
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="row mb-4">
+              <div class="col-md-3">
+                <div class="stat-card danger">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div><h3 id="pred-out" class="mb-0">0</h3><p class="mb-0">Out of Stock</p></div>
+                    <i class="bi bi-x-circle display-4 opacity-50"></i>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="stat-card danger">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div><h3 id="pred-critical" class="mb-0">0</h3><p class="mb-0">Finish in ≤3 Days</p></div>
+                    <i class="bi bi-exclamation-triangle display-4 opacity-50"></i>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="stat-card warning">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div><h3 id="pred-urgent" class="mb-0">0</h3><p class="mb-0">Finish in ≤7 Days</p></div>
+                    <i class="bi bi-clock display-4 opacity-50"></i>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="stat-card info">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div><h3 id="pred-watch" class="mb-0">0</h3><p class="mb-0">Watch (≤30 Days)</p></div>
+                    <i class="bi bi-eye display-4 opacity-50"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Reorder Suggestions</h5>
+                <select class="form-select form-select-sm" id="pred-filter" onchange="filterPredictions()" style="width:auto;">
+                  <option value="all">All Flagged</option>
+                  <option value="out_of_stock">Out of Stock</option>
+                  <option value="critical">Critical (≤3 days)</option>
+                  <option value="urgent">Urgent (≤7 days)</option>
+                  <option value="low">Low (≤14 days)</option>
+                  <option value="watch">Watch (≤30 days)</option>
+                </select>
+              </div>
+              <div class="card-body p-0">
+                <div class="table-responsive">
+                  <table class="table table-hover mb-0">
+                    <thead class="table-dark">
+                      <tr>
+                        <th>Product</th>
+                        <th>Current Stock</th>
+                        <th>Sold (30d)</th>
+                        <th>Daily Rate</th>
+                        <th>Days Left</th>
+                        <th>Suggested Reorder</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody id="tbl-predictions"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Advanced Analytics Section (Admin Only) -->
+          <div id="section-advanced-analytics" class="content-section hidden">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+              <h2><i class="bi bi-bar-chart-line"></i> Advanced Analytics</h2>
+              <div class="d-flex gap-2 align-items-center">
+                <select class="form-select form-select-sm" id="adv-period" onchange="loadAdvancedAnalytics()" style="width:auto;">
+                  <option value="7">Last 7 days</option>
+                  <option value="30" selected>Last 30 days</option>
+                  <option value="90">Last 90 days</option>
+                </select>
+                <button class="btn btn-outline-primary btn-sm" onclick="refreshWithFeedback(this, loadAdvancedAnalytics)">
+                  <i class="bi bi-arrow-clockwise"></i> Refresh
+                </button>
+              </div>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="row mb-4" id="adv-summary-cards"></div>
+
+            <!-- Loss Tracking -->
+            <div class="row mb-4">
+              <div class="col-md-6">
+                <div class="card border-danger">
+                  <div class="card-header bg-danger text-white">
+                    <h6 class="mb-0"><i class="bi bi-calendar-x"></i> Estimated Expiry Loss</h6>
+                  </div>
+                  <div class="card-body text-center">
+                    <h2 id="adv-expiry-loss" class="text-danger">GH₵0.00</h2>
+                    <small class="text-muted">Cost value of stock removed due to expiry</small>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="card border-warning">
+                  <div class="card-header bg-warning text-dark">
+                    <h6 class="mb-0"><i class="bi bi-shield-exclamation"></i> Estimated Theft/Loss</h6>
+                  </div>
+                  <div class="card-body text-center">
+                    <h2 id="adv-theft-loss" class="text-warning">GH₵0.00</h2>
+                    <small class="text-muted">Cost value of manually deducted stock</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Profit Trend -->
+            <div class="card mb-4">
+              <div class="card-header"><h5 class="mb-0"><i class="bi bi-graph-up text-success"></i> Profit Trend</h5></div>
+              <div class="card-body p-0">
+                <div class="table-responsive">
+                  <table class="table table-sm table-hover mb-0">
+                    <thead class="table-dark">
+                      <tr><th>Date</th><th>Receipts</th><th>Revenue</th><th>Cost</th><th>Profit</th><th>Margin</th></tr>
+                    </thead>
+                    <tbody id="tbl-profit-trend"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Best & Worst Products -->
+            <div class="row">
+              <div class="col-md-6">
+                <div class="card mb-3">
+                  <div class="card-header bg-success text-white">
+                    <h6 class="mb-0"><i class="bi bi-trophy"></i> Best Products (by Profit)</h6>
+                  </div>
+                  <div class="card-body p-0">
+                    <div class="table-responsive">
+                      <table class="table table-sm table-hover mb-0">
+                        <thead class="table-light">
+                          <tr><th>Product</th><th>Units</th><th>Revenue</th><th>Profit</th><th>Margin</th></tr>
+                        </thead>
+                        <tbody id="tbl-best-products"></tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="card mb-3">
+                  <div class="card-header bg-danger text-white">
+                    <h6 class="mb-0"><i class="bi bi-arrow-down-circle"></i> Worst Products (by Margin)</h6>
+                  </div>
+                  <div class="card-body p-0">
+                    <div class="table-responsive">
+                      <table class="table table-sm table-hover mb-0">
+                        <thead class="table-light">
+                          <tr><th>Product</th><th>Units</th><th>Revenue</th><th>Profit</th><th>Margin</th></tr>
+                        </thead>
+                        <tbody id="tbl-worst-products"></tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Anti-Theft Monitor Section (Admin Only) -->
           <div id="section-antitheft" class="content-section hidden">
             <div class="d-flex justify-content-between align-items-center mb-4">
@@ -3371,6 +3562,12 @@
           break;
         case 'antitheft':
           loadAntiTheft();
+          break;
+        case 'predictions':
+          loadPredictions();
+          break;
+        case 'advanced-analytics':
+          loadAdvancedAnalytics();
           break;
         case 'credit':
           loadCreditSection();
@@ -7575,6 +7772,157 @@
       
       // Product selection event listener is now handled in initializeProductSearch()
     });
+
+    // ============================================================
+    // INVENTORY PREDICTIONS
+    // ============================================================
+
+    let predictionData = [];
+
+    async function loadPredictions() {
+      try {
+        const data = await apiCall('api/analytics.php?type=inventory_predictions');
+        predictionData = data.predictions || [];
+
+        // Update cards
+        document.getElementById('pred-out').textContent      = predictionData.filter(p => p.status === 'out_of_stock').length;
+        document.getElementById('pred-critical').textContent = predictionData.filter(p => p.status === 'critical').length;
+        document.getElementById('pred-urgent').textContent   = predictionData.filter(p => p.status === 'urgent').length;
+        document.getElementById('pred-watch').textContent    = predictionData.filter(p => ['low','watch'].includes(p.status)).length;
+
+        // Badge
+        const badge = document.getElementById('predictions-badge');
+        const urgent = predictionData.filter(p => ['out_of_stock','critical','urgent'].includes(p.status)).length;
+        if (badge) { badge.textContent = urgent; badge.style.display = urgent > 0 ? 'inline' : 'none'; }
+
+        filterPredictions();
+      } catch(e) { console.error('Failed to load predictions:', e); }
+    }
+
+    function filterPredictions() {
+      const filter = document.getElementById('pred-filter').value;
+      const filtered = filter === 'all' ? predictionData : predictionData.filter(p => p.status === filter);
+      const tbody = document.getElementById('tbl-predictions');
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted py-4">
+          <i class="bi bi-check-circle text-success fs-3 d-block mb-2"></i>No products flagged</td></tr>`;
+        return;
+      }
+
+      const statusConfig = {
+        out_of_stock: { color: 'danger',  label: 'Out of Stock' },
+        critical:     { color: 'danger',  label: 'Critical' },
+        urgent:       { color: 'warning', label: 'Urgent' },
+        low:          { color: 'info',    label: 'Low' },
+        watch:        { color: 'secondary',label: 'Watch' },
+      };
+
+      tbody.innerHTML = filtered.map(p => {
+        const cfg = statusConfig[p.status] || { color: 'secondary', label: p.status };
+        const daysText = p.days_left !== null
+          ? `<strong class="text-${cfg.color}">${p.days_left} days</strong>`
+          : '<span class="text-muted">No sales data</span>';
+        return `<tr class="${['out_of_stock','critical'].includes(p.status) ? 'table-danger' : p.status === 'urgent' ? 'table-warning' : ''}">
+          <td><strong>${p.name}</strong><br><small class="text-muted">${p.sku}</small></td>
+          <td class="${p.current_stock === 0 ? 'text-danger fw-bold' : ''}">${p.current_stock}</td>
+          <td>${p.sold_last_30}</td>
+          <td>${p.daily_rate}/day</td>
+          <td>${daysText}</td>
+          <td><span class="badge bg-primary">${p.reorder_qty} units</span></td>
+          <td><span class="badge bg-${cfg.color}">${cfg.label}</span></td>
+        </tr>`;
+      }).join('');
+    }
+
+    // ============================================================
+    // ADVANCED ANALYTICS
+    // ============================================================
+
+    async function loadAdvancedAnalytics() {
+      const period = document.getElementById('adv-period')?.value || 30;
+      try {
+        const data = await apiCall(`api/analytics.php?type=advanced_analytics&period=${period}`);
+        const s = data.summary || {};
+
+        // Summary cards
+        document.getElementById('adv-summary-cards').innerHTML = `
+          <div class="col-md-3"><div class="stat-card success">
+            <div class="d-flex justify-content-between align-items-center">
+              <div><h3 class="mb-0">${formatCurrency(s.total_revenue || 0)}</h3><p class="mb-0">Total Revenue</p></div>
+              <i class="bi bi-cash-coin display-4 opacity-50"></i>
+            </div>
+          </div></div>
+          <div class="col-md-3"><div class="stat-card info">
+            <div class="d-flex justify-content-between align-items-center">
+              <div><h3 class="mb-0">${formatCurrency(s.total_profit || 0)}</h3><p class="mb-0">Total Profit</p></div>
+              <i class="bi bi-graph-up display-4 opacity-50"></i>
+            </div>
+          </div></div>
+          <div class="col-md-3"><div class="stat-card warning">
+            <div class="d-flex justify-content-between align-items-center">
+              <div><h3 class="mb-0">${s.avg_margin || 0}%</h3><p class="mb-0">Avg Profit Margin</p></div>
+              <i class="bi bi-percent display-4 opacity-50"></i>
+            </div>
+          </div></div>
+          <div class="col-md-3"><div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+              <div><h3 class="mb-0">${s.total_receipts || 0}</h3><p class="mb-0">Total Receipts</p></div>
+              <i class="bi bi-receipt display-4 opacity-50"></i>
+            </div>
+          </div></div>`;
+
+        // Loss tracking
+        document.getElementById('adv-expiry-loss').textContent = formatCurrency(data.expiry_loss || 0);
+        document.getElementById('adv-theft-loss').textContent  = formatCurrency(data.theft_estimate || 0);
+
+        // Profit trend table
+        const trendTbody = document.getElementById('tbl-profit-trend');
+        const trend = data.profit_trend || [];
+        if (trend.length === 0) {
+          trendTbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No data</td></tr>';
+        } else {
+          trendTbody.innerHTML = trend.map(t => {
+            const margin = t.revenue > 0 ? ((t.profit / t.revenue) * 100).toFixed(1) : 0;
+            return `<tr>
+              <td>${t.date}</td>
+              <td>${t.receipts}</td>
+              <td>${formatCurrency(t.revenue)}</td>
+              <td class="text-danger">${formatCurrency(t.cost)}</td>
+              <td class="text-success fw-bold">${formatCurrency(t.profit)}</td>
+              <td><span class="badge ${margin >= 20 ? 'bg-success' : margin >= 10 ? 'bg-warning text-dark' : 'bg-danger'}">${margin}%</span></td>
+            </tr>`;
+          }).join('');
+        }
+
+        // Best products
+        const bestTbody = document.getElementById('tbl-best-products');
+        const best = data.best_products || [];
+        bestTbody.innerHTML = best.length === 0
+          ? '<tr><td colspan="5" class="text-center text-muted">No data</td></tr>'
+          : best.map(p => `<tr>
+              <td>${p.name}</td>
+              <td>${p.units_sold}</td>
+              <td>${formatCurrency(p.revenue)}</td>
+              <td class="text-success fw-bold">${formatCurrency(p.profit)}</td>
+              <td><span class="badge bg-success">${p.margin}%</span></td>
+            </tr>`).join('');
+
+        // Worst products
+        const worstTbody = document.getElementById('tbl-worst-products');
+        const worst = data.worst_products || [];
+        worstTbody.innerHTML = worst.length === 0
+          ? '<tr><td colspan="5" class="text-center text-muted">No data</td></tr>'
+          : worst.map(p => `<tr class="${p.margin < 0 ? 'table-danger' : p.margin < 10 ? 'table-warning' : ''}">
+              <td>${p.name}</td>
+              <td>${p.units_sold}</td>
+              <td>${formatCurrency(p.revenue)}</td>
+              <td class="${p.profit < 0 ? 'text-danger' : ''} fw-bold">${formatCurrency(p.profit)}</td>
+              <td><span class="badge ${p.margin < 0 ? 'bg-danger' : p.margin < 10 ? 'bg-warning text-dark' : 'bg-secondary'}">${p.margin}%</span></td>
+            </tr>`).join('');
+
+      } catch(e) { console.error('Failed to load advanced analytics:', e); }
+    }
 
     // ============================================================
     // ANTI-THEFT MONITOR
