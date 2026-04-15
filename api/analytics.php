@@ -349,8 +349,9 @@ try {
                     elseif ($daysLeft !== null && $daysLeft <= 7)  $status = 'urgent';
                     elseif ($daysLeft !== null && $daysLeft <= 14) $status = 'low';
                     elseif ($daysLeft !== null && $daysLeft <= 30) $status = 'watch';
+                    elseif ($stock > 0 && $stock <= 10)            $status = 'watch'; // low stock regardless of sales
 
-                    if ($status !== 'ok' || $stock === 0) {
+                    if ($status !== 'ok') {
                         $predictions[] = [
                             'id'           => $r['id'],
                             'sku'          => $r['sku'],
