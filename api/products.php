@@ -218,16 +218,24 @@ try {
         if ($deleteAll) {
             try {
                 $pdo->beginTransaction();
+                // Disable foreign keys temporarily to allow cascade delete
+                $pdo->exec('PRAGMA foreign_keys = OFF');
+                $pdo->exec('DELETE FROM credit_payments');
+                $pdo->exec('DELETE FROM credit_sales');
+                $pdo->exec('DELETE FROM receipt_items');
+                $pdo->exec('DELETE FROM receipts');
                 $pdo->exec('DELETE FROM stock_movements');
                 $pdo->exec('DELETE FROM stock_batches');
                 $pdo->exec('DELETE FROM product_units');
                 $pdo->exec('DELETE FROM stock');
-                $pdo->exec('DELETE FROM products');
-                $pdo->exec('DELETE FROM sqlite_sequence WHERE name IN ("products","stock","stock_movements","stock_batches","product_units")');
+                $pdo->exec('DELETE FROM products WHERE id != 0 AND sku != "DELETED"');
+                $pdo->exec('DELETE FROM sqlite_sequence WHERE name IN ("products","stock","stock_movements","stock_batches","product_units","receipts","receipt_items","credit_sales","credit_payments")');
+                $pdo->exec('PRAGMA foreign_keys = ON');
                 $pdo->commit();
                 echo json_encode(['deleted' => 'all']);
             } catch (Throwable $e) {
                 $pdo->rollBack();
+                $pdo->exec('PRAGMA foreign_keys = ON');
                 http_response_code(500);
                 echo json_encode(['error' => 'Failed to delete all products: ' . $e->getMessage()]);
             }
