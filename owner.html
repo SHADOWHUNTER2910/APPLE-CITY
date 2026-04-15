@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>ShelfSense — Owner Dashboard</title>
+  <link href="assets/css/bootstrap.min.css" rel="stylesheet">
+  <link href="assets/css/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    body { background: #0f172a; color: #f1f5f9; font-family: 'Segoe UI', sans-serif; }
+    .top-bar { background: linear-gradient(135deg, #1e3c72, #2a5298); padding: 16px 20px; position: sticky; top: 0; z-index: 100; }
+    .top-bar h1 { font-size: 18px; font-weight: 700; margin: 0; }
+    .top-bar small { font-size: 11px; opacity: 0.7; }
+    .card-dark { background: #1e293b; border-radius: 12px; padding: 16px; margin-bottom: 12px; border: 1px solid #334155; }
+    .stat-val { font-size: 28px; font-weight: 800; }
+    .stat-label { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+    .badge-pill { border-radius: 20px; padding: 4px 10px; font-size: 11px; font-weight: 600; }
+    .trend-up { color: #22c55e; }
+    .trend-down { color: #ef4444; }
+    .trend-flat { color: #94a3b8; }
+    .section-title { font-size: 13px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin: 16px 0 8px; }
+    .list-item { background: #1e293b; border-radius: 8px; padding: 10px 14px; margin-bottom: 6px; border: 1px solid #334155; font-size: 13px; }
+    .list-item .name { font-weight: 600; }
+    .list-item .sub { color: #94a3b8; font-size: 11px; }
+    .pin-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #0f172a; }
+    .pin-card { background: #1e293b; border-radius: 16px; padding: 32px 24px; width: 100%; max-width: 340px; text-align: center; }
+    .pin-input { background: #0f172a; border: 2px solid #334155; color: white; font-size: 24px; letter-spacing: 8px; text-align: center; border-radius: 8px; padding: 12px; width: 100%; }
+    .pin-input:focus { border-color: #3b82f6; outline: none; }
+    .btn-primary-dark { background: #3b82f6; border: none; color: white; border-radius: 8px; padding: 12px 24px; font-weight: 600; width: 100%; font-size: 15px; }
+    .refresh-btn { background: #334155; border: none; color: #94a3b8; border-radius: 8px; padding: 8px 16px; font-size: 12px; }
+    .bar-wrap { background: #0f172a; border-radius: 4px; height: 6px; margin-top: 4px; }
+    .bar-fill { height: 6px; border-radius: 4px; background: #3b82f6; }
+    .alert-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+  </style>
+</head>
+<body>
+
+<!-- PIN Screen -->
+<div id="pin-screen" class="pin-screen">
+  <div class="pin-card">
+    <div style="font-size: 48px; margin-bottom: 12px;">🔐</div>
+    <h2 style="font-size: 20px; font-weight: 700; margin-bottom: 4px;">Owner Dashboard</h2>
+    <p style="color: #94a3b8; font-size: 13px; margin-bottom: 24px;">Enter your owner PIN to continue</p>
+    <input type="password" id="pin-input" class="pin-input" placeholder="••••" maxlength="8" inputmode="numeric"
+           onkeydown="if(event.key==='Enter') verifyPin()">
+    <div id="pin-error" style="color:#ef4444; font-size:12px; margin: 8px 0; min-height:16px;"></div>
+    <button class="btn-primary-dark mt-2" onclick="verifyPin()">
+      <i class="bi bi-unlock"></i> Unlock
+    </button>
+  </div>
+</div>
+
+<!-- Dashboard -->
+<div id="dashboard" style="display:none;">
+  <!-- Top Bar -->
+  <div class="top-bar d-flex justify-content-between align-items-center">
+    <div>
+      <h1><i class="bi bi-speedometer2"></i> Owner Dashboard</h1>
+      <small id="company-name-bar">ShelfSense POS</small>
+    </div>
+    <div class="d-flex gap-2 align-items-center">
+      <small id="last-updated" style="font-size:10px; color:#94a3b8;"></small>
+      <button class="refresh-btn" onclick="loadDashboard()"><i class="bi bi-arrow-clockwise"></i></button>
+    </div>
+  </div>
+
+  <div style="padding: 16px; max-width: 600px; margin: 0 auto;">
+
+    <!-- Today Summary -->
+    <div class="section-title">Today's Performance</div>
+    <div class="row g-2 mb-2">
+      <div class="col-6">
+        <div class="card-dark">
+          <div class="stat-val text-success" id="today-revenue">GH₵0</div>
+          <div class="stat-label">Revenue</div>
+          <div id="revenue-trend" class="mt-1" style="font-size:11px;"></div>
+        </div>
+      </div>
+      <div class="col-6">
+        <div class="card-dark">
+          <div class="stat-val text-info" id="today-profit">GH₵0</div>
+          <div class="stat-label">Profit</div>
+          <div id="profit-trend" class="mt-1" style="font-size:11px;"></div>
+        </div>
+      </div>
+      <div class="col-4">
+        <div class="card-dark text-center">
+          <div class="stat-val" style="font-size:22px;" id="today-receipts">0</div>
+          <div class="stat-label">Receipts</div>
+        </div>
+      </div>
+      <div class="col-4">
+        <div class="card-dark text-center">
+          <div class="stat-val text-warning" style="font-size:22px;" id="today-margin">0%</div>
+          <div class="stat-label">Margin</div>
+        </div>
+      </div>
+      <div class="col-4">
+        <div class="card-dark text-center">
+          <div class="stat-val text-danger" style="font-size:22px;" id="total-debt">GH₵0</div>
+          <div class="stat-label">Debt Owed</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 7-Day Trend -->
+    <div class="section-title">7-Day Sales Trend</div>
+    <div class="card-dark" id="weekly-trend-container">
+      <div id="weekly-bars" class="d-flex align-items-end gap-1" style="height:60px;"></div>
+      <div id="weekly-labels" class="d-flex gap-1 mt-1" style="font-size:9px; color:#64748b;"></div>
+    </div>
+
+    <!-- Staff Today -->
+    <div class="section-title">Staff Activity Today</div>
+    <div id="staff-today-list"></div>
+
+    <!-- Top Products Today -->
+    <div class="section-title">Top Products Today</div>
+    <div id="top-products-list"></div>
+
+    <!-- Alerts -->
+    <div class="section-title">
+      <span class="alert-dot" style="background:#ef4444;"></span>Stock Alerts
+    </div>
+    <div id="stock-alerts-list"></div>
+
+    <!-- Recent Receipts -->
+    <div class="section-title">Recent Receipts</div>
+    <div id="recent-receipts-list"></div>
+
+    <!-- WhatsApp Summary -->
+    <div class="section-title">Share Summary</div>
+    <div class="card-dark">
+      <p style="font-size:12px; color:#94a3b8; margin-bottom:10px;">
+        Copy today's summary and send via WhatsApp
+      </p>
+      <textarea id="whatsapp-summary" readonly
+        style="background:#0f172a; border:1px solid #334155; color:#f1f5f9; border-radius:8px; width:100%; padding:10px; font-size:12px; resize:none; height:140px;"></textarea>
+      <button class="btn-primary-dark mt-2" onclick="copySummary()">
+        <i class="bi bi-whatsapp"></i> Copy & Share on WhatsApp
+      </button>
+    </div>
+
+    <div style="height:32px;"></div>
+  </div>
+</div>
+
+<script src="assets/js/bootstrap.bundle.min.js"></script>
+<script>
+  const API = 'api/owner-dashboard.php';
+
+  function fmt(n) {
+    return 'GH₵' + parseFloat(n || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  }
+
+  function trendArrow(today, yesterday) {
+    if (!yesterday || yesterday == 0) return '';
+    const pct = ((today - yesterday) / yesterday * 100).toFixed(1);
+    if (pct > 0) return `<span class="trend-up">▲ ${pct}% vs yesterday</span>`;
+    if (pct < 0) return `<span class="trend-down">▼ ${Math.abs(pct)}% vs yesterday</span>`;
+    return `<span class="trend-flat">= same as yesterday</span>`;
+  }
+
+  async function verifyPin() {
+    const pin = document.getElementById('pin-input').value.trim();
+    if (!pin) return;
+    try {
+      const res = await fetch(API + '?action=verify_pin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin })
+      });
+      const data = await res.json();
+      if (data.success) {
+        document.getElementById('pin-screen').style.display = 'none';
+        document.getElementById('dashboard').style.display = 'block';
+        loadDashboard();
+      } else {
+        document.getElementById('pin-error').textContent = data.error || 'Incorrect PIN';
+        document.getElementById('pin-input').value = '';
+      }
+    } catch(e) {
+      document.getElementById('pin-error').textContent = 'Connection error. Is the app running?';
+    }
+  }
+
+  async function loadDashboard() {
+    try {
+      const res = await fetch(API);
+      if (res.status === 401) {
+        document.getElementById('pin-screen').style.display = 'flex';
+        document.getElementById('dashboard').style.display = 'none';
+        return;
+      }
+      const d = await res.json();
+
+      // Company name
+      document.getElementById('company-name-bar').textContent = d.company?.company_name || 'ShelfSense POS';
+      document.getElementById('last-updated').textContent = 'Updated ' + new Date().toLocaleTimeString();
+
+      // Today summary
+      document.getElementById('today-revenue').textContent  = fmt(d.today?.revenue);
+      document.getElementById('today-profit').textContent   = fmt(d.today?.profit);
+      document.getElementById('today-receipts').textContent = d.today?.receipts || 0;
+      document.getElementById('today-margin').textContent   = (d.today?.margin || 0) + '%';
+      document.getElementById('total-debt').textContent     = fmt(d.total_debt);
+      document.getElementById('revenue-trend').innerHTML    = trendArrow(d.today?.revenue, d.yesterday?.revenue);
+      document.getElementById('profit-trend').innerHTML     = trendArrow(d.today?.profit, d.yesterday?.profit);
+
+      // Weekly bars
+      const trend = d.weekly_trend || [];
+      const maxRev = Math.max(...trend.map(t => parseFloat(t.revenue)), 1);
+      const barsEl = document.getElementById('weekly-bars');
+      const labelsEl = document.getElementById('weekly-labels');
+      barsEl.innerHTML = trend.map(t => {
+        const h = Math.max(4, Math.round((parseFloat(t.revenue) / maxRev) * 56));
+        const day = new Date(t.date).toLocaleDateString('en', { weekday: 'short' });
+        return `<div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:2px;">
+          <div style="width:100%; height:${h}px; background:#3b82f6; border-radius:3px 3px 0 0;" title="${day}: ${fmt(t.revenue)}"></div>
+        </div>`;
+      }).join('');
+      labelsEl.innerHTML = trend.map(t => {
+        const day = new Date(t.date).toLocaleDateString('en', { weekday: 'short' });
+        return `<div style="flex:1; text-align:center;">${day}</div>`;
+      }).join('');
+
+      // Staff today
+      const staffEl = document.getElementById('staff-today-list');
+      staffEl.innerHTML = (d.staff_today || []).length === 0
+        ? '<div class="list-item" style="color:#64748b;">No sales recorded today</div>'
+        : d.staff_today.map(s => `
+            <div class="list-item d-flex justify-content-between align-items-center">
+              <div>
+                <div class="name"><i class="bi bi-person-circle"></i> ${s.username}</div>
+                <div class="sub">${s.receipts} receipt${s.receipts != 1 ? 's' : ''}</div>
+              </div>
+              <div class="text-end">
+                <div style="color:#22c55e; font-weight:700;">${fmt(s.sales)}</div>
+              </div>
+            </div>`).join('');
+
+      // Top products
+      const topEl = document.getElementById('top-products-list');
+      topEl.innerHTML = (d.top_products || []).length === 0
+        ? '<div class="list-item" style="color:#64748b;">No sales today</div>'
+        : d.top_products.map((p, i) => `
+            <div class="list-item d-flex justify-content-between align-items-center">
+              <div>
+                <span style="color:#64748b; font-size:11px;">#${i+1}</span>
+                <span class="name ms-1">${p.name}</span>
+                <div class="sub">${p.qty} units sold</div>
+              </div>
+              <div style="color:#f59e0b; font-weight:700;">${fmt(p.revenue)}</div>
+            </div>`).join('');
+
+      // Stock alerts
+      const alertsEl = document.getElementById('stock-alerts-list');
+      let alertsHtml = '';
+      (d.out_of_stock || []).forEach(p => {
+        alertsHtml += `<div class="list-item d-flex justify-content-between">
+          <span class="name">${p.name}</span>
+          <span class="badge-pill" style="background:#ef4444; color:white;">OUT OF STOCK</span>
+        </div>`;
+      });
+      (d.low_stock || []).forEach(p => {
+        alertsHtml += `<div class="list-item d-flex justify-content-between">
+          <span class="name">${p.name}</span>
+          <span class="badge-pill" style="background:#f59e0b; color:#000;">${p.quantity} left</span>
+        </div>`;
+      });
+      alertsEl.innerHTML = alertsHtml || '<div class="list-item" style="color:#22c55e;"><i class="bi bi-check-circle"></i> All stock levels OK</div>';
+
+      // Recent receipts
+      const receiptsEl = document.getElementById('recent-receipts-list');
+      receiptsEl.innerHTML = (d.recent_receipts || []).length === 0
+        ? '<div class="list-item" style="color:#64748b;">No receipts yet</div>'
+        : d.recent_receipts.map(r => `
+            <div class="list-item d-flex justify-content-between align-items-center">
+              <div>
+                <div class="name">${r.customer_name || 'Walk-in'}</div>
+                <div class="sub">${r.invoice_number} · ${r.payment_method}</div>
+              </div>
+              <div style="color:#22c55e; font-weight:700;">${fmt(r.total)}</div>
+            </div>`).join('');
+
+      // WhatsApp summary
+      const company = d.company?.company_name || 'ShelfSense';
+      const now = new Date().toLocaleString('en-GH');
+      const summary = `📊 *${company} — Daily Summary*\n` +
+        `🗓 ${now}\n\n` +
+        `💰 *Revenue:* ${fmt(d.today?.revenue)}\n` +
+        `📈 *Profit:* ${fmt(d.today?.profit)} (${d.today?.margin || 0}%)\n` +
+        `🧾 *Receipts:* ${d.today?.receipts || 0}\n` +
+        `💳 *Outstanding Debt:* ${fmt(d.total_debt)}\n\n` +
+        (d.low_stock?.length > 0 ? `⚠️ *Low Stock:*\n${d.low_stock.map(p => `• ${p.name} (${p.quantity} left)`).join('\n')}\n\n` : '') +
+        (d.out_of_stock?.length > 0 ? `🔴 *Out of Stock:*\n${d.out_of_stock.map(p => `• ${p.name}`).join('\n')}\n\n` : '') +
+        `_Sent from ShelfSense POS_`;
+      document.getElementById('whatsapp-summary').value = summary;
+
+    } catch(e) {
+      console.error('Dashboard load failed:', e);
+    }
+  }
+
+  function copySummary() {
+    const text = document.getElementById('whatsapp-summary').value;
+    navigator.clipboard.writeText(text).then(() => {
+      // Try to open WhatsApp
+      window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
+    }).catch(() => {
+      document.getElementById('whatsapp-summary').select();
+      document.execCommand('copy');
+      alert('Copied! Now paste it in WhatsApp.');
+    });
+  }
+
+  // Auto-refresh every 2 minutes
+  setInterval(() => {
+    if (document.getElementById('dashboard').style.display !== 'none') loadDashboard();
+  }, 120000);
+</script>
+</body>
+</html>

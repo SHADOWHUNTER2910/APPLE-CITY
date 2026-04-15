@@ -2439,6 +2439,15 @@
                       <label class="form-label">Website (Optional)</label>
                       <input type="url" class="form-control" name="company_website">
                     </div>
+                    <div class="col-md-6">
+                      <label class="form-label">
+                        <i class="bi bi-phone"></i> Owner Dashboard PIN
+                        <small class="text-muted ms-1">(4–8 digits, for mobile dashboard access)</small>
+                      </label>
+                      <input type="password" class="form-control" name="owner_pin" id="owner-pin-input"
+                             placeholder="Set a PIN for owner dashboard" maxlength="8" autocomplete="new-password">
+                      <small class="text-muted">Access your dashboard from any phone on the same network</small>
+                    </div>
                     <div class="col-12">
                       <button type="submit" class="btn btn-success">
                         <i class="bi bi-check-circle"></i> Save Company Information
@@ -2446,6 +2455,9 @@
                       <button type="button" class="btn btn-outline-secondary ms-2" onclick="loadCompanySettings()">
                         <i class="bi bi-arrow-clockwise"></i> Reset
                       </button>
+                      <a href="owner.html" target="_blank" class="btn btn-outline-primary ms-2">
+                        <i class="bi bi-phone"></i> Open Owner Dashboard
+                      </a>
                     </div>
                   </div>
                 </form>
@@ -7749,6 +7761,9 @@
           company_email: formData.get('company_email'),
           company_website: formData.get('company_website')
         };
+        // Only include PIN if it was filled in
+        const pin = formData.get('owner_pin');
+        if (pin && pin.trim()) companyData.owner_pin = pin.trim();
         
         try {
           // Save to database via API
