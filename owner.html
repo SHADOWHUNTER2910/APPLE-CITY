@@ -352,14 +352,23 @@
 
   function copySummary() {
     const text = document.getElementById('whatsapp-summary').value;
-    navigator.clipboard.writeText(text).then(() => {
-      // Try to open WhatsApp
-      window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
-    }).catch(() => {
-      document.getElementById('whatsapp-summary').select();
+    
+    // Select and copy the textarea text (works on HTTP)
+    const ta = document.getElementById('whatsapp-summary');
+    ta.select();
+    ta.setSelectionRange(0, 99999); // mobile
+    
+    try {
       document.execCommand('copy');
-      alert('Copied! Now paste it in WhatsApp.');
-    });
+      // Open WhatsApp with the text
+      const waUrl = 'whatsapp://send?text=' + encodeURIComponent(text);
+      const webUrl = 'https://wa.me/?text=' + encodeURIComponent(text);
+      // Try native WhatsApp app first, fallback to web
+      window.location.href = waUrl;
+      setTimeout(() => { window.open(webUrl, '_blank'); }, 1500);
+    } catch(e) {
+      alert('Please manually copy the text above and paste it in WhatsApp.');
+    }
   }
 
   // Auto-refresh every 2 minutes
