@@ -402,23 +402,41 @@ try {
         
         try {
             $pdo->beginTransaction();
-            
-            // Delete receipt items first (foreign key constraint)
+
+            // Get receipt items to restore stock before deleting
+            $items = $pdo->prepare('SELECT product_id, quantity_in_base_unit, quantity FROM receipt_items WHERE receipt_id = ?');
+            $items->execute([$receiptId]);
+            $receiptItems = $items->fetchAll();
+
+            // Restore stock for each item
+            foreach ($receiptItems as $item) {
+                $pid = (int)$item['product_id'];
+                $qty = (float)($item['quantity_in_base_unit'] ?? $item['quantity']);
+                if ($pid <= 0 || $qty <= 0) continue;
+
+                // Restore stock quantity
+                $pdo->prepare('UPDATE stock SET quantity = quantity + ? WHERE product_id = ?')->execute([$qty, $pid]);
+            }
+
+            // Delete stock movements linked to this receipt
+            $pdo->prepare('DELETE FROM stock_movements WHERE reference_type = "receipt" AND reference_id = ?')->execute([$receiptId]);
+
+            // Delete receipt items
             $pdo->prepare('DELETE FROM receipt_items WHERE receipt_id = ?')->execute([$receiptId]);
-            
+
             // Delete the receipt
             $stmt = $pdo->prepare('DELETE FROM receipts WHERE id = ?');
             $stmt->execute([$receiptId]);
-            
+
             if ($stmt->rowCount() === 0) {
                 $pdo->rollBack();
                 http_response_code(404);
                 echo json_encode(['error' => 'Receipt not found']);
                 exit;
             }
-            
+
             $pdo->commit();
-            echo json_encode(['deleted' => true, 'message' => 'Receipt deleted successfully']);
+            echo json_encode(['deleted' => true, 'message' => 'Receipt deleted and stock restored successfully']);
         } catch (Throwable $e) {
             $pdo->rollBack();
             http_response_code(500);
