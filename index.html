@@ -7641,11 +7641,9 @@
     }
 
     function updateCreditBadge() {
-      const debtors = document.getElementById('tbl-debtors');
-      const count = debtors ? debtors.querySelectorAll('tr[class!=""]').length : 0;
+      const totalDebtors = document.getElementById('credit-total-debtors');
+      const n = parseInt(totalDebtors?.textContent || '0');
       const badge = document.getElementById('credit-badge');
-      const totalDebt = document.getElementById('credit-total-debtors');
-      const n = parseInt(totalDebt?.textContent || '0');
       if (badge) {
         badge.textContent = n;
         badge.style.display = n > 0 ? 'inline' : 'none';
