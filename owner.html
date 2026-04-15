@@ -7,30 +7,37 @@
   <link href="assets/css/bootstrap.min.css" rel="stylesheet">
   <link href="assets/css/bootstrap-icons.css" rel="stylesheet">
   <style>
-    body { background: #0f172a; color: #f1f5f9; font-family: 'Segoe UI', sans-serif; }
-    .top-bar { background: linear-gradient(135deg, #1e3c72, #2a5298); padding: 16px 20px; position: sticky; top: 0; z-index: 100; }
-    .top-bar h1 { font-size: 18px; font-weight: 700; margin: 0; }
-    .top-bar small { font-size: 11px; opacity: 0.7; }
-    .card-dark { background: #1e293b; border-radius: 12px; padding: 16px; margin-bottom: 12px; border: 1px solid #334155; }
-    .stat-val { font-size: 28px; font-weight: 800; }
-    .stat-label { font-size: 12px; color: #94a3b8; margin-top: 2px; }
-    .badge-pill { border-radius: 20px; padding: 4px 10px; font-size: 11px; font-weight: 600; }
-    .trend-up { color: #22c55e; }
-    .trend-down { color: #ef4444; }
-    .trend-flat { color: #94a3b8; }
-    .section-title { font-size: 13px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin: 16px 0 8px; }
-    .list-item { background: #1e293b; border-radius: 8px; padding: 10px 14px; margin-bottom: 6px; border: 1px solid #334155; font-size: 13px; }
-    .list-item .name { font-weight: 600; }
-    .list-item .sub { color: #94a3b8; font-size: 11px; }
-    .pin-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #0f172a; }
-    .pin-card { background: #1e293b; border-radius: 16px; padding: 32px 24px; width: 100%; max-width: 340px; text-align: center; }
-    .pin-input { background: #0f172a; border: 2px solid #334155; color: white; font-size: 24px; letter-spacing: 8px; text-align: center; border-radius: 8px; padding: 12px; width: 100%; }
-    .pin-input:focus { border-color: #3b82f6; outline: none; }
-    .btn-primary-dark { background: #3b82f6; border: none; color: white; border-radius: 8px; padding: 12px 24px; font-weight: 600; width: 100%; font-size: 15px; }
-    .refresh-btn { background: #334155; border: none; color: #94a3b8; border-radius: 8px; padding: 8px 16px; font-size: 12px; }
-    .bar-wrap { background: #0f172a; border-radius: 4px; height: 6px; margin-top: 4px; }
-    .bar-fill { height: 6px; border-radius: 4px; background: #3b82f6; }
-    .alert-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+    body{background:#0f172a;color:#f1f5f9;font-family:'Segoe UI',sans-serif;padding-bottom:80px;}
+    .top-bar{background:linear-gradient(135deg,#1e3c72,#2a5298);padding:14px 16px;position:sticky;top:0;z-index:100;}
+    .top-bar h1{font-size:17px;font-weight:700;margin:0;}
+    .card-dark{background:#1e293b;border-radius:12px;padding:14px;margin-bottom:10px;border:1px solid #334155;}
+    .stat-val{font-size:26px;font-weight:800;}
+    .stat-label{font-size:11px;color:#94a3b8;margin-top:2px;}
+    .section-title{font-size:12px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin:14px 0 6px;}
+    .list-item{background:#1e293b;border-radius:8px;padding:10px 12px;margin-bottom:6px;border:1px solid #334155;font-size:13px;}
+    .list-item .name{font-weight:600;}
+    .list-item .sub{color:#94a3b8;font-size:11px;}
+    .pin-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;}
+    .pin-card{background:#1e293b;border-radius:16px;padding:32px 24px;width:100%;max-width:340px;text-align:center;}
+    .pin-input{background:#0f172a;border:2px solid #334155;color:white;font-size:24px;letter-spacing:8px;text-align:center;border-radius:8px;padding:12px;width:100%;}
+    .pin-input:focus{border-color:#3b82f6;outline:none;}
+    .btn-dark-primary{background:#3b82f6;border:none;color:white;border-radius:8px;padding:11px 20px;font-weight:600;font-size:14px;width:100%;}
+    .btn-dark-success{background:#22c55e;border:none;color:white;border-radius:8px;padding:8px 14px;font-weight:600;font-size:13px;}
+    .btn-dark-danger{background:#ef4444;border:none;color:white;border-radius:8px;padding:8px 14px;font-weight:600;font-size:13px;}
+    .btn-dark-warning{background:#f59e0b;border:none;color:#000;border-radius:8px;padding:8px 14px;font-weight:600;font-size:13px;}
+    .btn-sm-dark{background:#334155;border:none;color:#94a3b8;border-radius:6px;padding:5px 10px;font-size:12px;}
+    .trend-up{color:#22c55e;} .trend-down{color:#ef4444;} .trend-flat{color:#94a3b8;}
+    .badge-pill{border-radius:20px;padding:3px 9px;font-size:11px;font-weight:600;}
+    /* Bottom nav */
+    .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#1e293b;border-top:1px solid #334155;display:flex;z-index:200;}
+    .bottom-nav button{flex:1;background:none;border:none;color:#64748b;padding:10px 4px;font-size:10px;display:flex;flex-direction:column;align-items:center;gap:2px;}
+    .bottom-nav button.active{color:#3b82f6;}
+    .bottom-nav button i{font-size:20px;}
+    .tab-content-owner{display:none;} .tab-content-owner.active{display:block;}
+    .input-dark{background:#0f172a;border:1px solid #334155;color:#f1f5f9;border-radius:8px;padding:8px 12px;width:100%;font-size:13px;}
+    .input-dark:focus{border-color:#3b82f6;outline:none;}
+    .live-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block;animation:pulse 1.5s infinite;}
+    @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
   </style>
 </head>
 <body>
@@ -38,343 +45,353 @@
 <!-- PIN Screen -->
 <div id="pin-screen" class="pin-screen">
   <div class="pin-card">
-    <div style="font-size: 48px; margin-bottom: 12px;">🔐</div>
-    <h2 style="font-size: 20px; font-weight: 700; margin-bottom: 4px;">Owner Dashboard</h2>
-    <p style="color: #94a3b8; font-size: 13px; margin-bottom: 24px;">Enter your owner PIN to continue</p>
+    <div style="font-size:48px;margin-bottom:12px;">🔐</div>
+    <h2 style="font-size:20px;font-weight:700;margin-bottom:4px;">Owner Dashboard</h2>
+    <p style="color:#94a3b8;font-size:13px;margin-bottom:24px;">Enter your owner PIN</p>
     <input type="password" id="pin-input" class="pin-input" placeholder="••••" maxlength="8" inputmode="numeric"
-           onkeydown="if(event.key==='Enter') verifyPin()">
-    <div id="pin-error" style="color:#ef4444; font-size:12px; margin: 8px 0; min-height:16px;"></div>
-    <button class="btn-primary-dark mt-2" onclick="verifyPin()">
-      <i class="bi bi-unlock"></i> Unlock
-    </button>
+           onkeydown="if(event.key==='Enter')verifyPin()">
+    <div id="pin-error" style="color:#ef4444;font-size:12px;margin:8px 0;min-height:16px;"></div>
+    <button class="btn-dark-primary mt-2" onclick="verifyPin()"><i class="bi bi-unlock"></i> Unlock</button>
   </div>
 </div>
 
-<!-- Dashboard -->
-<div id="dashboard" style="display:none;">
+<!-- Main App -->
+<div id="app" style="display:none;">
   <!-- Top Bar -->
   <div class="top-bar d-flex justify-content-between align-items-center">
     <div>
-      <h1><i class="bi bi-speedometer2"></i> Owner Dashboard</h1>
-      <small id="company-name-bar">ShelfSense POS</small>
+      <h1><i class="bi bi-speedometer2"></i> <span id="company-name-bar">Owner Dashboard</span></h1>
+      <small id="last-updated" style="font-size:10px;color:#93c5fd;"></small>
     </div>
-    <div class="d-flex gap-2 align-items-center">
-      <small id="last-updated" style="font-size:10px; color:#94a3b8;"></small>
-      <button class="refresh-btn" onclick="loadDashboard()"><i class="bi bi-arrow-clockwise"></i></button>
-    </div>
+    <button class="btn-sm-dark" onclick="loadCurrentTab()"><i class="bi bi-arrow-clockwise"></i></button>
   </div>
 
-  <div style="padding: 16px; max-width: 600px; margin: 0 auto;">
+  <div style="padding:14px;max-width:600px;margin:0 auto;">
 
-    <!-- Today Summary -->
-    <div class="section-title">Today's Performance</div>
-    <div class="row g-2 mb-2">
-      <div class="col-6">
-        <div class="card-dark">
-          <div class="stat-val text-success" id="today-revenue">GH₵0</div>
-          <div class="stat-label">Revenue</div>
-          <div id="revenue-trend" class="mt-1" style="font-size:11px;"></div>
-        </div>
-      </div>
-      <div class="col-6">
-        <div class="card-dark">
-          <div class="stat-val text-info" id="today-profit">GH₵0</div>
-          <div class="stat-label">Profit</div>
-          <div id="profit-trend" class="mt-1" style="font-size:11px;"></div>
-        </div>
-      </div>
-      <div class="col-4">
-        <div class="card-dark text-center">
-          <div class="stat-val" style="font-size:22px;" id="today-receipts">0</div>
+    <!-- ── TAB: OVERVIEW ── -->
+    <div id="tab-overview" class="tab-content-owner active">
+      <div class="row g-2 mb-2">
+        <div class="col-6"><div class="card-dark">
+          <div class="stat-val text-success" id="ov-revenue">GH₵0</div>
+          <div class="stat-label">Today Revenue</div>
+          <div id="ov-rev-trend" style="font-size:11px;margin-top:4px;"></div>
+        </div></div>
+        <div class="col-6"><div class="card-dark">
+          <div class="stat-val text-info" id="ov-profit">GH₵0</div>
+          <div class="stat-label">Today Profit</div>
+          <div id="ov-prof-trend" style="font-size:11px;margin-top:4px;"></div>
+        </div></div>
+        <div class="col-4"><div class="card-dark text-center">
+          <div class="stat-val" style="font-size:22px;" id="ov-receipts">0</div>
           <div class="stat-label">Receipts</div>
-        </div>
-      </div>
-      <div class="col-4">
-        <div class="card-dark text-center">
-          <div class="stat-val text-warning" style="font-size:22px;" id="today-margin">0%</div>
+        </div></div>
+        <div class="col-4"><div class="card-dark text-center">
+          <div class="stat-val text-warning" style="font-size:22px;" id="ov-margin">0%</div>
           <div class="stat-label">Margin</div>
-        </div>
+        </div></div>
+        <div class="col-4"><div class="card-dark text-center">
+          <div class="stat-val text-danger" style="font-size:22px;" id="ov-debt">GH₵0</div>
+          <div class="stat-label">Debt</div>
+        </div></div>
       </div>
-      <div class="col-4">
-        <div class="card-dark text-center">
-          <div class="stat-val text-danger" style="font-size:22px;" id="total-debt">GH₵0</div>
-          <div class="stat-label">Debt Owed</div>
-        </div>
+
+      <div class="section-title">7-Day Trend</div>
+      <div class="card-dark">
+        <div id="weekly-bars" class="d-flex align-items-end gap-1" style="height:56px;"></div>
+        <div id="weekly-labels" class="d-flex gap-1 mt-1" style="font-size:9px;color:#64748b;"></div>
       </div>
-    </div>
 
-    <!-- 7-Day Trend -->
-    <div class="section-title">7-Day Sales Trend</div>
-    <div class="card-dark" id="weekly-trend-container">
-      <div id="weekly-bars" class="d-flex align-items-end gap-1" style="height:60px;"></div>
-      <div id="weekly-labels" class="d-flex gap-1 mt-1" style="font-size:9px; color:#64748b;"></div>
-    </div>
+      <div class="section-title">Staff Today</div>
+      <div id="ov-staff"></div>
 
-    <!-- Staff Today -->
-    <div class="section-title">Staff Activity Today</div>
-    <div id="staff-today-list"></div>
+      <div class="section-title">Top Products Today</div>
+      <div id="ov-top-products"></div>
 
-    <!-- Top Products Today -->
-    <div class="section-title">Top Products Today</div>
-    <div id="top-products-list"></div>
+      <div class="section-title"><span style="width:8px;height:8px;border-radius:50%;background:#ef4444;display:inline-block;margin-right:6px;"></span>Stock Alerts</div>
+      <div id="ov-alerts"></div>
 
-    <!-- Alerts -->
-    <div class="section-title">
-      <span class="alert-dot" style="background:#ef4444;"></span>Stock Alerts
-    </div>
-    <div id="stock-alerts-list"></div>
-
-    <!-- Recent Receipts -->
-    <div class="section-title">Recent Receipts</div>
-    <div id="recent-receipts-list"></div>
-
-    <!-- Tailscale Setup Guide -->
-    <div class="section-title">Remote Access Setup</div>
-    <div class="card-dark">
-      <div style="font-size:13px;">
-        <div style="font-size:15px; font-weight:700; margin-bottom:8px;">
-          <i class="bi bi-wifi"></i> Access from Anywhere with Tailscale
-        </div>
-        <p style="color:#94a3b8; font-size:12px; margin-bottom:12px;">
-          Tailscale lets you access this dashboard from your phone anywhere in the world — even when you're not on the shop's WiFi. It's free and takes 5 minutes to set up.
-        </p>
-
-        <div style="background:#0f172a; border-radius:8px; padding:12px; margin-bottom:10px;">
-          <div style="font-weight:700; color:#3b82f6; margin-bottom:6px;">Step 1 — On the Shop Computer</div>
-          <ol style="color:#cbd5e1; font-size:12px; padding-left:16px; margin:0;">
-            <li>Go to <strong>tailscale.com</strong> and create a free account</li>
-            <li>Download and install Tailscale for Windows</li>
-            <li>Sign in — the computer gets a permanent IP like <strong>100.x.x.x</strong></li>
-            <li>Note that IP address</li>
-          </ol>
-        </div>
-
-        <div style="background:#0f172a; border-radius:8px; padding:12px; margin-bottom:10px;">
-          <div style="font-weight:700; color:#3b82f6; margin-bottom:6px;">Step 2 — On Your Phone</div>
-          <ol style="color:#cbd5e1; font-size:12px; padding-left:16px; margin:0;">
-            <li>Install <strong>Tailscale</strong> from App Store or Play Store</li>
-            <li>Sign in with the <strong>same account</strong></li>
-            <li>Your phone and the shop computer are now connected</li>
-          </ol>
-        </div>
-
-        <div style="background:#0f172a; border-radius:8px; padding:12px; margin-bottom:10px;">
-          <div style="font-weight:700; color:#22c55e; margin-bottom:6px;">Step 3 — Access Dashboard</div>
-          <p style="color:#cbd5e1; font-size:12px; margin:0;">
-            Open your phone browser and go to:<br>
-            <strong style="color:#f59e0b;">http://100.x.x.x:8000/owner.html</strong><br>
-            <span style="color:#64748b;">(replace 100.x.x.x with your Tailscale IP)</span>
-          </p>
-        </div>
-
-        <div style="background:#1a2744; border-radius:8px; padding:10px; border:1px solid #3b82f6;">
-          <div style="font-size:11px; color:#93c5fd;">
-            <i class="bi bi-shield-check"></i>
-            <strong>Secure:</strong> Only devices signed into your Tailscale account can connect. No one else can access your dashboard.
-          </div>
-        </div>
+      <!-- WhatsApp -->
+      <div class="section-title">Share Summary</div>
+      <div class="card-dark">
+        <textarea id="whatsapp-summary" readonly class="input-dark" style="height:130px;resize:none;"></textarea>
+        <button class="btn-dark-primary mt-2" onclick="copySummary()"><i class="bi bi-whatsapp"></i> Copy & Share on WhatsApp</button>
       </div>
     </div>
 
-    <!-- WhatsApp Summary -->
-    <div class="section-title">Share Summary</div>
-    <div class="card-dark">
-      <p style="font-size:12px; color:#94a3b8; margin-bottom:10px;">
-        Copy today's summary and send via WhatsApp
-      </p>
-      <textarea id="whatsapp-summary" readonly
-        style="background:#0f172a; border:1px solid #334155; color:#f1f5f9; border-radius:8px; width:100%; padding:10px; font-size:12px; resize:none; height:140px;"></textarea>
-      <button class="btn-primary-dark mt-2" onclick="copySummary()">
-        <i class="bi bi-whatsapp"></i> Copy & Share on WhatsApp
-      </button>
+    <!-- ── TAB: LIVE RECEIPTS ── -->
+    <div id="tab-live" class="tab-content-owner">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <div style="font-size:13px;"><span class="live-dot"></span> <strong>Live Receipt Feed</strong></div>
+        <button class="btn-sm-dark" onclick="loadLiveReceipts()"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+      </div>
+      <div id="live-receipts-list"></div>
     </div>
 
-    <div style="height:32px;"></div>
-  </div>
+    <!-- ── TAB: P&L ── -->
+    <div id="tab-pnl" class="tab-content-owner">
+      <div class="d-flex gap-2 mb-3 align-items-center">
+        <input type="date" id="pnl-date" class="input-dark" style="flex:1;" onchange="loadPnl()">
+        <button class="btn-sm-dark" onclick="loadPnl()"><i class="bi bi-search"></i></button>
+      </div>
+      <div id="pnl-content"></div>
+    </div>
+
+    <!-- ── TAB: PRICE CONTROL ── -->
+    <div id="tab-prices" class="tab-content-owner">
+      <div class="mb-3">
+        <input type="text" id="price-search" class="input-dark" placeholder="Search product..." oninput="searchProducts()">
+      </div>
+      <div id="price-list"></div>
+    </div>
+
+    <!-- ── TAB: STAFF CONTROL ── -->
+    <div id="tab-staff" class="tab-content-owner">
+      <div class="section-title">Cashier Accounts</div>
+      <div id="staff-list"></div>
+    </div>
+
+  </div><!-- /container -->
+
+  <!-- Bottom Nav -->
+  <nav class="bottom-nav">
+    <button onclick="switchTab('overview')" id="nav-overview" class="active">
+      <i class="bi bi-speedometer2"></i><span>Overview</span>
+    </button>
+    <button onclick="switchTab('live')" id="nav-live">
+      <i class="bi bi-receipt"></i><span>Live</span>
+    </button>
+    <button onclick="switchTab('pnl')" id="nav-pnl">
+      <i class="bi bi-graph-up"></i><span>P&L</span>
+    </button>
+    <button onclick="switchTab('prices')" id="nav-prices">
+      <i class="bi bi-tag"></i><span>Prices</span>
+    </button>
+    <button onclick="switchTab('staff')" id="nav-staff">
+      <i class="bi bi-people"></i><span>Staff</span>
+    </button>
+  </nav>
 </div>
 
 <script src="assets/js/bootstrap.bundle.min.js"></script>
 <script>
-  const API = 'api/owner-dashboard.php';
+const API = 'api/owner-dashboard.php';
+let currentTab = 'overview';
 
-  function fmt(n) {
-    return 'GH₵' + parseFloat(n || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-  }
+function fmt(n){ return 'GH₵'+parseFloat(n||0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,','); }
+function fmtDate(s){ return s ? new Date(s).toLocaleString('en-GH',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : ''; }
+function trend(a,b){ if(!b||b==0)return ''; const p=((a-b)/b*100).toFixed(1); return p>0?`<span class="trend-up">▲${p}%</span>`:p<0?`<span class="trend-down">▼${Math.abs(p)}%</span>`:`<span class="trend-flat">=same</span>`; }
 
-  function trendArrow(today, yesterday) {
-    if (!yesterday || yesterday == 0) return '';
-    const pct = ((today - yesterday) / yesterday * 100).toFixed(1);
-    if (pct > 0) return `<span class="trend-up">▲ ${pct}% vs yesterday</span>`;
-    if (pct < 0) return `<span class="trend-down">▼ ${Math.abs(pct)}% vs yesterday</span>`;
-    return `<span class="trend-flat">= same as yesterday</span>`;
-  }
+async function api(action, opts){
+  const url = API + (action ? '?action='+action : '');
+  const res = await fetch(url, opts||{});
+  if(res.status===401){ showPin(); return null; }
+  return res.json();
+}
 
-  async function verifyPin() {
-    const pin = document.getElementById('pin-input').value.trim();
-    if (!pin) return;
-    try {
-      const res = await fetch(API + '?action=verify_pin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin })
-      });
-      const data = await res.json();
-      if (data.success) {
-        document.getElementById('pin-screen').style.display = 'none';
-        document.getElementById('dashboard').style.display = 'block';
-        loadDashboard();
-      } else {
-        document.getElementById('pin-error').textContent = data.error || 'Incorrect PIN';
-        document.getElementById('pin-input').value = '';
-      }
-    } catch(e) {
-      document.getElementById('pin-error').textContent = 'Connection error. Is the app running?';
-    }
-  }
+function showPin(){ document.getElementById('pin-screen').style.display='flex'; document.getElementById('app').style.display='none'; }
 
-  async function loadDashboard() {
-    try {
-      const res = await fetch(API);
-      if (res.status === 401) {
-        document.getElementById('pin-screen').style.display = 'flex';
-        document.getElementById('dashboard').style.display = 'none';
-        return;
-      }
-      const d = await res.json();
+async function verifyPin(){
+  const pin = document.getElementById('pin-input').value.trim();
+  if(!pin) return;
+  const d = await api('verify_pin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pin})});
+  if(d?.success){ document.getElementById('pin-screen').style.display='none'; document.getElementById('app').style.display='block'; loadCurrentTab(); }
+  else{ document.getElementById('pin-error').textContent=d?.error||'Incorrect PIN'; document.getElementById('pin-input').value=''; }
+}
 
-      // Company name
-      document.getElementById('company-name-bar').textContent = d.company?.company_name || 'ShelfSense POS';
-      document.getElementById('last-updated').textContent = 'Updated ' + new Date().toLocaleTimeString();
+function switchTab(tab){
+  currentTab = tab;
+  document.querySelectorAll('.tab-content-owner').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  document.querySelectorAll('.bottom-nav button').forEach(b=>b.classList.remove('active'));
+  document.getElementById('nav-'+tab).classList.add('active');
+  loadCurrentTab();
+}
 
-      // Today summary
-      document.getElementById('today-revenue').textContent  = fmt(d.today?.revenue);
-      document.getElementById('today-profit').textContent   = fmt(d.today?.profit);
-      document.getElementById('today-receipts').textContent = d.today?.receipts || 0;
-      document.getElementById('today-margin').textContent   = (d.today?.margin || 0) + '%';
-      document.getElementById('total-debt').textContent     = fmt(d.total_debt);
-      document.getElementById('revenue-trend').innerHTML    = trendArrow(d.today?.revenue, d.yesterday?.revenue);
-      document.getElementById('profit-trend').innerHTML     = trendArrow(d.today?.profit, d.yesterday?.profit);
+function loadCurrentTab(){
+  if(currentTab==='overview') loadOverview();
+  else if(currentTab==='live') loadLiveReceipts();
+  else if(currentTab==='pnl') loadPnl();
+  else if(currentTab==='prices') searchProducts();
+  else if(currentTab==='staff') loadStaff();
+}
 
-      // Weekly bars
-      const trend = d.weekly_trend || [];
-      const maxRev = Math.max(...trend.map(t => parseFloat(t.revenue)), 1);
-      const barsEl = document.getElementById('weekly-bars');
-      const labelsEl = document.getElementById('weekly-labels');
-      barsEl.innerHTML = trend.map(t => {
-        const h = Math.max(4, Math.round((parseFloat(t.revenue) / maxRev) * 56));
-        const day = new Date(t.date).toLocaleDateString('en', { weekday: 'short' });
-        return `<div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:2px;">
-          <div style="width:100%; height:${h}px; background:#3b82f6; border-radius:3px 3px 0 0;" title="${day}: ${fmt(t.revenue)}"></div>
-        </div>`;
-      }).join('');
-      labelsEl.innerHTML = trend.map(t => {
-        const day = new Date(t.date).toLocaleDateString('en', { weekday: 'short' });
-        return `<div style="flex:1; text-align:center;">${day}</div>`;
-      }).join('');
+// ── OVERVIEW ─────────────────────────────────────────────────────
+async function loadOverview(){
+  const d = await api('');
+  if(!d) return;
+  document.getElementById('company-name-bar').textContent = d.company?.company_name||'ShelfSense';
+  document.getElementById('last-updated').textContent = 'Updated '+new Date().toLocaleTimeString();
+  document.getElementById('ov-revenue').textContent = fmt(d.today?.revenue);
+  document.getElementById('ov-profit').textContent  = fmt(d.today?.profit);
+  document.getElementById('ov-receipts').textContent= d.today?.receipts||0;
+  document.getElementById('ov-margin').textContent  = (d.today?.margin||0)+'%';
+  document.getElementById('ov-debt').textContent    = fmt(d.total_debt);
+  document.getElementById('ov-rev-trend').innerHTML = trend(d.today?.revenue, d.yesterday?.revenue);
+  document.getElementById('ov-prof-trend').innerHTML= trend(d.today?.profit, d.yesterday?.profit);
 
-      // Staff today
-      const staffEl = document.getElementById('staff-today-list');
-      staffEl.innerHTML = (d.staff_today || []).length === 0
-        ? '<div class="list-item" style="color:#64748b;">No sales recorded today</div>'
-        : d.staff_today.map(s => `
-            <div class="list-item d-flex justify-content-between align-items-center">
-              <div>
-                <div class="name"><i class="bi bi-person-circle"></i> ${s.username}</div>
-                <div class="sub">${s.receipts} receipt${s.receipts != 1 ? 's' : ''}</div>
-              </div>
-              <div class="text-end">
-                <div style="color:#22c55e; font-weight:700;">${fmt(s.sales)}</div>
-              </div>
-            </div>`).join('');
+  const tr = d.weekly_trend||[], maxR = Math.max(...tr.map(t=>parseFloat(t.revenue)),1);
+  document.getElementById('weekly-bars').innerHTML = tr.map(t=>{
+    const h=Math.max(4,Math.round((parseFloat(t.revenue)/maxR)*52));
+    return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;">
+      <div style="width:100%;height:${h}px;background:#3b82f6;border-radius:3px 3px 0 0;"></div></div>`;
+  }).join('');
+  document.getElementById('weekly-labels').innerHTML = tr.map(t=>`<div style="flex:1;text-align:center;">${new Date(t.date).toLocaleDateString('en',{weekday:'short'})}</div>`).join('');
 
-      // Top products
-      const topEl = document.getElementById('top-products-list');
-      topEl.innerHTML = (d.top_products || []).length === 0
-        ? '<div class="list-item" style="color:#64748b;">No sales today</div>'
-        : d.top_products.map((p, i) => `
-            <div class="list-item d-flex justify-content-between align-items-center">
-              <div>
-                <span style="color:#64748b; font-size:11px;">#${i+1}</span>
-                <span class="name ms-1">${p.name}</span>
-                <div class="sub">${p.qty} units sold</div>
-              </div>
-              <div style="color:#f59e0b; font-weight:700;">${fmt(p.revenue)}</div>
-            </div>`).join('');
+  document.getElementById('ov-staff').innerHTML = (d.staff_today||[]).length===0
+    ? '<div class="list-item" style="color:#64748b;">No sales today</div>'
+    : d.staff_today.map(s=>`<div class="list-item d-flex justify-content-between">
+        <div><div class="name"><i class="bi bi-person-circle"></i> ${s.username}</div><div class="sub">${s.receipts} receipts</div></div>
+        <div style="color:#22c55e;font-weight:700;">${fmt(s.sales)}</div></div>`).join('');
 
-      // Stock alerts
-      const alertsEl = document.getElementById('stock-alerts-list');
-      let alertsHtml = '';
-      (d.out_of_stock || []).forEach(p => {
-        alertsHtml += `<div class="list-item d-flex justify-content-between">
-          <span class="name">${p.name}</span>
-          <span class="badge-pill" style="background:#ef4444; color:white;">OUT OF STOCK</span>
-        </div>`;
-      });
-      (d.low_stock || []).forEach(p => {
-        alertsHtml += `<div class="list-item d-flex justify-content-between">
-          <span class="name">${p.name}</span>
-          <span class="badge-pill" style="background:#f59e0b; color:#000;">${p.quantity} left</span>
-        </div>`;
-      });
-      alertsEl.innerHTML = alertsHtml || '<div class="list-item" style="color:#22c55e;"><i class="bi bi-check-circle"></i> All stock levels OK</div>';
+  document.getElementById('ov-top-products').innerHTML = (d.top_products||[]).length===0
+    ? '<div class="list-item" style="color:#64748b;">No sales today</div>'
+    : d.top_products.map((p,i)=>`<div class="list-item d-flex justify-content-between">
+        <div><span style="color:#64748b;font-size:11px;">#${i+1}</span> <span class="name">${p.name}</span><div class="sub">${p.qty} units</div></div>
+        <div style="color:#f59e0b;font-weight:700;">${fmt(p.revenue)}</div></div>`).join('');
 
-      // Recent receipts
-      const receiptsEl = document.getElementById('recent-receipts-list');
-      receiptsEl.innerHTML = (d.recent_receipts || []).length === 0
-        ? '<div class="list-item" style="color:#64748b;">No receipts yet</div>'
-        : d.recent_receipts.map(r => `
-            <div class="list-item d-flex justify-content-between align-items-center">
-              <div>
-                <div class="name">${r.customer_name || 'Walk-in'}</div>
-                <div class="sub">${r.invoice_number} · ${r.payment_method}</div>
-              </div>
-              <div style="color:#22c55e; font-weight:700;">${fmt(r.total)}</div>
-            </div>`).join('');
+  let alerts='';
+  (d.out_of_stock||[]).forEach(p=>{ alerts+=`<div class="list-item d-flex justify-content-between"><span class="name">${p.name}</span><span class="badge-pill" style="background:#ef4444;color:white;">OUT</span></div>`; });
+  (d.low_stock||[]).forEach(p=>{ alerts+=`<div class="list-item d-flex justify-content-between"><span class="name">${p.name}</span><span class="badge-pill" style="background:#f59e0b;color:#000;">${p.quantity} left</span></div>`; });
+  document.getElementById('ov-alerts').innerHTML = alerts||'<div class="list-item" style="color:#22c55e;"><i class="bi bi-check-circle"></i> All stock OK</div>';
 
-      // WhatsApp summary
-      const company = d.company?.company_name || 'ShelfSense';
-      const now = new Date().toLocaleString('en-GH');
-      const summary = `📊 *${company} — Daily Summary*\n` +
-        `🗓 ${now}\n\n` +
-        `💰 *Revenue:* ${fmt(d.today?.revenue)}\n` +
-        `📈 *Profit:* ${fmt(d.today?.profit)} (${d.today?.margin || 0}%)\n` +
-        `🧾 *Receipts:* ${d.today?.receipts || 0}\n` +
-        `💳 *Outstanding Debt:* ${fmt(d.total_debt)}\n\n` +
-        (d.low_stock?.length > 0 ? `⚠️ *Low Stock:*\n${d.low_stock.map(p => `• ${p.name} (${p.quantity} left)`).join('\n')}\n\n` : '') +
-        (d.out_of_stock?.length > 0 ? `🔴 *Out of Stock:*\n${d.out_of_stock.map(p => `• ${p.name}`).join('\n')}\n\n` : '') +
-        `_Sent from ShelfSense POS_`;
-      document.getElementById('whatsapp-summary').value = summary;
+  const company=d.company?.company_name||'ShelfSense', now=new Date().toLocaleString('en-GH');
+  document.getElementById('whatsapp-summary').value =
+    `📊 *${company} — Daily Summary*\n🗓 ${now}\n\n`+
+    `💰 *Revenue:* ${fmt(d.today?.revenue)}\n📈 *Profit:* ${fmt(d.today?.profit)} (${d.today?.margin||0}%)\n`+
+    `🧾 *Receipts:* ${d.today?.receipts||0}\n💳 *Debt Owed:* ${fmt(d.total_debt)}\n\n`+
+    (d.low_stock?.length>0?`⚠️ *Low Stock:*\n${d.low_stock.map(p=>`• ${p.name} (${p.quantity})`).join('\n')}\n\n`:'')+
+    (d.out_of_stock?.length>0?`🔴 *Out of Stock:*\n${d.out_of_stock.map(p=>`• ${p.name}`).join('\n')}\n\n`:'')+
+    `_Sent from ShelfSense POS_`;
+}
 
-    } catch(e) {
-      console.error('Dashboard load failed:', e);
-    }
-  }
+// ── LIVE RECEIPTS ─────────────────────────────────────────────────
+async function loadLiveReceipts(){
+  const d = await api('live_receipts');
+  if(!d) return;
+  const el = document.getElementById('live-receipts-list');
+  el.innerHTML = (d.items||[]).length===0
+    ? '<div class="list-item" style="color:#64748b;">No receipts yet</div>'
+    : d.items.map(r=>`
+      <div class="list-item">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="name">${r.customer_name||'Walk-in'} <small style="color:#64748b;">#${r.invoice_number}</small></div>
+            <div class="sub">${r.items||''}</div>
+            <div class="sub">${fmtDate(r.created_at)} · ${r.created_by_username||''} · ${r.payment_method}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="color:#22c55e;font-weight:700;">${fmt(r.total)}</div>
+            <div style="color:#94a3b8;font-size:11px;">profit: ${fmt(r.total_profit)}</div>
+          </div>
+        </div>
+      </div>`).join('');
+}
 
-  function copySummary() {
-    const text = document.getElementById('whatsapp-summary').value;
-    
-    // Select and copy the textarea text (works on HTTP)
-    const ta = document.getElementById('whatsapp-summary');
-    ta.select();
-    ta.setSelectionRange(0, 99999); // mobile
-    
-    try {
-      document.execCommand('copy');
-      // Open WhatsApp with the text
-      const waUrl = 'whatsapp://send?text=' + encodeURIComponent(text);
-      const webUrl = 'https://wa.me/?text=' + encodeURIComponent(text);
-      // Try native WhatsApp app first, fallback to web
-      window.location.href = waUrl;
-      setTimeout(() => { window.open(webUrl, '_blank'); }, 1500);
-    } catch(e) {
-      alert('Please manually copy the text above and paste it in WhatsApp.');
-    }
-  }
+// ── P&L ──────────────────────────────────────────────────────────
+async function loadPnl(){
+  const date = document.getElementById('pnl-date').value || new Date().toISOString().split('T')[0];
+  document.getElementById('pnl-date').value = date;
+  const d = await api('pnl&date='+date);
+  if(!d) return;
+  const s = d.summary||{};
+  document.getElementById('pnl-content').innerHTML = `
+    <div class="row g-2 mb-3">
+      <div class="col-6"><div class="card-dark"><div class="stat-val text-success">${fmt(s.revenue)}</div><div class="stat-label">Revenue</div></div></div>
+      <div class="col-6"><div class="card-dark"><div class="stat-val text-info">${fmt(s.profit)}</div><div class="stat-label">Profit</div></div></div>
+      <div class="col-4"><div class="card-dark text-center"><div class="stat-val" style="font-size:20px;">${s.receipts||0}</div><div class="stat-label">Receipts</div></div></div>
+      <div class="col-4"><div class="card-dark text-center"><div class="stat-val text-warning" style="font-size:20px;">${s.margin||0}%</div><div class="stat-label">Margin</div></div></div>
+      <div class="col-4"><div class="card-dark text-center"><div class="stat-val text-danger" style="font-size:20px;">${fmt(s.total_discount)}</div><div class="stat-label">Discounts</div></div></div>
+    </div>
+    <div class="section-title">Payment Breakdown</div>
+    <div class="card-dark">
+      ${[['Cash',s.cash_sales,'#22c55e'],['MoMo',s.momo_sales,'#3b82f6'],['Credit',s.credit_sales,'#ef4444'],['Card',s.card_sales,'#f59e0b']].map(([l,v,c])=>
+        `<div class="d-flex justify-content-between mb-1"><span style="color:#94a3b8;">${l}</span><span style="color:${c};font-weight:700;">${fmt(v)}</span></div>`).join('')}
+    </div>
+    <div class="section-title">By Staff</div>
+    ${(d.by_staff||[]).map(s=>`<div class="list-item d-flex justify-content-between">
+      <div><div class="name">${s.username}</div><div class="sub">${s.receipts} receipts</div></div>
+      <div style="text-align:right;"><div style="color:#22c55e;font-weight:700;">${fmt(s.sales)}</div><div style="color:#94a3b8;font-size:11px;">profit: ${fmt(s.profit)}</div></div>
+    </div>`).join('')||'<div class="list-item" style="color:#64748b;">No sales</div>'}
+    <div class="section-title">Top Products</div>
+    ${(d.top_products||[]).map((p,i)=>`<div class="list-item d-flex justify-content-between">
+      <div><span style="color:#64748b;">#${i+1}</span> <span class="name">${p.name}</span><div class="sub">${p.qty} units</div></div>
+      <div style="color:#f59e0b;font-weight:700;">${fmt(p.revenue)}</div>
+    </div>`).join('')||'<div class="list-item" style="color:#64748b;">No sales</div>'}`;
+}
 
-  // Auto-refresh every 2 minutes
-  setInterval(() => {
-    if (document.getElementById('dashboard').style.display !== 'none') loadDashboard();
-  }, 120000);
+// ── PRICE CONTROL ─────────────────────────────────────────────────
+let priceSearchTimer;
+function searchProducts(){
+  clearTimeout(priceSearchTimer);
+  priceSearchTimer = setTimeout(async ()=>{
+    const q = document.getElementById('price-search').value.trim();
+    const d = await api('products&q='+encodeURIComponent(q));
+    if(!d) return;
+    const el = document.getElementById('price-list');
+    if((d.items||[]).length===0){ el.innerHTML='<div class="list-item" style="color:#64748b;">No products found</div>'; return; }
+    el.innerHTML = d.items.map(p=>{
+      const units = p.units ? p.units.split('||').map(u=>{ const [id,name,price,cost]=u.split('|'); return {id,name,price,cost}; }) : [];
+      return `<div class="card-dark mb-2">
+        <div class="name mb-1">${p.name} <small style="color:#64748b;">${p.sku}</small></div>
+        ${units.map(u=>`<div class="d-flex align-items-center gap-2 mb-1">
+          <span style="color:#94a3b8;font-size:12px;flex:1;">${u.name}</span>
+          <input type="number" step="0.01" value="${parseFloat(u.price).toFixed(2)}"
+            id="price-${u.id}" class="input-dark" style="width:90px;padding:5px 8px;">
+          <button class="btn-dark-success" onclick="updatePrice(${u.id})" style="padding:5px 10px;font-size:12px;">Save</button>
+        </div>`).join('')}
+      </div>`;
+    }).join('');
+  }, 400);
+}
+
+async function updatePrice(unitId){
+  const val = parseFloat(document.getElementById('price-'+unitId).value);
+  if(!val||val<=0){ alert('Enter a valid price'); return; }
+  const d = await api('update_price',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({unit_id:unitId,unit_price:val})});
+  if(d?.success){ const btn=document.querySelector(`button[onclick="updatePrice(${unitId})"]`); if(btn){btn.textContent='✓';btn.style.background='#16a34a';setTimeout(()=>{btn.textContent='Save';btn.style.background='';},2000);} }
+  else alert('Failed to update price');
+}
+
+// ── STAFF CONTROL ─────────────────────────────────────────────────
+async function loadStaff(){
+  const d = await api('staff');
+  if(!d) return;
+  document.getElementById('staff-list').innerHTML = (d.items||[]).map(u=>{
+    const active = u.status==='active';
+    return `<div class="list-item d-flex justify-content-between align-items-center">
+      <div>
+        <div class="name"><i class="bi bi-person-circle"></i> ${u.username}
+          <span class="badge-pill ms-1" style="background:${u.role==='admin'?'#7c3aed':'#334155'};color:white;">${u.role}</span>
+        </div>
+        <div class="sub">${active?'🟢 Active':'🔴 Disabled'}</div>
+      </div>
+      <button class="${active?'btn-dark-danger':'btn-dark-success'}" onclick="toggleStaff(${u.id},'${active?'inactive':'active'}',this)">
+        ${active?'Disable':'Enable'}
+      </button>
+    </div>`;
+  }).join('');
+}
+
+async function toggleStaff(userId, newStatus, btn){
+  if(!confirm(`${newStatus==='inactive'?'Disable':'Enable'} this account?`)) return;
+  const d = await api('toggle_staff',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:userId,status:newStatus})});
+  if(d?.success) loadStaff();
+  else alert(d?.error||'Failed');
+}
+
+// ── WHATSAPP ──────────────────────────────────────────────────────
+function copySummary(){
+  const ta = document.getElementById('whatsapp-summary');
+  ta.select(); ta.setSelectionRange(0,99999);
+  try{ document.execCommand('copy'); }catch(e){}
+  const text = ta.value;
+  window.location.href = 'whatsapp://send?text='+encodeURIComponent(text);
+  setTimeout(()=>{ window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank'); },1500);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────
+document.getElementById('pnl-date').value = new Date().toISOString().split('T')[0];
+setInterval(()=>{ if(document.getElementById('app').style.display!=='none') loadCurrentTab(); },120000);
 </script>
 </body>
 </html>
