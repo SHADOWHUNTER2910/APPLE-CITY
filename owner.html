@@ -128,6 +128,54 @@
     <div class="section-title">Recent Receipts</div>
     <div id="recent-receipts-list"></div>
 
+    <!-- Tailscale Setup Guide -->
+    <div class="section-title">Remote Access Setup</div>
+    <div class="card-dark">
+      <div style="font-size:13px;">
+        <div style="font-size:15px; font-weight:700; margin-bottom:8px;">
+          <i class="bi bi-wifi"></i> Access from Anywhere with Tailscale
+        </div>
+        <p style="color:#94a3b8; font-size:12px; margin-bottom:12px;">
+          Tailscale lets you access this dashboard from your phone anywhere in the world — even when you're not on the shop's WiFi. It's free and takes 5 minutes to set up.
+        </p>
+
+        <div style="background:#0f172a; border-radius:8px; padding:12px; margin-bottom:10px;">
+          <div style="font-weight:700; color:#3b82f6; margin-bottom:6px;">Step 1 — On the Shop Computer</div>
+          <ol style="color:#cbd5e1; font-size:12px; padding-left:16px; margin:0;">
+            <li>Go to <strong>tailscale.com</strong> and create a free account</li>
+            <li>Download and install Tailscale for Windows</li>
+            <li>Sign in — the computer gets a permanent IP like <strong>100.x.x.x</strong></li>
+            <li>Note that IP address</li>
+          </ol>
+        </div>
+
+        <div style="background:#0f172a; border-radius:8px; padding:12px; margin-bottom:10px;">
+          <div style="font-weight:700; color:#3b82f6; margin-bottom:6px;">Step 2 — On Your Phone</div>
+          <ol style="color:#cbd5e1; font-size:12px; padding-left:16px; margin:0;">
+            <li>Install <strong>Tailscale</strong> from App Store or Play Store</li>
+            <li>Sign in with the <strong>same account</strong></li>
+            <li>Your phone and the shop computer are now connected</li>
+          </ol>
+        </div>
+
+        <div style="background:#0f172a; border-radius:8px; padding:12px; margin-bottom:10px;">
+          <div style="font-weight:700; color:#22c55e; margin-bottom:6px;">Step 3 — Access Dashboard</div>
+          <p style="color:#cbd5e1; font-size:12px; margin:0;">
+            Open your phone browser and go to:<br>
+            <strong style="color:#f59e0b;">http://100.x.x.x:8000/owner.html</strong><br>
+            <span style="color:#64748b;">(replace 100.x.x.x with your Tailscale IP)</span>
+          </p>
+        </div>
+
+        <div style="background:#1a2744; border-radius:8px; padding:10px; border:1px solid #3b82f6;">
+          <div style="font-size:11px; color:#93c5fd;">
+            <i class="bi bi-shield-check"></i>
+            <strong>Secure:</strong> Only devices signed into your Tailscale account can connect. No one else can access your dashboard.
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- WhatsApp Summary -->
     <div class="section-title">Share Summary</div>
     <div class="card-dark">
