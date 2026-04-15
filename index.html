@@ -2377,7 +2377,7 @@
                           <th>Product</th>
                           <th>SKU</th>
                           <th>Initial</th>
-                          <th>Added</th>
+                          <th>Restocked</th>
                           <th>Sold</th>
                           <th>Manual Deductions</th>
                           <th>Expected</th>
@@ -7439,7 +7439,7 @@
           <td><strong>${r.name}</strong></td>
           <td><small class="text-muted">${r.sku}</small></td>
           <td>${r.initial_qty}</td>
-          <td class="text-success">+${r.total_added}</td>
+          <td class="text-success">+${r.total_restocked}</td>
           <td class="text-primary">-${r.sold_qty}</td>
           <td class="${r.manual_deductions > 0 ? 'text-danger fw-bold' : ''}">${r.manual_deductions > 0 ? '-' + r.manual_deductions : '0'}</td>
           <td><strong>${r.expected_qty}</strong></td>

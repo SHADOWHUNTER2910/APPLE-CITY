@@ -18,8 +18,9 @@ try {
     $since  = date('Y-m-d', strtotime("-{$days} days"));
 
     // ── 1. STOCK VARIANCE REPORT ─────────────────────────────────────
-    // For every product: expected = initial + additions - receipt_deductions
-    // Variance = expected - actual (positive = missing stock)
+    // Expected = initial_quantity + restock_additions - receipt_deductions
+    // The initial stock addition movement is already captured in initial_quantity
+    // so we only count additions that happened AFTER the first stock was set
     if ($action === 'variance') {
         $stmt = $pdo->query('
             SELECT
@@ -29,7 +30,11 @@ try {
                 COALESCE(s.initial_quantity, 0)                                         AS initial_qty,
                 COALESCE(s.quantity, 0)                                                 AS actual_qty,
                 COALESCE((SELECT SUM(quantity) FROM stock_movements
-                          WHERE product_id = p.id AND movement_type = "addition"), 0)   AS total_added,
+                          WHERE product_id = p.id AND movement_type = "addition"
+                            AND reference_type != "initial" 
+                            AND id != (SELECT MIN(id) FROM stock_movements sm2 
+                                       WHERE sm2.product_id = p.id 
+                                       AND sm2.movement_type = "addition")), 0)         AS total_restocked,
                 COALESCE((SELECT SUM(quantity) FROM stock_movements
                           WHERE product_id = p.id AND movement_type = "deduction"
                             AND reference_type = "receipt"), 0)                         AS sold_qty,
@@ -49,8 +54,9 @@ try {
 
         foreach ($rows as $r) {
             $expected = (int)$r['initial_qty']
-                      + (int)$r['total_added']
-                      - (int)$r['sold_qty'];
+                      + (int)$r['total_restocked']
+                      - (int)$r['sold_qty']
+                      - (int)$r['manual_deductions'];
             $actual   = (int)$r['actual_qty'];
             $variance = $expected - $actual; // positive = missing
 
@@ -59,7 +65,7 @@ try {
                 'sku'               => $r['sku'],
                 'name'              => $r['name'],
                 'initial_qty'       => (int)$r['initial_qty'],
-                'total_added'       => (int)$r['total_added'],
+                'total_restocked'   => (int)$r['total_restocked'],
                 'sold_qty'          => (int)$r['sold_qty'],
                 'manual_deductions' => (int)$r['manual_deductions'],
                 'adjustments'       => (int)$r['adjustments'],
