@@ -322,10 +322,10 @@ function startPhpServer() {
       });
     }
 
-    console.log('Starting PHP server with command:', phpExe, '-S', '127.0.0.1:8000');
+    console.log('Starting PHP server with command:', phpExe, '-S', '0.0.0.0:8000');
     console.log('Working directory:', appDir);
 
-    phpServer = spawn(phpExe, ['-S', '127.0.0.1:8000'], { 
+    phpServer = spawn(phpExe, ['-S', '0.0.0.0:8000'], { 
       cwd: appDir, 
       env,
       stdio: ['pipe', 'pipe', 'pipe']
