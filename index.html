@@ -422,10 +422,6 @@
               Inventory Predictions
               <span id="predictions-badge" class="badge bg-danger ms-1" style="display:none;">0</span>
             </a>
-            <a class="nav-link admin-only hidden" href="#" data-section="advanced-analytics">
-              <i class="bi bi-bar-chart-line"></i>
-              Advanced Analytics
-            </a>
             <a class="nav-link admin-only hidden" href="#" data-section="antitheft">
               <i class="bi bi-shield-exclamation"></i>
               Anti-Theft Monitor
@@ -1827,6 +1823,16 @@
                   User Performance
                 </button>
               </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="loss-tab" data-bs-toggle="tab" data-bs-target="#loss-analytics" type="button" role="tab">
+                  <i class="bi bi-exclamation-triangle text-danger"></i> Loss Tracking
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="bestworst-tab" data-bs-toggle="tab" data-bs-target="#bestworst-analytics" type="button" role="tab">
+                  <i class="bi bi-trophy text-warning"></i> Best & Worst
+                </button>
+              </li>
             </ul>
 
             <div class="tab-content mt-3" id="analytics-content">
@@ -2024,6 +2030,101 @@
                   <div class="card-body">
                     <div id="user-performance-table">
                       <!-- User performance will be populated here -->
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Loss Tracking Tab -->
+              <div class="tab-pane fade" id="loss-analytics" role="tabpanel">
+                <div class="d-flex justify-content-end mb-3">
+                  <select class="form-select form-select-sm" id="loss-period" onchange="loadLossTracking()" style="width:auto;">
+                    <option value="7">Last 7 days</option>
+                    <option value="30" selected>Last 30 days</option>
+                    <option value="90">Last 90 days</option>
+                  </select>
+                </div>
+                <div class="row mb-4">
+                  <div class="col-md-6">
+                    <div class="card border-danger">
+                      <div class="card-header bg-danger text-white">
+                        <h6 class="mb-0"><i class="bi bi-calendar-x"></i> Estimated Expiry Loss</h6>
+                      </div>
+                      <div class="card-body text-center">
+                        <h2 id="loss-expiry" class="text-danger">GH₵0.00</h2>
+                        <small class="text-muted">Cost value of stock removed due to expiry</small>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="card border-warning">
+                      <div class="card-header bg-warning text-dark">
+                        <h6 class="mb-0"><i class="bi bi-shield-exclamation"></i> Estimated Theft / Unexplained Loss</h6>
+                      </div>
+                      <div class="card-body text-center">
+                        <h2 id="loss-theft" class="text-warning">GH₵0.00</h2>
+                        <small class="text-muted">Cost value of manually deducted stock</small>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="card">
+                  <div class="card-header"><h6 class="mb-0">Profit Trend</h6></div>
+                  <div class="card-body p-0">
+                    <div class="table-responsive">
+                      <table class="table table-sm table-hover mb-0">
+                        <thead class="table-dark">
+                          <tr><th>Date</th><th>Receipts</th><th>Revenue</th><th>Cost</th><th>Profit</th><th>Margin</th></tr>
+                        </thead>
+                        <tbody id="tbl-loss-trend"></tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Best & Worst Tab -->
+              <div class="tab-pane fade" id="bestworst-analytics" role="tabpanel">
+                <div class="d-flex justify-content-end mb-3">
+                  <select class="form-select form-select-sm" id="bestworst-period" onchange="loadBestWorst()" style="width:auto;">
+                    <option value="7">Last 7 days</option>
+                    <option value="30" selected>Last 30 days</option>
+                    <option value="90">Last 90 days</option>
+                  </select>
+                </div>
+                <div class="row">
+                  <div class="col-md-6">
+                    <div class="card mb-3">
+                      <div class="card-header bg-success text-white">
+                        <h6 class="mb-0"><i class="bi bi-trophy"></i> Best Products (by Profit)</h6>
+                      </div>
+                      <div class="card-body p-0">
+                        <div class="table-responsive">
+                          <table class="table table-sm table-hover mb-0">
+                            <thead class="table-light">
+                              <tr><th>Product</th><th>Units</th><th>Revenue</th><th>Profit</th><th>Margin</th></tr>
+                            </thead>
+                            <tbody id="tbl-best-products"></tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="card mb-3">
+                      <div class="card-header bg-danger text-white">
+                        <h6 class="mb-0"><i class="bi bi-arrow-down-circle"></i> Worst Products (by Margin)</h6>
+                      </div>
+                      <div class="card-body p-0">
+                        <div class="table-responsive">
+                          <table class="table table-sm table-hover mb-0">
+                            <thead class="table-light">
+                              <tr><th>Product</th><th>Units</th><th>Revenue</th><th>Profit</th><th>Margin</th></tr>
+                            </thead>
+                            <tbody id="tbl-worst-products"></tbody>
+                          </table>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -2442,105 +2543,6 @@
                     </thead>
                     <tbody id="tbl-predictions"></tbody>
                   </table>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Advanced Analytics Section (Admin Only) -->
-          <div id="section-advanced-analytics" class="content-section hidden">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-              <h2><i class="bi bi-bar-chart-line"></i> Advanced Analytics</h2>
-              <div class="d-flex gap-2 align-items-center">
-                <select class="form-select form-select-sm" id="adv-period" onchange="loadAdvancedAnalytics()" style="width:auto;">
-                  <option value="7">Last 7 days</option>
-                  <option value="30" selected>Last 30 days</option>
-                  <option value="90">Last 90 days</option>
-                </select>
-                <button class="btn btn-outline-primary btn-sm" onclick="refreshWithFeedback(this, loadAdvancedAnalytics)">
-                  <i class="bi bi-arrow-clockwise"></i> Refresh
-                </button>
-              </div>
-            </div>
-
-            <!-- Summary Cards -->
-            <div class="row mb-4" id="adv-summary-cards"></div>
-
-            <!-- Loss Tracking -->
-            <div class="row mb-4">
-              <div class="col-md-6">
-                <div class="card border-danger">
-                  <div class="card-header bg-danger text-white">
-                    <h6 class="mb-0"><i class="bi bi-calendar-x"></i> Estimated Expiry Loss</h6>
-                  </div>
-                  <div class="card-body text-center">
-                    <h2 id="adv-expiry-loss" class="text-danger">GH₵0.00</h2>
-                    <small class="text-muted">Cost value of stock removed due to expiry</small>
-                  </div>
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="card border-warning">
-                  <div class="card-header bg-warning text-dark">
-                    <h6 class="mb-0"><i class="bi bi-shield-exclamation"></i> Estimated Theft/Loss</h6>
-                  </div>
-                  <div class="card-body text-center">
-                    <h2 id="adv-theft-loss" class="text-warning">GH₵0.00</h2>
-                    <small class="text-muted">Cost value of manually deducted stock</small>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Profit Trend -->
-            <div class="card mb-4">
-              <div class="card-header"><h5 class="mb-0"><i class="bi bi-graph-up text-success"></i> Profit Trend</h5></div>
-              <div class="card-body p-0">
-                <div class="table-responsive">
-                  <table class="table table-sm table-hover mb-0">
-                    <thead class="table-dark">
-                      <tr><th>Date</th><th>Receipts</th><th>Revenue</th><th>Cost</th><th>Profit</th><th>Margin</th></tr>
-                    </thead>
-                    <tbody id="tbl-profit-trend"></tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-
-            <!-- Best & Worst Products -->
-            <div class="row">
-              <div class="col-md-6">
-                <div class="card mb-3">
-                  <div class="card-header bg-success text-white">
-                    <h6 class="mb-0"><i class="bi bi-trophy"></i> Best Products (by Profit)</h6>
-                  </div>
-                  <div class="card-body p-0">
-                    <div class="table-responsive">
-                      <table class="table table-sm table-hover mb-0">
-                        <thead class="table-light">
-                          <tr><th>Product</th><th>Units</th><th>Revenue</th><th>Profit</th><th>Margin</th></tr>
-                        </thead>
-                        <tbody id="tbl-best-products"></tbody>
-                      </table>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="card mb-3">
-                  <div class="card-header bg-danger text-white">
-                    <h6 class="mb-0"><i class="bi bi-arrow-down-circle"></i> Worst Products (by Margin)</h6>
-                  </div>
-                  <div class="card-body p-0">
-                    <div class="table-responsive">
-                      <table class="table table-sm table-hover mb-0">
-                        <thead class="table-light">
-                          <tr><th>Product</th><th>Units</th><th>Revenue</th><th>Profit</th><th>Margin</th></tr>
-                        </thead>
-                        <tbody id="tbl-worst-products"></tbody>
-                      </table>
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>
@@ -3565,9 +3567,6 @@
           break;
         case 'predictions':
           loadPredictions();
-          break;
-        case 'advanced-analytics':
-          loadAdvancedAnalytics();
           break;
         case 'credit':
           loadCreditSection();
@@ -7489,6 +7488,10 @@
             loadLowProfitProducts();
           } else if (targetId === '#users-analytics') {
             loadUserPerformance();
+          } else if (targetId === '#loss-analytics') {
+            loadLossTracking();
+          } else if (targetId === '#bestworst-analytics') {
+            loadBestWorst();
           }
         });
       });
@@ -7836,8 +7839,54 @@
     }
 
     // ============================================================
-    // ADVANCED ANALYTICS
+    // LOSS TRACKING & BEST/WORST (tabs inside Analytics & Reports)
     // ============================================================
+
+    async function loadLossTracking() {
+      const period = document.getElementById('loss-period')?.value || 30;
+      try {
+        const data = await apiCall(`api/analytics.php?type=advanced_analytics&period=${period}`);
+        document.getElementById('loss-expiry').textContent = formatCurrency(data.expiry_loss || 0);
+        document.getElementById('loss-theft').textContent  = formatCurrency(data.theft_estimate || 0);
+
+        const tbody = document.getElementById('tbl-loss-trend');
+        const trend = data.profit_trend || [];
+        tbody.innerHTML = trend.length === 0
+          ? '<tr><td colspan="6" class="text-center text-muted">No data</td></tr>'
+          : trend.map(t => {
+              const margin = t.revenue > 0 ? ((t.profit / t.revenue) * 100).toFixed(1) : 0;
+              return `<tr>
+                <td>${t.date}</td><td>${t.receipts}</td>
+                <td>${formatCurrency(t.revenue)}</td>
+                <td class="text-danger">${formatCurrency(t.cost)}</td>
+                <td class="text-success fw-bold">${formatCurrency(t.profit)}</td>
+                <td><span class="badge ${margin >= 20 ? 'bg-success' : margin >= 10 ? 'bg-warning text-dark' : 'bg-danger'}">${margin}%</span></td>
+              </tr>`;
+            }).join('');
+      } catch(e) { console.error('Failed to load loss tracking:', e); }
+    }
+
+    async function loadBestWorst() {
+      const period = document.getElementById('bestworst-period')?.value || 30;
+      try {
+        const data = await apiCall(`api/analytics.php?type=advanced_analytics&period=${period}`);
+
+        const renderProducts = (items, tbodyId) => {
+          const tbody = document.getElementById(tbodyId);
+          tbody.innerHTML = (items || []).length === 0
+            ? '<tr><td colspan="5" class="text-center text-muted">No data</td></tr>'
+            : items.map(p => `<tr class="${p.margin < 0 ? 'table-danger' : p.margin < 10 ? 'table-warning' : ''}">
+                <td>${p.name}</td><td>${p.units_sold}</td>
+                <td>${formatCurrency(p.revenue)}</td>
+                <td class="${p.profit < 0 ? 'text-danger' : 'text-success'} fw-bold">${formatCurrency(p.profit)}</td>
+                <td><span class="badge ${p.margin < 0 ? 'bg-danger' : p.margin < 10 ? 'bg-warning text-dark' : 'bg-success'}">${p.margin}%</span></td>
+              </tr>`).join('');
+        };
+
+        renderProducts(data.best_products, 'tbl-best-products');
+        renderProducts(data.worst_products, 'tbl-worst-products');
+      } catch(e) { console.error('Failed to load best/worst:', e); }
+    }
 
     async function loadAdvancedAnalytics() {
       const period = document.getElementById('adv-period')?.value || 30;
