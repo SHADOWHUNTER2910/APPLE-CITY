@@ -1306,8 +1306,43 @@
           <div id="section-receipts" class="content-section hidden">
             <div class="d-flex justify-content-between align-items-center mb-4">
               <h2><i class="bi bi-receipt"></i> Create Receipt</h2>
-              <button class="btn btn-outline-primary" onclick="refreshWithFeedback(this, loadReceiptProducts)">
-                <i class="bi bi-arrow-clockwise"></i> Refresh Products
+              <div class="d-flex gap-2">
+                <button class="btn btn-outline-secondary btn-sm" onclick="toggleShortcutsBar()" title="Keyboard Shortcuts">
+                  <i class="bi bi-keyboard"></i> Shortcuts
+                </button>
+                <button class="btn btn-outline-primary" onclick="refreshWithFeedback(this, loadReceiptProducts)">
+                  <i class="bi bi-arrow-clockwise"></i> Refresh Products
+                </button>
+              </div>
+            </div>
+
+            <!-- Keyboard Shortcuts Bar -->
+            <div id="shortcuts-bar" class="alert alert-dark py-2 mb-3" style="display:none; font-size:12px;">
+              <div class="d-flex flex-wrap gap-3 align-items-center">
+                <strong><i class="bi bi-keyboard"></i> Shortcuts:</strong>
+                <span><kbd>F1</kbd> Search product</span>
+                <span><kbd>Enter</kbd> Add item</span>
+                <span><kbd>F2</kbd> Cash received</span>
+                <span><kbd>F9</kbd> Submit receipt</span>
+                <span><kbd>F10</kbd> Clear receipt</span>
+                <span><kbd>1</kbd> Cash &nbsp;<kbd>2</kbd> MoMo &nbsp;<kbd>3</kbd> Card &nbsp;<kbd>4</kbd> Credit</span>
+                <span><kbd>+</kbd> / <kbd>-</kbd> Qty up/down</span>
+              </div>
+            </div>
+
+            <!-- Quick-Add Frequent Items -->
+            <div id="quick-add-panel" class="card mb-3" style="display:none;">
+              <div class="card-header py-2 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><i class="bi bi-lightning-fill text-warning"></i> Quick Add — Top Products</h6>
+                <button class="btn btn-sm btn-outline-secondary" onclick="toggleQuickAdd()">Hide</button>
+              </div>
+              <div class="card-body py-2">
+                <div id="quick-add-buttons" class="d-flex flex-wrap gap-2"></div>
+              </div>
+            </div>
+            <div class="mb-2">
+              <button class="btn btn-sm btn-outline-warning" onclick="toggleQuickAdd()" id="quick-add-toggle-btn">
+                <i class="bi bi-lightning-fill"></i> Quick Add
               </button>
             </div>
 
@@ -1396,7 +1431,8 @@
                             </div>
                             <div class="col-md-2">
                               <label for="input-quantity" class="form-label">Quantity</label>
-                              <input id="input-quantity" type="number" class="form-control" min="1" autocomplete="off">
+                              <input id="input-quantity" type="number" class="form-control" min="1" autocomplete="off"
+                                onkeydown="if(event.key==='Enter'){event.preventDefault();addReceiptItem();}">
                             </div>
                             <div class="col-md-3">
                               <label for="input-unit-price" class="form-label">Unit Price</label>
@@ -7803,6 +7839,147 @@
         btn.classList.toggle('active', tabs[i] === tab);
       });
     }
+
+    // ============================================================
+    // ULTRA-FAST POS MODE — Keyboard Shortcuts & Quick Add
+    // ============================================================
+
+    function toggleShortcutsBar() {
+      const bar = document.getElementById('shortcuts-bar');
+      bar.style.display = bar.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function toggleQuickAdd() {
+      const panel = document.getElementById('quick-add-panel');
+      const btn   = document.getElementById('quick-add-toggle-btn');
+      const show  = panel.style.display === 'none';
+      panel.style.display = show ? 'block' : 'none';
+      if (show) loadQuickAddButtons();
+    }
+
+    async function loadQuickAddButtons() {
+      const container = document.getElementById('quick-add-buttons');
+      container.innerHTML = '<span class="text-muted small">Loading...</span>';
+      try {
+        // Get top 8 products by total sold from stock movements
+        const data = await apiCall('api/products.php?page=1&pageSize=200');
+        const products = (data.items || []).filter(p => p.total_sold > 0);
+        products.sort((a, b) => b.total_sold - a.total_sold);
+        const top = products.slice(0, 8);
+
+        if (top.length === 0) {
+          // Fallback: just show first 8 products
+          const all = data.items || [];
+          top.push(...all.slice(0, 8));
+        }
+
+        container.innerHTML = top.map((p, i) => `
+          <button class="btn btn-outline-primary btn-sm" 
+                  onclick="quickAddProduct(${p.id}, '${p.name.replace(/'/g,"\\'")}', ${p.unit_price})"
+                  title="Shortcut: Alt+${i+1}">
+            <strong>${i+1}.</strong> ${p.name}
+            <span class="badge bg-light text-dark ms-1">GH₵${p.unit_price}</span>
+          </button>`).join('');
+      } catch(e) {
+        container.innerHTML = '<span class="text-danger small">Failed to load</span>';
+      }
+    }
+
+    async function quickAddProduct(productId, productName, unitPrice) {
+      // Set product in search field and trigger unit load
+      const searchInput = document.getElementById('receipt-product-search');
+      const selectedProductId = document.getElementById('selected-receipt-product-id');
+      searchInput.value = productName;
+      selectedProductId.value = productId;
+      document.getElementById('input-unit-price').value = unitPrice;
+      document.getElementById('receipt-product-suggestions').style.display = 'none';
+      await loadReceiptProductUnits(productId);
+      // Focus quantity for immediate entry
+      setTimeout(() => {
+        const qty = document.getElementById('input-quantity');
+        qty.value = 1;
+        qty.focus();
+        qty.select();
+      }, 150);
+    }
+
+    // Global keyboard shortcuts for receipt section
+    document.addEventListener('keydown', function(e) {
+      // Only active when receipt section is visible
+      const receiptSection = document.getElementById('section-receipts');
+      if (!receiptSection || receiptSection.classList.contains('hidden')) return;
+
+      // Don't fire if typing in an input/textarea (except specific ones)
+      const tag = document.activeElement?.tagName;
+      const isTyping = (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT');
+
+      switch(e.key) {
+        case 'F1':
+          e.preventDefault();
+          document.getElementById('receipt-product-search')?.focus();
+          break;
+
+        case 'F2':
+          e.preventDefault();
+          const cashInput = document.getElementById('cash-received');
+          if (cashInput && cashInput.closest('#cash-received-section')?.style.display !== 'none') {
+            cashInput.focus();
+            cashInput.select();
+          }
+          break;
+
+        case 'F9':
+          e.preventDefault();
+          document.querySelector('#form-receipt [type="submit"]')?.click();
+          break;
+
+        case 'F10':
+          e.preventDefault();
+          if (confirm('Clear the current receipt?')) clearReceipt();
+          break;
+
+        case '+':
+        case '=':
+          if (!isTyping) {
+            e.preventDefault();
+            const qtyInput = document.getElementById('input-quantity');
+            if (qtyInput) { qtyInput.value = (parseInt(qtyInput.value) || 0) + 1; }
+          }
+          break;
+
+        case '-':
+          if (!isTyping) {
+            e.preventDefault();
+            const qtyInput = document.getElementById('input-quantity');
+            if (qtyInput) { qtyInput.value = Math.max(1, (parseInt(qtyInput.value) || 1) - 1); }
+          }
+          break;
+
+        // Payment method shortcuts (only when not typing)
+        case '1':
+          if (!isTyping) { e.preventDefault(); selectPaymentMethod('cash'); }
+          break;
+        case '2':
+          if (!isTyping) { e.preventDefault(); selectPaymentMethod('mobile_money'); }
+          break;
+        case '3':
+          if (!isTyping) { e.preventDefault(); selectPaymentMethod('card'); }
+          break;
+        case '4':
+          if (!isTyping) { e.preventDefault(); selectPaymentMethod('credit'); }
+          break;
+      }
+
+      // Alt+1 through Alt+8 for quick-add buttons
+      if (e.altKey && !isTyping) {
+        const num = parseInt(e.key);
+        if (num >= 1 && num <= 8) {
+          e.preventDefault();
+          const btns = document.querySelectorAll('#quick-add-buttons button');
+          if (btns[num - 1]) btns[num - 1].click();
+        }
+      }
+    });
 
     // ============================================================
     // SMART EXPIRY DISCOUNT SYSTEM
