@@ -39,6 +39,7 @@
         "filter": [
           "api/**/*",
           "index.html",
+          "owner.html",
           "src/**/*",
           "config.php",
           "sql/**/*",
