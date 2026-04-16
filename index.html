@@ -3647,8 +3647,8 @@
     async function loadExpiringProducts() {
       try {
         const [expiringData, expiredData] = await Promise.all([
-          apiCall('api/batches.php?status=expiring'),
-          apiCall('api/batches.php?status=expired')
+          apiCall('api/batches.php?status=expiring').catch(()=>({items:[]})),
+          apiCall('api/batches.php?status=expired').catch(()=>({items:[]}))
         ]);
         
         const container = document.getElementById('expiring-products-list');
@@ -3914,9 +3914,9 @@
       try {
         // Load stats - request large page size to get all products for count
         const [productsCount, stockTotals, receiptsData] = await Promise.all([
-          apiCall('api/products.php?count_only=1'),
-          apiCall('api/stock.php?totals_only=1'), // Single query for all stock totals
-          apiCall('api/receipts.php')
+          apiCall('api/products.php?count_only=1').catch(()=>({total:0})),
+          apiCall('api/stock.php?totals_only=1').catch(()=>({total_stock:0,low_stock:0,out_of_stock:0})),
+          apiCall('api/receipts.php').catch(()=>({items:[]}))
         ]);
         
         const totalProducts = productsCount.total || 0;
@@ -3971,7 +3971,7 @@
         }
         
         // Load low stock alerts - fetch separately for the list
-        const lowStockData = await apiCall('api/stock.php?page_size=500');
+        const lowStockData = await apiCall('api/stock.php?page_size=500').catch(()=>({items:[]}));
         const lowStockHtml = lowStockData.items
           .filter(item => item.quantity < 10)
           .map(item => `
@@ -4020,8 +4020,8 @@
       try {
         // Fetch both expiring soon and expired separately
         const [expiringData, expiredData] = await Promise.all([
-          apiCall('api/batches.php?status=expiring'),
-          apiCall('api/batches.php?status=expired')
+          apiCall('api/batches.php?status=expiring').catch(()=>({items:[]})),
+          apiCall('api/batches.php?status=expired').catch(()=>({items:[]}))
         ]);
         
         const expiringSoonItems = expiringData.items || [];
