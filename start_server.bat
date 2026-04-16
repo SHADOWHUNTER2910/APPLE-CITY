@@ -1,7 +1,7 @@
 @echo off
 cls
 echo ========================================
-echo Stock Manager ^& Expiry Tracker
+echo ShelfSense POS
 echo ========================================
 echo.
 echo Starting PHP Development Server...
