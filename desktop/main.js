@@ -437,47 +437,9 @@ function createWindow() {
     }
   });
 
-  // ── Focus & Input Fix ──────────────────────────────────────────────
-  // Inject a script that keeps inputs alive by simulating a tiny
-  // window resize every 30 seconds. This forces Electron to repaint
-  // and re-attach input handlers without any visible effect.
-  function keepAlive() {
-    if (!mainWindow || mainWindow.isDestroyed()) return;
-    try {
-      const [w, h] = mainWindow.getSize();
-      mainWindow.setSize(w + 1, h);
-      mainWindow.setSize(w, h);
-    } catch (e) {}
-  }
-
-  // Also forcefully re-focus the webContents every 30 seconds when idle
-  let keepAliveInterval = null;
-
+  // ── Focus Fix ─────────────────────────────────────────────────────
   mainWindow.on('focus', () => {
     mainWindow.webContents.focus();
-    // Clear any existing interval and restart
-    if (keepAliveInterval) clearInterval(keepAliveInterval);
-    keepAliveInterval = setInterval(() => {
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        keepAlive();
-        mainWindow.webContents.focus();
-      }
-    }, 5000); // Every 5 seconds
-  });
-
-  mainWindow.on('blur', () => {
-    // Keep the interval running even when blurred
-    if (!keepAliveInterval) {
-      keepAliveInterval = setInterval(() => {
-        if (mainWindow && !mainWindow.isDestroyed()) {
-          keepAlive();
-        }
-      }, 5000);
-    }
-  });
-
-  mainWindow.on('closed', () => {
-    if (keepAliveInterval) clearInterval(keepAliveInterval);
   });
   // ──────────────────────────────────────────────────────────────────
 
@@ -486,52 +448,22 @@ function createWindow() {
     mainWindow.focus();
     mainWindow.webContents.focus();
 
-    // Inject renderer-side fix
-    setTimeout(() => {
-      mainWindow.webContents.executeJavaScript(`
-        // ── Renderer Keep-Alive ──────────────────────────────────────
-        // Re-enable pointer events on ALL inputs every 3 seconds
-        setInterval(() => {
-          document.querySelectorAll('input, textarea, select').forEach(el => {
-            if (!el.disabled && el.type !== 'hidden') {
-              el.style.pointerEvents = 'auto';
-              el.style.userSelect = 'auto';
-              el.removeAttribute('inert');
-            }
-          });
-        }, 3000);
-
-        // Dispatch a resize event every 10s to force Electron repaint
-        setInterval(() => {
-          window.dispatchEvent(new Event('resize'));
-        }, 10000);
-
-        console.log('ShelfSense: Input stability fix active');
-        // ─────────────────────────────────────────────────────────────
-      `).catch(err => console.error('Keep-alive script error:', err));
-    }, 1000);
-  });
-  
-  // Clear only cache (not storage/cookies) before loading to preserve sessions
-  mainWindow.webContents.session.clearCache().then(() => {
-    console.log('Cache cleared successfully');
-    
-    // Load URL with cache-busting parameter
-    const urlWithCacheBuster = `${serverUrl}?t=${Date.now()}`;
-    console.log('Loading URL with cache buster:', urlWithCacheBuster);
-    
-    // Set a basic CSP to reduce warnings (development only)
-    mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
-      callback({
-        responseHeaders: {
-          ...details.responseHeaders,
-          'Content-Security-Policy': ['default-src \'self\' \'unsafe-inline\' \'unsafe-eval\' data: http://127.0.0.1:8000 http://localhost:8000; img-src \'self\' data: http://127.0.0.1:8000 http://localhost:8000;']
+    // Inject renderer-side fix only if inputs are actually broken
+    mainWindow.webContents.executeJavaScript(`
+      // One-time fix: ensure inputs are enabled on load
+      document.querySelectorAll('input, textarea, select').forEach(el => {
+        if (!el.disabled && el.type !== 'hidden') {
+          el.style.pointerEvents = 'auto';
+          el.style.userSelect = 'auto';
+          el.removeAttribute('inert');
         }
       });
-    });
-    
-    mainWindow.loadURL(urlWithCacheBuster);
+      console.log('ShelfSense: Input stability fix active');
+    `).catch(err => console.error('Input fix script error:', err));
   });
+  
+  // Load the app directly without clearing cache on every launch
+  mainWindow.loadURL(serverUrl);
   
   mainWindow.webContents.on('did-finish-load', () => {
     console.log('Window loaded successfully');
@@ -564,11 +496,7 @@ function createWindow() {
   // Add keyboard shortcut for refresh (Ctrl+R or F5)
   mainWindow.webContents.on('before-input-event', (event, input) => {
     if ((input.control && input.key.toLowerCase() === 'r') || input.key === 'F5') {
-      console.log('Refresh requested, clearing cache and reloading...');
-      mainWindow.webContents.session.clearCache().then(() => {
-        const refreshUrl = `${serverUrl}?refresh=${Date.now()}`;
-        mainWindow.loadURL(refreshUrl);
-      });
+      mainWindow.webContents.reload();
     }
   });
 
@@ -646,11 +574,7 @@ app.whenReady().then(() => {
           accelerator: 'CmdOrCtrl+R',
           click: () => {
             if (mainWindow && !mainWindow.isDestroyed()) {
-              console.log('Menu refresh requested, clearing cache and reloading...');
-              mainWindow.webContents.session.clearCache().then(() => {
-                const refreshUrl = `${serverUrl}?menu_refresh=${Date.now()}`;
-                mainWindow.loadURL(refreshUrl);
-              });
+              mainWindow.webContents.reload();
             }
           }
         },

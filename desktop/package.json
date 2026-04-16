@@ -42,7 +42,6 @@
           "owner.html",
           "src/**/*",
           "config.php",
-          "sql/**/*",
           "assets/**/*",
           "data/**/*"
         ]
