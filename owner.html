@@ -42,16 +42,18 @@
 </head>
 <body>
 
-<!-- PIN Screen -->
+<!-- Login Screen -->
 <div id="pin-screen" class="pin-screen">
   <div class="pin-card">
     <div style="font-size:48px;margin-bottom:12px;">🔐</div>
     <h2 style="font-size:20px;font-weight:700;margin-bottom:4px;">Owner Dashboard</h2>
-    <p style="color:#94a3b8;font-size:13px;margin-bottom:24px;">Enter your owner PIN</p>
-    <input type="password" id="pin-input" class="pin-input" placeholder="••••" maxlength="8" inputmode="numeric"
-           onkeydown="if(event.key==='Enter')verifyPin()">
+    <p style="color:#94a3b8;font-size:13px;margin-bottom:24px;">Sign in with your admin account</p>
+    <input type="text" id="login-username" class="input-dark mb-2" placeholder="Username"
+           autocomplete="username" onkeydown="if(event.key==='Enter')document.getElementById('login-password').focus()">
+    <input type="password" id="login-password" class="input-dark mb-2" placeholder="Password"
+           autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
     <div id="pin-error" style="color:#ef4444;font-size:12px;margin:8px 0;min-height:16px;"></div>
-    <button class="btn-dark-primary mt-2" onclick="verifyPin()"><i class="bi bi-unlock"></i> Unlock</button>
+    <button class="btn-dark-primary mt-2" onclick="doLogin()"><i class="bi bi-unlock"></i> Sign In</button>
   </div>
 </div>
 
@@ -64,6 +66,7 @@
       <small id="last-updated" style="font-size:10px;color:#93c5fd;"></small>
     </div>
     <button class="btn-sm-dark" onclick="loadCurrentTab()"><i class="bi bi-arrow-clockwise"></i></button>
+    <button class="btn-sm-dark ms-1" onclick="doLogout()" title="Sign out"><i class="bi bi-box-arrow-right"></i></button>
   </div>
 
   <div style="padding:14px;max-width:600px;margin:0 auto;">
@@ -214,18 +217,34 @@ function trend(a,b){ if(!b||b==0)return ''; const p=((a-b)/b*100).toFixed(1); re
 async function api(action, opts){
   const url = API + (action ? '?action='+action : '');
   const res = await fetch(url, opts||{});
-  if(res.status===401){ showPin(); return null; }
+  if(res.status===401||res.status===403){ showPin(); return null; }
   return res.json();
 }
 
 function showPin(){ document.getElementById('pin-screen').style.display='flex'; document.getElementById('app').style.display='none'; }
 
-async function verifyPin(){
-  const pin = document.getElementById('pin-input').value.trim();
-  if(!pin) return;
-  const d = await api('verify_pin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pin})});
-  if(d?.success){ document.getElementById('pin-screen').style.display='none'; document.getElementById('app').style.display='block'; loadCurrentTab(); }
-  else{ document.getElementById('pin-error').textContent=d?.error||'Incorrect PIN'; document.getElementById('pin-input').value=''; }
+async function doLogin(){
+  const username = document.getElementById('login-username').value.trim();
+  const password = document.getElementById('login-password').value;
+  const errEl = document.getElementById('pin-error');
+  errEl.textContent = '';
+  if(!username||!password){ errEl.textContent='Enter username and password'; return; }
+  try {
+    const res = await fetch('api/login.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})});
+    const d = await res.json();
+    if(!res.ok){ errEl.textContent = d.error||'Login failed'; return; }
+    if(d.role !== 'admin'){ errEl.textContent = 'Admin access required'; await fetch('api/logout.php',{method:'POST'}); return; }
+    document.getElementById('pin-screen').style.display='none';
+    document.getElementById('app').style.display='block';
+    loadCurrentTab();
+  } catch(e){ errEl.textContent='Connection error'; }
+}
+
+async function doLogout(){
+  await fetch('api/logout.php',{method:'POST'});
+  document.getElementById('login-password').value='';
+  document.getElementById('pin-error').textContent='';
+  showPin();
 }
 
 function switchTab(tab){
@@ -537,6 +556,20 @@ async function deleteReceipt(rid, invoice){
 // ── INIT ──────────────────────────────────────────────────────────
 document.getElementById('pnl-date').value = new Date().toISOString().split('T')[0];
 document.getElementById('activity-date').value = new Date().toISOString().split('T')[0];
+
+// Check if already logged in on page load
+(async ()=>{
+  try {
+    const res = await fetch('api/me.php');
+    const d = await res.json();
+    if(d.authenticated && d.role === 'admin'){
+      document.getElementById('pin-screen').style.display='none';
+      document.getElementById('app').style.display='block';
+      loadCurrentTab();
+    }
+  } catch(e){}
+})();
+
 setInterval(()=>{ if(document.getElementById('app').style.display!=='none') loadCurrentTab(); },120000);
 </script>
 </body>

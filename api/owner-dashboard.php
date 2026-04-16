@@ -6,27 +6,15 @@ session_start();
 
 $pdo = get_pdo();
 
-function getOwnerPin(PDO $pdo): string {
-    $stmt = $pdo->prepare("SELECT setting_value FROM company_settings WHERE setting_key = 'owner_pin'");
-    $stmt->execute();
-    return (string)($stmt->fetchColumn() ?: '');
-}
-
 $action = $_GET['action'] ?? 'dashboard';
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
-// ── PIN Verify ────────────────────────────────────────────────────
-if ($action === 'verify_pin') {
-    $data = json_decode(file_get_contents('php://input'), true) ?? [];
-    $pin  = trim((string)($data['pin'] ?? ''));
-    $storedPin = getOwnerPin($pdo);
-    if ($storedPin === '') { http_response_code(400); echo json_encode(['error' => 'No owner PIN set. Please set one in System Settings.']); exit; }
-    if ($pin === $storedPin) { $_SESSION['owner_authenticated'] = true; echo json_encode(['success' => true]); }
-    else { http_response_code(401); echo json_encode(['error' => 'Incorrect PIN']); }
+// ── Auth: require admin session ───────────────────────────────────
+if (empty($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'admin') {
+    http_response_code(401);
+    echo json_encode(['error' => 'unauthenticated']);
     exit;
 }
-
-if (empty($_SESSION['owner_authenticated'])) { http_response_code(401); echo json_encode(['error' => 'unauthenticated']); exit; }
 
 try {
     // ── LIVE RECEIPT FEED ─────────────────────────────────────────
