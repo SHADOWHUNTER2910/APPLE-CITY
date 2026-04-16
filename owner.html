@@ -73,50 +73,73 @@
 
     <!-- ── TAB: OVERVIEW ── -->
     <div id="tab-overview" class="tab-content-owner active">
+
+      <!-- Today Snapshot -->
       <div class="row g-2 mb-2">
         <div class="col-6"><div class="card-dark">
-          <div class="stat-label">Revenue</div>
+          <div class="stat-label">💰 Revenue Today</div>
           <div class="stat-val text-success" id="ov-revenue">GH₵0</div>
           <div id="ov-rev-trend" style="font-size:10px;margin-top:4px;"></div>
         </div></div>
         <div class="col-6"><div class="card-dark">
-          <div class="stat-label">Profit</div>
+          <div class="stat-label">📈 Profit Today</div>
           <div class="stat-val text-info" id="ov-profit">GH₵0</div>
           <div id="ov-prof-trend" style="font-size:10px;margin-top:4px;"></div>
         </div></div>
-        <div class="col-4"><div class="card-dark text-center">
-          <div class="stat-label">Receipts</div>
+        <div class="col-3"><div class="card-dark text-center">
+          <div class="stat-label">Sales</div>
           <div class="stat-val" id="ov-receipts">0</div>
         </div></div>
-        <div class="col-4"><div class="card-dark text-center">
+        <div class="col-3"><div class="card-dark text-center">
           <div class="stat-label">Margin</div>
           <div class="stat-val text-warning" id="ov-margin">0%</div>
         </div></div>
-        <div class="col-4"><div class="card-dark text-center">
+        <div class="col-3"><div class="card-dark text-center">
+          <div class="stat-label">Cost</div>
+          <div class="stat-val text-danger" id="ov-cost">GH₵0</div>
+        </div></div>
+        <div class="col-3"><div class="card-dark text-center">
           <div class="stat-label">Debt</div>
-          <div class="stat-val text-danger" id="ov-debt">GH₵0</div>
+          <div class="stat-val" style="color:#f97316;" id="ov-debt">GH₵0</div>
         </div></div>
       </div>
 
-      <div class="section-title">7-Day Trend</div>
+      <!-- 7-Day Trend -->
+      <div class="section-title">📊 7-Day Trend</div>
       <div class="card-dark">
         <div id="weekly-bars" class="d-flex align-items-end gap-1" style="height:56px;"></div>
         <div id="weekly-labels" class="d-flex gap-1 mt-1" style="font-size:9px;color:#64748b;"></div>
+        <div id="weekly-profit-row" class="d-flex gap-1 mt-1" style="font-size:9px;color:#22c55e;"></div>
       </div>
 
-      <div class="section-title">Staff Today</div>
+      <!-- Expiring Soon -->
+      <div class="section-title">⏰ Expiring Soon</div>
+      <div id="ov-expiring"></div>
+
+      <!-- Stock Alerts -->
+      <div class="section-title">📦 Stock Alerts</div>
+      <div id="ov-stock-alerts"></div>
+
+      <!-- Running Out -->
+      <div class="section-title">🔮 Running Out Soon</div>
+      <div id="ov-predictions"></div>
+
+      <!-- Top Debtors -->
+      <div class="section-title">💳 Outstanding Debts</div>
+      <div id="ov-debtors"></div>
+
+      <!-- Staff Today -->
+      <div class="section-title">👥 Staff Performance Today</div>
       <div id="ov-staff"></div>
 
-      <div class="section-title">Top Products Today</div>
+      <!-- Top Products -->
+      <div class="section-title">🏆 Top Products Today</div>
       <div id="ov-top-products"></div>
 
-      <div class="section-title"><span style="width:8px;height:8px;border-radius:50%;background:#ef4444;display:inline-block;margin-right:6px;"></span>Stock Alerts</div>
-      <div id="ov-alerts"></div>
-
       <!-- WhatsApp -->
-      <div class="section-title">Share Summary</div>
+      <div class="section-title">📲 Share Summary</div>
       <div class="card-dark">
-        <textarea id="whatsapp-summary" readonly class="input-dark" style="height:130px;resize:none;"></textarea>
+        <textarea id="whatsapp-summary" readonly class="input-dark" style="height:140px;resize:none;"></textarea>
         <button class="btn-dark-primary mt-2" onclick="copySummary()"><i class="bi bi-whatsapp"></i> Copy & Share on WhatsApp</button>
       </div>
     </div>
@@ -268,50 +291,110 @@ function loadCurrentTab(){
 
 // ── OVERVIEW ─────────────────────────────────────────────────────
 async function loadOverview(){
-  const d = await api('');
+  // Fetch main dashboard + expiry + inventory predictions in parallel
+  const [d, expiryData, predictData, debtData] = await Promise.all([
+    api(''),
+    fetch('api/batches.php?status=expiring').then(r=>r.json()).catch(()=>({items:[]})),
+    fetch('api/analytics.php?type=inventory_predictions').then(r=>r.json()).catch(()=>({predictions:[]})),
+    api('customers')
+  ]);
   if(!d) return;
+
   document.getElementById('company-name-bar').textContent = d.company?.company_name||'ShelfSense';
   document.getElementById('last-updated').textContent = 'Updated '+new Date().toLocaleTimeString();
-  document.getElementById('ov-revenue').textContent = fmt(d.today?.revenue);
-  document.getElementById('ov-profit').textContent  = fmt(d.today?.profit);
-  document.getElementById('ov-receipts').textContent= d.today?.receipts||0;
-  document.getElementById('ov-margin').textContent  = (d.today?.margin||0)+'%';
-  document.getElementById('ov-debt').textContent    = fmt(d.total_debt);
-  document.getElementById('ov-rev-trend').innerHTML = trend(d.today?.revenue, d.yesterday?.revenue);
-  document.getElementById('ov-prof-trend').innerHTML= trend(d.today?.profit, d.yesterday?.profit);
+  document.getElementById('ov-revenue').textContent  = fmt(d.today?.revenue);
+  document.getElementById('ov-profit').textContent   = fmt(d.today?.profit);
+  document.getElementById('ov-receipts').textContent = d.today?.receipts||0;
+  document.getElementById('ov-margin').textContent   = (d.today?.margin||0)+'%';
+  document.getElementById('ov-cost').textContent     = fmt(d.today?.cost);
+  document.getElementById('ov-debt').textContent     = fmt(d.total_debt);
+  document.getElementById('ov-rev-trend').innerHTML  = trend(d.today?.revenue, d.yesterday?.revenue);
+  document.getElementById('ov-prof-trend').innerHTML = trend(d.today?.profit, d.yesterday?.profit);
 
+  // 7-day bars with profit overlay
   const tr = d.weekly_trend||[], maxR = Math.max(...tr.map(t=>parseFloat(t.revenue)),1);
   document.getElementById('weekly-bars').innerHTML = tr.map(t=>{
-    const h=Math.max(4,Math.round((parseFloat(t.revenue)/maxR)*52));
-    return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;">
-      <div style="width:100%;height:${h}px;background:#3b82f6;border-radius:3px 3px 0 0;"></div></div>`;
+    const h = Math.max(4, Math.round((parseFloat(t.revenue)/maxR)*52));
+    const profitH = Math.max(2, Math.round((parseFloat(t.profit||0)/maxR)*52));
+    return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;position:relative;" title="${new Date(t.date).toLocaleDateString('en',{weekday:'short'})}: ${fmt(t.revenue)}">
+      <div style="width:100%;height:${h}px;background:#3b82f6;border-radius:3px 3px 0 0;position:relative;">
+        <div style="position:absolute;bottom:0;width:100%;height:${profitH}px;background:#22c55e;border-radius:3px 3px 0 0;opacity:0.7;"></div>
+      </div></div>`;
   }).join('');
   document.getElementById('weekly-labels').innerHTML = tr.map(t=>`<div style="flex:1;text-align:center;">${new Date(t.date).toLocaleDateString('en',{weekday:'short'})}</div>`).join('');
+  document.getElementById('weekly-profit-row').innerHTML = tr.map(t=>`<div style="flex:1;text-align:center;">${fmt(t.profit||0).replace('GH₵','')}</div>`).join('');
 
+  // Expiring soon
+  const expiring = (expiryData.items||[]).slice(0,8);
+  document.getElementById('ov-expiring').innerHTML = expiring.length===0
+    ? '<div class="list-item" style="color:#22c55e;"><i class="bi bi-check-circle"></i> No products expiring soon</div>'
+    : expiring.map(b=>{
+        const days = b.days_until_expiry;
+        const color = days<=7?'#ef4444':days<=30?'#f59e0b':'#94a3b8';
+        return `<div class="list-item d-flex justify-content-between align-items-center">
+          <div><div class="name">${b.product_name}</div><div class="sub">Batch ${b.batch_number} · ${b.quantity} units</div></div>
+          <span class="badge-pill" style="background:${color};color:${days<=30&&days>7?'#000':'white'};">${days}d left</span>
+        </div>`;
+      }).join('');
+
+  // Stock alerts
+  let stockHtml = '';
+  (d.out_of_stock||[]).forEach(p=>{ stockHtml+=`<div class="list-item d-flex justify-content-between"><span class="name">${p.name}</span><span class="badge-pill" style="background:#ef4444;color:white;">OUT OF STOCK</span></div>`; });
+  (d.low_stock||[]).forEach(p=>{ stockHtml+=`<div class="list-item d-flex justify-content-between"><span class="name">${p.name}</span><span class="badge-pill" style="background:#f59e0b;color:#000;">${p.quantity} left</span></div>`; });
+  document.getElementById('ov-stock-alerts').innerHTML = stockHtml||'<div class="list-item" style="color:#22c55e;"><i class="bi bi-check-circle"></i> All stock levels OK</div>';
+
+  // Inventory predictions (running out)
+  const preds = (predictData.predictions||[]).filter(p=>['critical','urgent','out_of_stock'].includes(p.status)).slice(0,6);
+  document.getElementById('ov-predictions').innerHTML = preds.length===0
+    ? '<div class="list-item" style="color:#22c55e;"><i class="bi bi-check-circle"></i> No urgent restock needed</div>'
+    : preds.map(p=>{
+        const color = p.status==='out_of_stock'?'#ef4444':p.status==='critical'?'#ef4444':'#f59e0b';
+        const label = p.status==='out_of_stock'?'OUT':p.days_left!=null?`${p.days_left}d`:'low';
+        return `<div class="list-item d-flex justify-content-between align-items-center">
+          <div><div class="name">${p.name}</div><div class="sub">${p.current_stock} units · reorder ${p.reorder_qty}</div></div>
+          <span class="badge-pill" style="background:${color};color:white;">${label}</span>
+        </div>`;
+      }).join('');
+
+  // Top debtors
+  const debtors = (debtData?.items||[]).filter(c=>parseFloat(c.total_debt)>0).slice(0,5);
+  document.getElementById('ov-debtors').innerHTML = debtors.length===0
+    ? '<div class="list-item" style="color:#22c55e;"><i class="bi bi-check-circle"></i> No outstanding debts</div>'
+    : debtors.map(c=>`<div class="list-item d-flex justify-content-between align-items-center">
+        <div><div class="name">${c.name}</div><div class="sub">${c.phone||'No phone'}</div></div>
+        <span style="color:#ef4444;font-weight:700;">${fmt(c.total_debt)}</span>
+      </div>`).join('');
+
+  // Staff today
   document.getElementById('ov-staff').innerHTML = (d.staff_today||[]).length===0
-    ? '<div class="list-item" style="color:#64748b;">No sales today</div>'
-    : d.staff_today.map(s=>`<div class="list-item d-flex justify-content-between">
+    ? '<div class="list-item" style="color:#64748b;">No sales recorded today</div>'
+    : d.staff_today.map(s=>`<div class="list-item d-flex justify-content-between align-items-center">
         <div><div class="name"><i class="bi bi-person-circle"></i> ${s.username}</div><div class="sub">${s.receipts} receipts</div></div>
-        <div style="color:#22c55e;font-weight:700;">${fmt(s.sales)}</div></div>`).join('');
+        <div style="text-align:right;"><div style="color:#22c55e;font-weight:700;">${fmt(s.sales)}</div></div>
+      </div>`).join('');
 
+  // Top products
   document.getElementById('ov-top-products').innerHTML = (d.top_products||[]).length===0
     ? '<div class="list-item" style="color:#64748b;">No sales today</div>'
     : d.top_products.map((p,i)=>`<div class="list-item d-flex justify-content-between">
         <div><span style="color:#64748b;font-size:11px;">#${i+1}</span> <span class="name">${p.name}</span><div class="sub">${p.qty} units</div></div>
-        <div style="color:#f59e0b;font-weight:700;">${fmt(p.revenue)}</div></div>`).join('');
+        <div style="color:#f59e0b;font-weight:700;">${fmt(p.revenue)}</div>
+      </div>`).join('');
 
-  let alerts='';
-  (d.out_of_stock||[]).forEach(p=>{ alerts+=`<div class="list-item d-flex justify-content-between"><span class="name">${p.name}</span><span class="badge-pill" style="background:#ef4444;color:white;">OUT</span></div>`; });
-  (d.low_stock||[]).forEach(p=>{ alerts+=`<div class="list-item d-flex justify-content-between"><span class="name">${p.name}</span><span class="badge-pill" style="background:#f59e0b;color:#000;">${p.quantity} left</span></div>`; });
-  document.getElementById('ov-alerts').innerHTML = alerts||'<div class="list-item" style="color:#22c55e;"><i class="bi bi-check-circle"></i> All stock OK</div>';
-
-  const company=d.company?.company_name||'ShelfSense', now=new Date().toLocaleString('en-GH');
+  // WhatsApp summary
+  const company = d.company?.company_name||'ShelfSense';
+  const now = new Date().toLocaleString('en-GH');
   document.getElementById('whatsapp-summary').value =
     `📊 *${company} — Daily Summary*\n🗓 ${now}\n\n`+
-    `💰 *Revenue:* ${fmt(d.today?.revenue)}\n📈 *Profit:* ${fmt(d.today?.profit)} (${d.today?.margin||0}%)\n`+
-    `🧾 *Receipts:* ${d.today?.receipts||0}\n💳 *Debt Owed:* ${fmt(d.total_debt)}\n\n`+
-    (d.low_stock?.length>0?`⚠️ *Low Stock:*\n${d.low_stock.map(p=>`• ${p.name} (${p.quantity})`).join('\n')}\n\n`:'')+
+    `💰 *Revenue:* ${fmt(d.today?.revenue)}\n`+
+    `📈 *Profit:* ${fmt(d.today?.profit)} (${d.today?.margin||0}%)\n`+
+    `💸 *Cost:* ${fmt(d.today?.cost)}\n`+
+    `🧾 *Receipts:* ${d.today?.receipts||0}\n`+
+    `💳 *Total Debt:* ${fmt(d.total_debt)}\n\n`+
+    (expiring.length>0?`⏰ *Expiring Soon:*\n${expiring.slice(0,3).map(b=>`• ${b.product_name} (${b.days_until_expiry}d)`).join('\n')}\n\n`:'')+
     (d.out_of_stock?.length>0?`🔴 *Out of Stock:*\n${d.out_of_stock.map(p=>`• ${p.name}`).join('\n')}\n\n`:'')+
+    (d.low_stock?.length>0?`⚠️ *Low Stock:*\n${d.low_stock.map(p=>`• ${p.name} (${p.quantity})`).join('\n')}\n\n`:'')+
+    (debtors.length>0?`💳 *Top Debtors:*\n${debtors.slice(0,3).map(c=>`• ${c.name}: ${fmt(c.total_debt)}`).join('\n')}\n\n`:'')+
     `_Sent from ShelfSense POS_`;
 }
 
