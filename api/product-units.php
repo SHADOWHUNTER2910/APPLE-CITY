@@ -228,7 +228,16 @@ try {
             if (isset($data['is_base_unit']) && $data['is_base_unit']) {
                 $pdo->prepare('UPDATE products SET default_unit_id = ? WHERE id = ?')->execute([$id, $productId]);
             }
-            
+
+            // If unit_price changed and this is the base unit, sync to products.unit_price
+            if (isset($data['unit_price'])) {
+                $checkBase = $pdo->prepare('SELECT is_base_unit FROM product_units WHERE id = ?');
+                $checkBase->execute([$id]);
+                if ((int)$checkBase->fetchColumn() === 1) {
+                    $pdo->prepare('UPDATE products SET unit_price = ? WHERE id = ?')->execute([(float)$data['unit_price'], $productId]);
+                }
+            }
+
             $pdo->commit();
             echo json_encode(['updated' => 1]);
         } catch (Throwable $e) {

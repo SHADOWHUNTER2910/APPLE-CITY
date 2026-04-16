@@ -114,6 +114,8 @@ try {
         $newPrice = (float)($data['unit_price'] ?? 0);
         if ($unitId <= 0 || $newPrice <= 0) { http_response_code(400); echo json_encode(['error' => 'Invalid input']); exit; }
         $pdo->prepare('UPDATE product_units SET unit_price = ? WHERE id = ?')->execute([$newPrice, $unitId]);
+        // Sync price back to products table if this is the base unit (keeps POS search in sync)
+        $pdo->prepare('UPDATE products SET unit_price = ? WHERE id = (SELECT product_id FROM product_units WHERE id = ? AND is_base_unit = 1)')->execute([$newPrice, $unitId]);
         echo json_encode(['success' => true]);
         exit;
     }
