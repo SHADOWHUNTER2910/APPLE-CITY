@@ -111,8 +111,16 @@ function ensure_sqlite_initialized(PDO $pdo, string $dbFile): void {
         username TEXT NOT NULL UNIQUE,
         password_hash TEXT NOT NULL,
         role TEXT NOT NULL DEFAULT \'user\',
+        status TEXT NOT NULL DEFAULT \'active\',
         created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     )');
+
+    // Add status column to existing users tables that were created without it
+    try {
+        $pdo->exec('ALTER TABLE users ADD COLUMN status TEXT NOT NULL DEFAULT \'active\'');
+    } catch (Exception $e) {
+        // Column already exists, ignore
+    }
     
     // Stock batches for expiry tracking
     $pdo->exec('CREATE TABLE IF NOT EXISTS stock_batches (
