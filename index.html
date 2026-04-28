@@ -939,12 +939,8 @@
                       <input id="edit-product-price" type="number" step="0.01" class="form-control" name="unit_price" autocomplete="off" required>
                     </div>
                     <div class="mb-3">
-                      <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="edit-product-has-expiry" name="has_expiry" value="1" style="cursor: pointer !important; pointer-events: auto !important;">
-                        <label class="form-check-label" for="edit-product-has-expiry" style="cursor: pointer; user-select: none;" onclick="document.getElementById('edit-product-has-expiry').checked = !document.getElementById('edit-product-has-expiry').checked;"></label>
-                          <strong>Product has expiry date</strong>
-                        </label>
-                      </div>
+                      <label for="edit-product-cost-price" class="form-label">Cost Price (GH₵)</label>
+                      <input id="edit-product-cost-price" type="number" step="0.01" class="form-control" name="cost_price" autocomplete="off">
                     </div>
                   </form>
                 </div>
@@ -4207,7 +4203,7 @@
             form.querySelector('input[name="sku"]').value = product.sku;
             form.querySelector('input[name="name"]').value = product.name;
             form.querySelector('input[name="unit_price"]').value = product.unit_price;
-            form.querySelector('input[name="has_expiry"]').checked = product.has_expiry == 1;
+            form.querySelector('input[name="cost_price"]').value = product.cost_price || 0;
             // Remove listener after first use
             document.getElementById('editProductModal').removeEventListener('shown.bs.modal', handler);
           });
@@ -4227,9 +4223,6 @@
         const productData = Object.fromEntries(formData);
         const productId = productData.product_id;
         delete productData.product_id;
-        
-        const hasExpiryCheckbox = document.getElementById('edit-product-has-expiry');
-        productData.has_expiry = hasExpiryCheckbox && hasExpiryCheckbox.checked ? 1 : 0;
         
         await apiCall(`api/products.php?id=${productId}`, {
           method: 'PUT',
@@ -4998,43 +4991,16 @@
             
             if (currentFilteredProducts.length > 0) {
               suggestionsDiv.innerHTML = currentFilteredProducts.map(product => {
-                const expiryBadge = product.has_expiry ? '<span class="badge bg-warning text-dark ms-1" style="font-size:10px;"><i class="bi bi-clock"></i> Expiry Tracked</span>' : '';
                 return `<div class="suggestion-item p-2 border-bottom" style="cursor: pointer;" 
                       data-id="${product.id}" 
                       data-name="${product.name}" 
-                      data-price="${product.unit_price}"
-                      data-has-expiry="${product.has_expiry}">
-                  <strong>${product.name}</strong> <small class="text-muted">(${product.sku})</small>${expiryBadge}<br>
+                      data-price="${product.unit_price}">
+                  <strong>${product.name}</strong> <small class="text-muted">(${product.sku})</small><br>
                   <small class="text-muted">GH₵${product.unit_price}</small>
                   <span id="expiry-hint-${product.id}" class="ms-2"></span>
                 </div>`;
               }).join('');
               suggestionsDiv.style.display = 'block';
-
-              // Load FIFO expiry hints for expiry-tracked products (async, non-blocking)
-              currentFilteredProducts.forEach(product => {
-                if (product.has_expiry) {
-                  apiCall(`api/imei.php /* was batches */?product_id=${product.id}`).then(batchData => {
-                    const batches = (batchData.items || []).filter(b => b.status !== 'expired' && b.quantity > 0);
-                    const hint = document.getElementById(`expiry-hint-${product.id}`);
-                    if (!hint) return;
-                    if (batches.length === 0) {
-                      hint.innerHTML = '<span class="badge bg-danger" style="font-size:10px;">No valid stock</span>';
-                      return;
-                    }
-                    const soonest = batches[0]; // FIFO — oldest expiry first
-                    const days = soonest.days_until_expiry;
-                    const discount = getExpiryDiscountSuggestion(days, soonest.status);
-                    let color = 'success', icon = 'check-circle';
-                    if (days <= 7)  { color = 'danger';  icon = 'exclamation-triangle'; }
-                    else if (days <= 30) { color = 'warning text-dark'; icon = 'clock'; }
-                    hint.innerHTML = `<span class="badge bg-${color}" style="font-size:10px;">
-                      <i class="bi bi-${icon}"></i> Sell first: ${days}d left · ${soonest.quantity} units
-                      ${discount ? ` · ${discount}% off suggested` : ''}
-                    </span>`;
-                  }).catch(() => {});
-                }
-              });
 
               // Add click and hover handlers to suggestions
               suggestionsDiv.querySelectorAll('.suggestion-item').forEach((item, index) => {
@@ -5055,61 +5021,16 @@
                   const productId = this.dataset.id;
                   const productName = this.dataset.name;
                   const productPrice = this.dataset.price;
-                  const hasExpiry = this.dataset.hasExpiry === '1';
-                  
+
                   const searchInput = document.getElementById('receipt-product-search');
                   const selectedProductId = document.getElementById('selected-receipt-product-id');
-                  
-                  if (hasExpiry) {
-                    try {
-                      const batchData = await apiCall(`api/imei.php /* was batches */?product_id=${productId}`);
-                      const batches = batchData.items || [];
-                      
-                      // Only check if batches exist - if no batches, allow sale
-                      if (batches.length > 0) {
-                        const expiredBatches = batches.filter(b => b.status === 'expired');
-                        const goodBatches = batches.filter(b => b.status !== 'expired' && b.quantity > 0);
-                        const totalGoodStock = goodBatches.reduce((sum, b) => sum + b.quantity, 0);
-                        
-                        // All batches expired - block completely
-                        if (goodBatches.length === 0) {
-                          alert(`⛔ CANNOT SELL - ALL STOCK EXPIRED\n\n"${productName}" has no valid stock.\nAll ${expiredBatches.length} batch(es) have expired.\n\nPlease remove expired stock from Expiry Management.`);
-                          return;
-                        }
-                        
-                        // Some batches expired - warn but allow
-                        if (expiredBatches.length > 0) {
-                          const proceed = confirm(`⚠️ EXPIRY WARNING\n\n"${productName}" has ${expiredBatches.length} expired batch(es).\n\nValid stock available: ${totalGoodStock} units\n\nDo you want to proceed with selling from valid stock?`);
-                          if (!proceed) return;
-                        }
-                      }
-                    } catch (e) {
-                      console.error('Expiry check failed:', e);
-                    }
-                  }
-                  
+
                   searchInput.value = productName;
                   selectedProductId.value = productId;
                   suggestionsDiv.style.display = 'none';
                   selectedIndex = -1;
-                  
-                  // Check for near-expiry and show discount suggestion
-                  if (hasExpiry) {
-                    try {
-                      const batchData = await apiCall(`api/imei.php /* was batches */?product_id=${productId}`);
-                      const batches = (batchData.items || []).filter(b => b.status !== 'expired' && b.quantity > 0);
-                      if (batches.length > 0) {
-                        const soonestBatch = batches[0]; // already sorted by expiry ASC
-                        const days = soonestBatch.days_until_expiry;
-                        const suggestedDiscount = getExpiryDiscountSuggestion(days, soonestBatch.status);
-                        if (suggestedDiscount) {
-                          showExpiryDiscountAlert(productName, days, suggestedDiscount);
-                        }
-                      }
-                    } catch(e) { /* silent */ }
-                  }
 
-                  // Update price and load units
+                  // Update price
                   document.getElementById('input-unit-price').value = productPrice;
                   loadReceiptProductUnits(productId);
                 });
@@ -7264,10 +7185,7 @@
           productData.sku = generateSKUFromName(productData.name);
         }
         
-        // Convert has_expiry checkbox to integer (1 or 0)
-        // Check the actual checkbox element since unchecked checkboxes don't appear in FormData
-        const hasExpiryCheckbox = document.getElementById('product-has-expiry');
-        productData.has_expiry = hasExpiryCheckbox && hasExpiryCheckbox.checked ? 1 : 0;
+        // (has_expiry removed for iPhone shop)
         
         try {
           await apiCall('api/products.php', {
