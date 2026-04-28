@@ -238,13 +238,21 @@ try {
             }
             
             if (!$force) {
-                // Normal delete - check if referenced in receipt_items
+                // Normal delete - check if referenced in receipt_items or has sold IMEI units
                 $chk = $pdo->prepare('SELECT COUNT(*) FROM receipt_items WHERE product_id = ?');
                 $chk->execute([$id]);
                 if ((int)$chk->fetchColumn() > 0) {
                     $pdo->rollBack();
                     http_response_code(409);
                     echo json_encode(['error' => 'Product is referenced in receipts']);
+                    exit;
+                }
+                $chkImei = $pdo->prepare('SELECT COUNT(*) FROM imei_units WHERE product_id = ? AND status = "sold"');
+                $chkImei->execute([$id]);
+                if ((int)$chkImei->fetchColumn() > 0) {
+                    $pdo->rollBack();
+                    http_response_code(409);
+                    echo json_encode(['error' => 'Product has sold IMEI units linked to receipts. Use force delete.']);
                     exit;
                 }
             } else {
@@ -268,7 +276,10 @@ try {
                 $updateStmt->execute([$product['name'], $placeholderId, $id]);
             }
             
-            // Delete stock row then product
+            // Delete all linked data before deleting product
+            $pdo->prepare('DELETE FROM imei_units WHERE product_id = ?')->execute([$id]);
+            $pdo->prepare('DELETE FROM product_variants WHERE product_id = ?')->execute([$id]);
+            $pdo->prepare('DELETE FROM stock_movements WHERE product_id = ?')->execute([$id]);
             $pdo->prepare('DELETE FROM stock WHERE product_id = ?')->execute([$id]);
             $stmt = $pdo->prepare('DELETE FROM products WHERE id = ?');
             $stmt->execute([$id]);
