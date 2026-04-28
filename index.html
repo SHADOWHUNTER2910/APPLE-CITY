@@ -852,17 +852,10 @@
                     </div>
                   </div>
                   <div class="col-md-3">
-                    <select class="form-select" id="product-expiry-filter" onchange="filterProducts()">
-                      <option value="all">All Products</option>
-                      <option value="with-expiry">With Expiry Tracking</option>
-                      <option value="without-expiry">Without Expiry</option>
-                    </select>
-                  </div>
-                  <div class="col-md-2">
-                    <select class="form-select" id="product-units-filter" onchange="filterProducts()">
-                      <option value="all">All Units</option>
-                      <option value="with-units">Has Multiple Units</option>
-                      <option value="no-units">No Units</option>
+                    <select class="form-select" id="product-variant-filter" onchange="filterProducts()">
+                      <option value="all">All Models</option>
+                      <option value="with-variants">Has Variants</option>
+                      <option value="no-variants">No Variants</option>
                     </select>
                   </div>
                   <div class="col-md-2">
@@ -4754,8 +4747,7 @@
     // Product Search/Filter Functions
     function filterProducts() {
       const searchTerm = document.getElementById('product-search').value.toLowerCase();
-      const expiryFilter = document.getElementById('product-expiry-filter').value;
-      const unitsFilter = document.getElementById('product-units-filter').value;
+      const variantFilter = document.getElementById('product-variant-filter')?.value || 'all';
       const tbody = document.getElementById('tbl-products');
       const rows = tbody.getElementsByTagName('tr');
       let visibleCount = 0;
@@ -4763,31 +4755,22 @@
       
       for (let i = 0; i < rows.length; i++) {
         const row = rows[i];
-        const sku = row.cells[1]?.textContent.toLowerCase() || '';
+        const sku  = row.cells[1]?.textContent.toLowerCase() || '';
         const name = row.cells[2]?.textContent.toLowerCase() || '';
-        const hasExpiry = row.cells[5]?.textContent.toLowerCase() || '';
-        const units = row.cells[4]?.textContent || '';
+        const variantCell = row.cells[4]?.textContent.trim() || '';
         
         // Search filter
         const matchesSearch = sku.includes(searchTerm) || name.includes(searchTerm);
-        
-        // Expiry filter
-        let matchesExpiry = true;
-        if (expiryFilter === 'with-expiry') {
-          matchesExpiry = hasExpiry.includes('yes');
-        } else if (expiryFilter === 'without-expiry') {
-          matchesExpiry = hasExpiry.includes('no');
+
+        // Variant filter
+        let matchesVariant = true;
+        if (variantFilter === 'with-variants') {
+          matchesVariant = !variantCell.includes('0 variant');
+        } else if (variantFilter === 'no-variants') {
+          matchesVariant = variantCell.includes('0 variant') || variantCell === '';
         }
         
-        // Units filter
-        let matchesUnits = true;
-        if (unitsFilter === 'with-units') {
-          matchesUnits = units !== '0' && units !== '';
-        } else if (unitsFilter === 'no-units') {
-          matchesUnits = units === '0' || units === '';
-        }
-        
-        if (matchesSearch && matchesExpiry && matchesUnits) {
+        if (matchesSearch && matchesVariant) {
           row.style.display = '';
           visibleCount++;
         } else {
@@ -4797,7 +4780,7 @@
       
       // Show search info
       const searchInfo = document.getElementById('product-search-info');
-      if (searchTerm || expiryFilter !== 'all' || unitsFilter !== 'all') {
+      if (searchTerm || variantFilter !== 'all') {
         searchInfo.style.display = 'block';
         searchInfo.innerHTML = `<i class="bi bi-info-circle"></i> Showing ${visibleCount} of ${totalCount} products`;
       } else {
@@ -4812,8 +4795,7 @@
     
     function clearAllProductFilters() {
       document.getElementById('product-search').value = '';
-      document.getElementById('product-expiry-filter').value = 'all';
-      document.getElementById('product-units-filter').value = 'all';
+      const vf = document.getElementById('product-variant-filter'); if(vf) vf.value = 'all';
       filterProducts();
     }
 
@@ -4821,9 +4803,7 @@
     async function filterStock() {
       const searchTerm = document.getElementById('stock-search').value.toLowerCase();
       const statusFilter = document.getElementById('stock-status-filter').value;
-      const expiryFilter = document.getElementById('stock-expiry-filter').value;
-      
-      console.log('Filter settings:', { searchTerm, statusFilter, expiryFilter });
+      console.log('Filter settings:', { searchTerm, statusFilter });
       
       // Update search term and reload from server
       stockSearchTerm = searchTerm;
@@ -4867,15 +4847,9 @@
           matchesStatus = statusCell === 'out of stock';
         }
         
-        // Expiry filter - check for the "Expiry Tracked" badge in HTML
-        let matchesExpiry = true;
-        if (expiryFilter === 'with-expiry') {
-          matchesExpiry = nameCell.includes('Expiry Tracked');
-        } else if (expiryFilter === 'without-expiry') {
-          matchesExpiry = !nameCell.includes('Expiry Tracked');
-        }
         
-        if (matchesStatus && matchesExpiry) {
+        
+        if (matchesStatus) {
           row.style.display = '';
           visibleCount++;
         } else {
@@ -4907,7 +4881,6 @@
     function clearAllStockFilters() {
       document.getElementById('stock-search').value = '';
       document.getElementById('stock-status-filter').value = 'all';
-      document.getElementById('stock-expiry-filter').value = 'all';
       stockSearchTerm = '';
       filterStock();
     }
