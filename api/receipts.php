@@ -30,6 +30,9 @@ try {
         $discount       = (float)($data['discount'] ?? 0);
         $cash_received  = (float)($data['cash_received'] ?? 0);
         $change_given   = (float)($data['change_given'] ?? 0);
+        $trade_in_id    = isset($data['trade_in_id']) && $data['trade_in_id'] ? (int)$data['trade_in_id'] : null;
+        $trade_in_value = (float)($data['trade_in_value'] ?? 0);
+        $trade_in_device = trim((string)($data['trade_in_device'] ?? ''));
 
         if ($invoice_number === '' || !is_array($items) || count($items) === 0) {
             http_response_code(400);
@@ -71,9 +74,9 @@ try {
             }
         }
 
-        $total       = max(0.0, $subtotal - $discount);
+        $total       = max(0.0, $subtotal - $discount - $trade_in_value);
         $totalProfit = $total - $totalCost;
-        $profitMargin = $total > 0 ? ($totalProfit / $total) * 100 : 0;
+        $profitMargin = ($subtotal - $discount) > 0 ? ($totalProfit / ($subtotal - $discount)) * 100 : 0;
 
         // ── Insert receipt & items ────────────────────────────────────
         $pdo->beginTransaction();
@@ -84,17 +87,25 @@ try {
                      company_name, company_location, subtotal, discount, total,
                      total_cost, total_profit, profit_margin,
                      cash_received, change_given, payment_method, payment_reference,
+                     trade_in_id, trade_in_value, trade_in_device,
                      created_by, created_by_username)
-                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
             ');
             $insR->execute([
                 $invoice_number, $customer_name, $customer_phone, $customer_address,
                 $company_name, $company_location, $subtotal, $discount, $total,
                 $totalCost, $totalProfit, $profitMargin,
                 $cash_received, $change_given, $payment_method, $payment_reference,
+                $trade_in_id, $trade_in_value, $trade_in_device ?: null,
                 $_SESSION['user_id'], $_SESSION['username']
             ]);
             $rid = (int)$pdo->lastInsertId();
+
+            // If trade-in linked, mark it as completed and link to this receipt
+            if ($trade_in_id) {
+                $pdo->prepare('UPDATE trade_ins SET status = "completed", linked_receipt_id = ? WHERE id = ?')
+                    ->execute([$rid, $trade_in_id]);
+            }
 
             $insI    = $pdo->prepare('
                 INSERT INTO receipt_items

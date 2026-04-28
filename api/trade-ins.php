@@ -72,7 +72,7 @@ try {
         if ($id <= 0) { http_response_code(400); echo json_encode(['error' => 'id required']); exit; }
 
         $fields = []; $params = [];
-        $editable = ['customer_name','customer_phone','device_model','imei','condition','offered_value','agreed_value','linked_receipt_id','status','notes'];
+        $editable = ['customer_name','customer_phone','device_model','imei','condition','offered_value','agreed_value','linked_receipt_id','status','notes','added_to_inventory','inventory_imei_id'];
         foreach ($editable as $f) {
             if (array_key_exists($f, $data)) { $fields[] = "$f = ?"; $params[] = $data[$f] === '' ? null : $data[$f]; }
         }

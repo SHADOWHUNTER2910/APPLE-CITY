@@ -1404,6 +1404,9 @@
                           <button type="button" class="btn btn-outline-warning payment-method-btn" data-method="credit" onclick="selectPaymentMethod('credit')">
                             <i class="bi bi-clock-history"></i> Credit
                           </button>
+                          <button type="button" class="btn btn-outline-secondary payment-method-btn" data-method="trade_in" onclick="selectPaymentMethod('trade_in')">
+                            <i class="bi bi-arrow-left-right"></i> Trade-in
+                          </button>
                         </div>
                         <input type="hidden" id="payment-method" value="cash">
                         <div id="mobile-money-ref" class="d-none">
@@ -1415,6 +1418,38 @@
                         <div id="credit-note-div" class="d-none">
                           <div class="alert alert-warning mt-2 mb-0 py-2">
                             <i class="bi bi-exclamation-triangle"></i> Credit sale — customer owes the full amount.
+                          </div>
+                        </div>
+                        <div id="trade-in-div" class="d-none mt-2">
+                          <div class="card border-secondary">
+                            <div class="card-body py-2">
+                              <label class="form-label fw-semibold mb-1"><i class="bi bi-arrow-left-right"></i> Trade-in Device</label>
+                              <div class="row g-2 mb-2">
+                                <div class="col-md-6">
+                                  <input type="text" id="tradein-device-model" class="form-control form-control-sm" placeholder="Device model (e.g. iPhone 13 Pro)" autocomplete="off">
+                                </div>
+                                <div class="col-md-3">
+                                  <input type="text" id="tradein-imei-input" class="form-control form-control-sm font-monospace" placeholder="IMEI (optional)" autocomplete="off">
+                                </div>
+                                <div class="col-md-3">
+                                  <select class="form-select form-select-sm" id="tradein-condition-input">
+                                    <option value="excellent">Excellent</option>
+                                    <option value="good" selected>Good</option>
+                                    <option value="fair">Fair</option>
+                                    <option value="poor">Poor</option>
+                                  </select>
+                                </div>
+                              </div>
+                              <div class="row g-2 align-items-center">
+                                <div class="col-md-5">
+                                  <label class="form-label mb-0 small fw-semibold">Trade-in Value (GH₵)</label>
+                                  <input type="number" id="tradein-value-input" class="form-control form-control-sm" step="0.01" min="0" placeholder="0.00" oninput="calculateChange()">
+                                </div>
+                                <div class="col-md-7 pt-3">
+                                  <div id="tradein-balance-info" class="small text-muted"></div>
+                                </div>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -2274,6 +2309,42 @@
                 </button>
               </div>
             </div>
+
+            <!-- Summary Cards -->
+            <div class="row mb-4" id="tradein-summary-cards">
+              <div class="col-md-3">
+                <div class="stat-card warning">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div><h3 id="ti-pending" class="mb-0">0</h3><p class="mb-0">Pending</p></div>
+                    <i class="bi bi-hourglass-split display-4 opacity-50"></i>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="stat-card success">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div><h3 id="ti-completed" class="mb-0">0</h3><p class="mb-0">Completed</p></div>
+                    <i class="bi bi-check-circle display-4 opacity-50"></i>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="stat-card info">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div><h3 id="ti-in-stock" class="mb-0">0</h3><p class="mb-0">Added to Inventory</p></div>
+                    <i class="bi bi-phone display-4 opacity-50"></i>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="stat-card">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div><h3 id="ti-total-value" class="mb-0">GH₵0</h3><p class="mb-0">Total Value</p></div>
+                    <i class="bi bi-cash-coin display-4 opacity-50"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
             <div class="card">
               <div class="card-header">
                 <div class="row g-2 align-items-center">
@@ -2302,6 +2373,7 @@
                         <th>Condition</th>
                         <th>Agreed Value</th>
                         <th>Status</th>
+                        <th>Receipt</th>
                         <th>Date</th>
                         <th>Actions</th>
                       </tr>
@@ -4832,7 +4904,8 @@
       const customerName = document.querySelector('input[name="customer_name"]').value.trim();
       const subtotal = receiptItems.reduce((sum, item) => sum + item.total_price, 0);
       const discount = getDiscountAmount(subtotal);
-      const total = Math.max(0, subtotal - discount);
+      const tradeInVal = getTradeInValue();
+      const total = Math.max(0, subtotal - discount - tradeInVal);
       const cashReceived = parseFloat(document.getElementById('cash-received').value) || 0;
       const change = Math.max(0, cashReceived - total);
 
@@ -4862,7 +4935,9 @@
             `).join('')}
           </div>
           <div style="border-top:1px dashed #ddd;padding-top:8px;font-size:11px;">
-            ${discount > 0 ? `<div style="display:flex;justify-content:space-between;margin-bottom:2px;"><span>Subtotal:</span><span>${formatCurrency(subtotal)}</span></div><div style="display:flex;justify-content:space-between;margin-bottom:2px;color:#dc3545;"><span>Discount:</span><span>-${formatCurrency(discount)}</span></div>` : ''}
+            ${discount > 0 || tradeInVal > 0 ? `<div style="display:flex;justify-content:space-between;margin-bottom:2px;"><span>Subtotal:</span><span>${formatCurrency(subtotal)}</span></div>` : ''}
+            ${discount > 0 ? `<div style="display:flex;justify-content:space-between;margin-bottom:2px;color:#dc3545;"><span>Discount:</span><span>-${formatCurrency(discount)}</span></div>` : ''}
+            ${tradeInVal > 0 ? `<div style="display:flex;justify-content:space-between;margin-bottom:2px;color:#0d6efd;"><span>Trade-in:</span><span>-${formatCurrency(tradeInVal)}</span></div>` : ''}
             <div style="display:flex;justify-content:space-between;font-weight:bold;font-size:13px;margin-bottom:4px;"><span>TOTAL:</span><span>${formatCurrency(total)}</span></div>
             ${cashReceived > 0 ? `<div style="display:flex;justify-content:space-between;font-size:10px;"><span>Cash:</span><span>${formatCurrency(cashReceived)}</span></div><div style="display:flex;justify-content:space-between;font-size:10px;color:${change>=0?'#28a745':'#dc3545'};"><span>Change:</span><span>${formatCurrency(change)}</span></div>` : ''}
           </div>
@@ -4873,17 +4948,19 @@
     function selectPaymentMethod(method) {
       document.getElementById('payment-method').value = method;
       document.querySelectorAll('.payment-method-btn').forEach(btn => {
-        btn.classList.remove('active','btn-success','btn-primary','btn-info','btn-warning');
-        btn.classList.add('btn-outline-' + (btn.dataset.method==='cash'?'success':btn.dataset.method==='mobile_money'?'primary':btn.dataset.method==='card'?'info':'warning'));
+        btn.classList.remove('active','btn-success','btn-primary','btn-info','btn-warning','btn-secondary');
+        const m = btn.dataset.method;
+        btn.classList.add('btn-outline-' + (m==='cash'?'success':m==='mobile_money'?'primary':m==='card'?'info':m==='trade_in'?'secondary':'warning'));
       });
       const activeBtn = document.querySelector(`.payment-method-btn[data-method="${method}"]`);
       if (activeBtn) {
-        activeBtn.classList.remove('btn-outline-success','btn-outline-primary','btn-outline-info','btn-outline-warning');
-        activeBtn.classList.add('active','btn-'+(method==='cash'?'success':method==='mobile_money'?'primary':method==='card'?'info':'warning'));
+        activeBtn.classList.remove('btn-outline-success','btn-outline-primary','btn-outline-info','btn-outline-warning','btn-outline-secondary');
+        activeBtn.classList.add('active','btn-'+(method==='cash'?'success':method==='mobile_money'?'primary':method==='card'?'info':method==='trade_in'?'secondary':'warning'));
       }
       document.getElementById('mobile-money-ref').classList.toggle('d-none', method!=='mobile_money');
       document.getElementById('card-ref').classList.toggle('d-none', method!=='card');
       document.getElementById('credit-note-div').classList.toggle('d-none', method!=='credit');
+      document.getElementById('trade-in-div').classList.toggle('d-none', method!=='trade_in');
       const cashSection = document.getElementById('cash-received-section');
       const changeLabel = document.getElementById('change-label');
       if (method==='credit') {
@@ -4894,6 +4971,10 @@
         cashSection.classList.add('d-none');
         if (changeLabel) changeLabel.textContent='Amount Paid:';
         document.getElementById('cash-received').value='0';
+      } else if (method==='trade_in') {
+        cashSection.classList.remove('d-none');
+        if (changeLabel) changeLabel.textContent='Balance to Pay (Cash):';
+        document.getElementById('cash-received').value='';
       } else {
         cashSection.classList.remove('d-none');
         if (changeLabel) changeLabel.textContent='Change to Give:';
@@ -4909,10 +4990,17 @@
       return Math.min(subtotal, discountValue);
     }
 
+    function getTradeInValue() {
+      const method = document.getElementById('payment-method')?.value || 'cash';
+      if (method !== 'trade_in') return 0;
+      return parseFloat(document.getElementById('tradein-value-input')?.value) || 0;
+    }
+
     function calculateChange() {
       const subtotal = receiptItems.reduce((sum, item) => sum + item.total_price, 0);
       const discount = getDiscountAmount(subtotal);
-      const total    = Math.max(0, subtotal - discount);
+      const tradeIn  = getTradeInValue();
+      const total    = Math.max(0, subtotal - discount - tradeIn);
       const paymentMethod = document.getElementById('payment-method')?.value || 'cash';
       const cashReceived  = paymentMethod==='credit' ? 0 : (parseFloat(document.getElementById('cash-received').value)||0);
       const change = cashReceived - total;
@@ -4923,9 +5011,22 @@
       if (discountEl) discountEl.textContent = discount>0 ? `-${formatCurrency(discount)}` : formatCurrency(0);
       document.getElementById('receipt-total').textContent = formatCurrency(total);
 
+      // Update trade-in balance info
+      const balanceInfo = document.getElementById('tradein-balance-info');
+      if (balanceInfo && paymentMethod === 'trade_in' && tradeIn > 0) {
+        const remaining = Math.max(0, subtotal - discount - tradeIn);
+        balanceInfo.innerHTML = remaining > 0
+          ? `<span class="text-warning fw-semibold">Customer still pays: <strong>${formatCurrency(remaining)}</strong></span>`
+          : `<span class="text-success fw-semibold">✅ Trade-in covers full amount!</span>`;
+      }
+
       const changeEl = document.getElementById('receipt-change');
       if (paymentMethod==='credit') { changeEl.textContent=formatCurrency(total); changeEl.style.color='#dc3545'; }
       else if (paymentMethod==='mobile_money'||paymentMethod==='card') { changeEl.textContent=formatCurrency(total); changeEl.style.color='#0d6efd'; }
+      else if (paymentMethod==='trade_in') {
+        changeEl.textContent = cashReceived > 0 ? formatCurrency(Math.max(0, change)) : formatCurrency(total);
+        changeEl.style.color = cashReceived >= total && cashReceived > 0 ? '#28a745' : '#fd7e14';
+      }
       else { changeEl.textContent=formatCurrency(Math.max(0,change)); changeEl.style.color=cashReceived>=total&&cashReceived>0?'#28a745':cashReceived>0?'#dc3545':'#6c757d'; }
 
       updateReceiptPreview();
@@ -4937,6 +5038,16 @@
       document.getElementById('cash-received').value='';
       document.getElementById('discount-value').value='';
       document.getElementById('discount-type').value='fixed';
+      const tiDevice = document.getElementById('tradein-device-model');
+      const tiImei = document.getElementById('tradein-imei-input');
+      const tiVal = document.getElementById('tradein-value-input');
+      const tiCond = document.getElementById('tradein-condition-input');
+      if (tiDevice) tiDevice.value='';
+      if (tiImei) tiImei.value='';
+      if (tiVal) tiVal.value='';
+      if (tiCond) tiCond.value='good';
+      const balInfo = document.getElementById('tradein-balance-info');
+      if (balInfo) balInfo.innerHTML='';
       selectPaymentMethod('cash');
       updateReceiptDisplay();
       document.getElementById('receipt-preview').innerHTML='<p class="text-muted text-center small">Add items to see preview</p>';
@@ -5115,7 +5226,7 @@
         searchTimeout = setTimeout(async () => {
           try {
             // Server-side search
-            const data = await apiCall(`api/products.php?q=${encodeURIComponent(searchTerm)}&pageSize=10`);
+            const data = await apiCall(`api/products.php?q=${encodeURIComponent(searchTerm)}&pageSize=50`);
             currentFilteredProducts = data.items || [];
             
             if (currentFilteredProducts.length > 0) {
@@ -5262,7 +5373,7 @@
       });
     }
 
-    function loadReceiptProductUnits(productId) {
+    async function loadReceiptProductUnits(productId) {
       const unitSelect = document.getElementById('select-unit');
       const priceInput = document.getElementById('input-unit-price');
       
@@ -5311,7 +5422,50 @@
       }
     }
 
-    function loadReceiptHistory(filters = {}
+    async function loadReceiptHistory(filters = {}) {
+      try {
+        const params = new URLSearchParams();
+        if (filters.search) params.append('q', filters.search);
+        if (filters.filterType) params.append('filter_type', filters.filterType);
+        if (filters.startDate) params.append('start_date', filters.startDate);
+        if (filters.endDate) params.append('end_date', filters.endDate);
+        const url = params.toString() ? `api/receipts.php?${params.toString()}` : 'api/receipts.php';
+        const data = await apiCall(url);
+        const tbody = document.getElementById('tbl-receipt-history');
+        const isAdmin = currentUser && currentUser.role === 'admin';
+        const sectionTitle = document.querySelector('#section-receipt-history h2');
+        if (sectionTitle) sectionTitle.innerHTML = isAdmin
+          ? '<i class="bi bi-clock-history"></i> Receipt History (All Users)'
+          : '<i class="bi bi-clock-history"></i> My Receipt History';
+        if (!data.items || data.items.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="${isAdmin?8:7}" class="text-center text-muted">No receipts found</td></tr>`;
+          return;
+        }
+        tbody.innerHTML = data.items.map(receipt => {
+          const products = receipt.products || 'N/A';
+          const productsDisplay = products.length > 50 ? products.substring(0, 50) + '...' : products;
+          const profitMargin = receipt.total > 0 ? ((receipt.total_profit || 0) / receipt.total) * 100 : 0;
+          const profitBadgeClass = profitMargin >= 20 ? 'bg-success' : profitMargin >= 10 ? 'bg-warning' : 'bg-danger';
+          return `<tr>
+            <td>${receipt.invoice_number}</td>
+            <td><small class="text-muted" title="${products}">${productsDisplay}</small></td>
+            <td>${receipt.customer_name || 'N/A'}</td>
+            <td>${formatCurrency(receipt.total)}</td>
+            ${isAdmin ? `<td><span class="badge ${profitBadgeClass}">${formatCurrency(receipt.total_profit || 0)}</span><br><small class="text-muted">${profitMargin.toFixed(1)}%</small></td>` : ''}
+            <td>${formatDate(receipt.created_at)}</td>
+            <td><span class="badge bg-info">${receipt.created_by_username || 'Unknown'}</span></td>
+            <td class="no-print">
+              <button class="btn btn-sm btn-info me-1" onclick="viewReceipt(${receipt.id})"><i class="bi bi-eye"></i></button>
+              <button class="btn btn-sm btn-primary me-1" onclick="viewAndPrintReceipt(${receipt.id})"><i class="bi bi-printer"></i></button>
+              ${isAdmin ? `<button class="btn btn-sm btn-danger" onclick="deleteReceipt(${receipt.id},'${receipt.invoice_number}')"><i class="bi bi-trash"></i></button>` : ''}
+            </td>
+          </tr>`;
+        }).join('');
+      } catch (error) {
+        console.error('Failed to load receipt history:', error);
+        document.getElementById('tbl-receipt-history').innerHTML = '<tr><td colspan="8" class="text-center text-danger">Failed to load receipts</td></tr>';
+      }
+    }
 
     function applyReceiptFilters() {
       const filters = {
@@ -5331,7 +5485,7 @@
       loadReceiptHistory();
     }
 
-    function viewReceipt(receiptId) {
+    async function viewReceipt(receiptId) {
       try {
         const receipt = await apiCall(`api/receipts.php?id=${receiptId}`);
         displayReceiptModal(receipt);
@@ -5340,7 +5494,7 @@
       }
     }
 
-    function viewAndPrintReceipt(receiptId) {
+    async function viewAndPrintReceipt(receiptId) {
       try {
         const receipt = await apiCall(`api/receipts.php?id=${receiptId}`);
         displayReceiptModal(receipt);
@@ -5405,14 +5559,22 @@
 
           <!-- Totals -->
           <div style="font-size: 10px; margin: 3px 0;">
-            ${receipt.discount > 0 ? `
+            ${receipt.discount > 0 || receipt.trade_in_value > 0 ? `
             <div style="display: flex; justify-content: space-between; font-size: 8px; margin-bottom: 1px;">
               <span>SUBTOTAL:</span>
               <span>GH₵${(receipt.subtotal || receipt.total).toFixed(2)}</span>
             </div>
+            ` : ''}
+            ${receipt.discount > 0 ? `
             <div style="display: flex; justify-content: space-between; font-size: 8px; margin-bottom: 2px; color: #dc3545;">
               <span>DISCOUNT:</span>
               <span>-GH₵${parseFloat(receipt.discount).toFixed(2)}</span>
+            </div>
+            ` : ''}
+            ${receipt.trade_in_value > 0 ? `
+            <div style="display: flex; justify-content: space-between; font-size: 8px; margin-bottom: 2px; color: #0d6efd;">
+              <span>TRADE-IN (${receipt.trade_in_device || 'Device'}):</span>
+              <span>-GH₵${parseFloat(receipt.trade_in_value).toFixed(2)}</span>
             </div>
             ` : ''}
             <div style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 2px;">
@@ -5469,7 +5631,7 @@
 
     }
 
-    function printReceipt() {
+    async function printReceipt() {
       // Get the receipt content
       const printContent = document.getElementById('receipt-print-content');
       
@@ -6872,7 +7034,8 @@
         // Calculate subtotal and discount first
         const subtotal = receiptItems.reduce((sum, item) => sum + item.total_price, 0);
         const discount = getDiscountAmount(subtotal);
-        const total = Math.max(0, subtotal - discount);
+        const tradeInValue = getTradeInValue();
+        const total = Math.max(0, subtotal - discount - tradeInValue);
         
         const cashReceived = (paymentMethod === 'credit' || paymentMethod === 'mobile_money' || paymentMethod === 'card') 
           ? total 
@@ -6888,6 +7051,28 @@
             alert(`Insufficient payment!\n\nTotal Due: GH₵${total.toFixed(2)}\nReceived: GH₵${cashReceived.toFixed(2)}\nShortfall: GH₵${(total - cashReceived).toFixed(2)}`);
             document.getElementById('cash-received').focus();
             return;
+          }
+        }
+
+        if (paymentMethod === 'trade_in') {
+          const tradeInDevice = document.getElementById('tradein-device-model')?.value.trim();
+          if (!tradeInDevice) {
+            alert('Please enter the trade-in device model.');
+            document.getElementById('tradein-device-model').focus();
+            return;
+          }
+          if (tradeInValue <= 0) {
+            alert('Please enter the trade-in value.');
+            document.getElementById('tradein-value-input').focus();
+            return;
+          }
+          // If there's a remaining balance, cash received is required
+          if (total > 0 && (!cashReceived || cashReceived < total)) {
+            if (!cashReceived || cashReceived <= 0) {
+              alert(`Trade-in value: GH₵${tradeInValue.toFixed(2)}\nRemaining balance: GH₵${total.toFixed(2)}\n\nPlease enter the cash amount for the remaining balance.`);
+              document.getElementById('cash-received').focus();
+              return;
+            }
           }
         }
         
@@ -6934,8 +7119,36 @@
           : paymentMethod === 'card'
           ? (document.getElementById('card-reference').value || '')
           : '';
-        receiptData.cash_received = cashReceived;
-        receiptData.change_given = paymentMethod === 'credit' ? 0 : Math.max(0, cashReceived - total);
+        receiptData.cash_received = paymentMethod === 'trade_in' ? (cashReceived || 0) : cashReceived;
+        receiptData.change_given = paymentMethod === 'credit' ? 0 : Math.max(0, (cashReceived || 0) - total);
+
+        // Trade-in data
+        if (paymentMethod === 'trade_in') {
+          receiptData.trade_in_value = tradeInValue;
+          receiptData.trade_in_device = document.getElementById('tradein-device-model')?.value.trim() || '';
+          // Create the trade-in record first, then link it
+          try {
+            const tiRes = await apiCall('api/trade-ins.php', {
+              method: 'POST',
+              body: JSON.stringify({
+                customer_name: receiptData.customer_name,
+                customer_phone: receiptData.customer_phone,
+                device_model: receiptData.trade_in_device,
+                imei: document.getElementById('tradein-imei-input')?.value.trim() || '',
+                condition: document.getElementById('tradein-condition-input')?.value || 'good',
+                agreed_value: tradeInValue,
+                notes: `Trade-in for receipt ${receiptData.invoice_number}`
+              })
+            });
+            receiptData.trade_in_id = tiRes.id || null;
+          } catch(e) {
+            console.warn('Trade-in record creation failed:', e);
+            receiptData.trade_in_id = null;
+          }
+        } else {
+          receiptData.trade_in_value = 0;
+          receiptData.trade_in_id = null;
+        }
         
         try {
           const result = await apiCall('api/receipts.php', {
@@ -8221,10 +8434,6 @@
       const sell = hidden?.dataset?.sell || 0;
       document.getElementById('imei-modal-cost').value = parseFloat(cost).toFixed(2);
       document.getElementById('imei-modal-sell').value = parseFloat(sell).toFixed(2);
-      const info = document.getElementById('imei-price-info');
-      if (hidden?.value && (parseFloat(sell) > 0 || parseFloat(cost) > 0)) {
-        info.innerHTML = `<i class="bi bi-check-circle text-success"></i> Using model prices: Cost <strong>GH₵${parseFloat(cost).toFixed(2)}</strong> · Sell <strong>GH₵${parseFloat(sell).toFixed(2)}</strong>. <a href="#" class="ms-2" onclick="document.getElementById('imei-price-override').classList.toggle('d-none');return false;">Override for this unit</a>`;
-      }
     }
 
     let imeiSearchTimeout;
@@ -8235,7 +8444,7 @@
         const suggestions = document.getElementById('imei-model-suggestions');
         if (q.length < 2) { suggestions.style.display = 'none'; return; }
         try {
-          const data = await apiCall('api/products.php?q='+encodeURIComponent(q)+'&pageSize=10');
+          const data = await apiCall('api/products.php?q='+encodeURIComponent(q)+'&pageSize=50');
           const items = data.items || [];
           if (items.length === 0) {
             suggestions.innerHTML = '<div class="p-2 text-muted">No models found</div>';
@@ -8271,11 +8480,10 @@
       errEl.classList.add('d-none');
 
       const hidden = document.getElementById('imei-modal-product');
-      const overrideVisible = !document.getElementById('imei-price-override').classList.contains('d-none');
       const isBulk = !document.getElementById('imei-bulk-mode').classList.contains('d-none');
 
-      const costPrice = overrideVisible ? parseFloat(document.getElementById('imei-modal-cost').value)||0 : parseFloat(hidden?.dataset?.cost||0);
-      const sellPrice = overrideVisible ? parseFloat(document.getElementById('imei-modal-sell').value)||0 : parseFloat(hidden?.dataset?.sell||0);
+      const costPrice = parseFloat(document.getElementById('imei-modal-cost').value)||0;
+      const sellPrice = parseFloat(document.getElementById('imei-modal-sell').value)||0;
       const productId = parseInt(hidden.value)||0;
       const storage   = document.getElementById('imei-modal-storage').value;
       const color     = document.getElementById('imei-modal-color').value.trim();
@@ -8566,6 +8774,20 @@
           return;
         }
         const condColor = {excellent:'success',good:'primary',fair:'warning',poor:'danger'};
+
+        // Update summary cards
+        const pending   = items.filter(t => t.status === 'pending').length;
+        const completed = items.filter(t => t.status === 'completed').length;
+        const inStock   = items.filter(t => t.added_to_inventory == 1).length;
+        const totalVal  = items.reduce((s, t) => s + parseFloat(t.agreed_value||0), 0);
+        const elPend = document.getElementById('ti-pending');
+        const elComp = document.getElementById('ti-completed');
+        const elStk  = document.getElementById('ti-in-stock');
+        const elVal  = document.getElementById('ti-total-value');
+        if (elPend) elPend.textContent = pending;
+        if (elComp) elComp.textContent = completed;
+        if (elStk)  elStk.textContent  = inStock;
+        if (elVal)  elVal.textContent   = formatCurrency(totalVal);
         tbody.innerHTML = items.map(t=>`<tr>
           <td>${t.customer_name}</td>
           <td>${t.customer_phone||'—'}</td>
@@ -8574,10 +8796,13 @@
           <td><span class="badge bg-${condColor[t.condition]||'secondary'}">${t.condition}</span></td>
           <td class="fw-bold">${formatCurrency(t.agreed_value)}</td>
           <td><span class="badge bg-${t.status==='completed'?'success':t.status==='cancelled'?'danger':'warning'}">${t.status}</span></td>
+          <td>${t.linked_receipt_id ? `<small class="text-muted">Receipt #${t.linked_receipt_id}</small>` : '<small class="text-muted">—</small>'}</td>
           <td><small>${fmtDateShort(t.created_at)}</small></td>
           <td>
             <button class="btn btn-sm btn-outline-primary me-1" onclick="openTradeInDetail(${t.id})" title="Edit"><i class="bi bi-pencil"></i></button>
-            ${t.status==='pending'?`<button class="btn btn-sm btn-outline-success" onclick="completeTradeIn(${t.id})" title="Mark Complete"><i class="bi bi-check-circle"></i></button>`:''}
+            ${t.status==='pending'?`<button class="btn btn-sm btn-outline-success me-1" onclick="completeTradeIn(${t.id})" title="Mark Complete"><i class="bi bi-check-circle"></i></button>`:''}
+            ${t.status==='completed' && !t.added_to_inventory ?`<button class="btn btn-sm btn-outline-info" onclick="addTradeInToInventory(${t.id},'${t.device_model.replace(/'/g,"\\'")}','${t.imei||''}','${t.condition}')" title="Add to Inventory"><i class="bi bi-upc-scan"></i> Stock</button>`:''}
+            ${t.added_to_inventory ? `<span class="badge bg-info"><i class="bi bi-check"></i> In Stock</span>` : ''}
           </td>
         </tr>`).join('');
       } catch(e){ console.error('loadTradeIns',e); }
@@ -8712,6 +8937,150 @@
         await apiCall('api/trade-ins.php?id='+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'completed'})});
         loadTradeIns();
       } catch(e){ alert('Failed: '+e.message); }
+    }
+
+    async function addTradeInToInventory(tradeInId, deviceModel, imei, condition) {
+      // Find the product in our system matching the device model
+      let existing = document.getElementById('addToInventoryModal');
+      if (existing) existing.remove();
+
+      const modal = document.createElement('div');
+      modal.className = 'modal fade'; modal.id = 'addToInventoryModal'; modal.tabIndex = -1;
+      modal.innerHTML = `<div class="modal-dialog"><div class="modal-content">
+        <div class="modal-header bg-info text-white">
+          <h5 class="modal-title"><i class="bi bi-upc-scan"></i> Add Trade-in to Inventory</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-info py-2 mb-3">
+            <strong>${deviceModel}</strong>${imei ? ` · IMEI: <code>${imei}</code>` : ''}<br>
+            <small>Condition: <span class="badge bg-secondary">${condition}</span></small>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Match to iPhone Model *</label>
+            <div class="position-relative">
+              <input type="text" class="form-control" id="inv-model-search" placeholder="Search model..." autocomplete="off" oninput="inventoryModelSearch()">
+              <div id="inv-model-suggestions" class="position-absolute w-100 bg-white border rounded-bottom shadow-sm" style="z-index:2000;max-height:200px;overflow-y:auto;display:none;top:100%;left:0;"></div>
+            </div>
+            <input type="hidden" id="inv-product-id">
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label fw-semibold">Storage</label>
+              <select class="form-select" id="inv-storage">
+                <option value="">—</option>
+                <option>64GB</option><option>128GB</option><option>256GB</option><option>512GB</option><option>1TB</option>
+              </select>
+            </div>
+            <div class="col-6">
+              <label class="form-label fw-semibold">Color</label>
+              <input type="text" class="form-control" id="inv-color" placeholder="e.g. Space Grey">
+            </div>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label fw-semibold">Cost Price (GH₵)</label>
+              <input type="number" class="form-control" id="inv-cost" step="0.01" min="0" placeholder="0.00">
+              <small class="text-muted">What you paid for it (trade-in value)</small>
+            </div>
+            <div class="col-6">
+              <label class="form-label fw-semibold">Selling Price (GH₵)</label>
+              <input type="number" class="form-control" id="inv-sell" step="0.01" min="0" placeholder="0.00">
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">IMEI</label>
+            <input type="text" class="form-control font-monospace" id="inv-imei" value="${imei}" maxlength="15" placeholder="15-digit IMEI">
+          </div>
+          <div id="inv-error" class="alert alert-danger d-none"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-info text-white" onclick="submitAddToInventory(${tradeInId})">
+            <i class="bi bi-plus-circle"></i> Add to Inventory
+          </button>
+        </div>
+      </div></div>`;
+      document.body.appendChild(modal);
+      new bootstrap.Modal(modal).show();
+    }
+
+    let invSearchTimeout;
+    function inventoryModelSearch() {
+      clearTimeout(invSearchTimeout);
+      invSearchTimeout = setTimeout(async () => {
+        const q = document.getElementById('inv-model-search').value.trim();
+        const suggestions = document.getElementById('inv-model-suggestions');
+        if (q.length < 2) { suggestions.style.display = 'none'; return; }
+        try {
+          const data = await apiCall('api/products.php?q='+encodeURIComponent(q)+'&pageSize=20');
+          const items = data.items || [];
+          if (items.length === 0) {
+            suggestions.innerHTML = '<div class="p-2 text-muted">No models found</div>';
+            suggestions.style.display = 'block';
+            return;
+          }
+          suggestions.innerHTML = items.map(p => `
+            <div class="p-2 border-bottom" style="cursor:pointer;"
+              onmouseenter="this.style.background='#f0f0f0'" onmouseleave="this.style.background='white'"
+              onclick="selectInvModel(${p.id},'${p.name.replace(/'/g,"\\'")}')">
+              <strong>${p.name}</strong> <small class="text-muted">${p.sku}</small>
+            </div>`).join('');
+          suggestions.style.display = 'block';
+        } catch(e) { suggestions.style.display = 'none'; }
+      }, 300);
+    }
+
+    function selectInvModel(id, name) {
+      document.getElementById('inv-model-search').value = name;
+      document.getElementById('inv-product-id').value = id;
+      document.getElementById('inv-model-suggestions').style.display = 'none';
+    }
+
+    async function submitAddToInventory(tradeInId) {
+      const errEl = document.getElementById('inv-error');
+      errEl.classList.add('d-none');
+
+      const productId = parseInt(document.getElementById('inv-product-id').value) || 0;
+      const imei      = document.getElementById('inv-imei').value.trim();
+      const storage   = document.getElementById('inv-storage').value;
+      const color     = document.getElementById('inv-color').value.trim();
+      const costPrice = parseFloat(document.getElementById('inv-cost').value) || 0;
+      const sellPrice = parseFloat(document.getElementById('inv-sell').value) || 0;
+
+      if (!productId) { errEl.textContent = 'Please select a model.'; errEl.classList.remove('d-none'); return; }
+      if (!imei || !/^\d{15}$/.test(imei)) { errEl.textContent = 'Please enter a valid 15-digit IMEI.'; errEl.classList.remove('d-none'); return; }
+
+      const btn = document.querySelector('#addToInventoryModal .btn-info');
+      btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Adding...';
+
+      try {
+        // Add to IMEI inventory
+        const res = await apiCall('api/imei.php', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ product_id: productId, imei, storage, color, cost_price: costPrice, selling_price: sellPrice, notes: 'Trade-in unit' })
+        });
+
+        if (res.error) { errEl.textContent = res.error; errEl.classList.remove('d-none'); btn.disabled = false; btn.innerHTML = '<i class="bi bi-plus-circle"></i> Add to Inventory'; return; }
+
+        // Mark trade-in as added to inventory
+        await apiCall('api/trade-ins.php?id='+tradeInId, {
+          method: 'PUT',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ added_to_inventory: 1, inventory_imei_id: res.id || null })
+        });
+
+        bootstrap.Modal.getInstance(document.getElementById('addToInventoryModal')).hide();
+        loadTradeIns();
+        loadStock();
+        alert(`✅ ${document.getElementById('inv-model-search').value} added to inventory!\nIMEI: ${imei}`);
+      } catch(e) {
+        errEl.textContent = 'Failed: ' + e.message;
+        errEl.classList.remove('d-none');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-plus-circle"></i> Add to Inventory';
+      }
     }
 
     // ============================================================

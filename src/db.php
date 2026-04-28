@@ -124,7 +124,10 @@ function ensure_sqlite_initialized(PDO $pdo, string $dbFile): void {
                     'total_profit REAL DEFAULT 0.0','profit_margin REAL DEFAULT 0.0',
                     'discount REAL DEFAULT 0.0','payment_method TEXT DEFAULT "cash"',
                     'payment_reference TEXT DEFAULT NULL','created_by INTEGER DEFAULT NULL',
-                    'created_by_username TEXT DEFAULT NULL'];
+                    'created_by_username TEXT DEFAULT NULL',
+                    'trade_in_id INTEGER DEFAULT NULL',
+                    'trade_in_value REAL DEFAULT 0.0',
+                    'trade_in_device TEXT DEFAULT NULL'];
     foreach ($receiptCols as $col) {
         try { $pdo->exec('ALTER TABLE receipts ADD COLUMN '.$col); } catch (Exception $e) {}
     }
@@ -231,12 +234,16 @@ function ensure_sqlite_initialized(PDO $pdo, string $dbFile): void {
         agreed_value REAL NOT NULL DEFAULT 0.0,
         linked_receipt_id INTEGER DEFAULT NULL,
         status TEXT NOT NULL DEFAULT "pending",
+        added_to_inventory INTEGER NOT NULL DEFAULT 0,
+        inventory_imei_id INTEGER DEFAULT NULL,
         notes TEXT DEFAULT NULL,
         created_by INTEGER DEFAULT NULL,
         created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY(linked_receipt_id) REFERENCES receipts(id) ON UPDATE CASCADE ON DELETE SET NULL,
         FOREIGN KEY(created_by) REFERENCES users(id) ON UPDATE CASCADE ON DELETE SET NULL
     )');
+    try { $pdo->exec('ALTER TABLE trade_ins ADD COLUMN added_to_inventory INTEGER NOT NULL DEFAULT 0'); } catch (Exception $e) {}
+    try { $pdo->exec('ALTER TABLE trade_ins ADD COLUMN inventory_imei_id INTEGER DEFAULT NULL'); } catch (Exception $e) {}
 
     // ── Warranties ────────────────────────────────────────────────────
     $pdo->exec('CREATE TABLE IF NOT EXISTS warranties (
