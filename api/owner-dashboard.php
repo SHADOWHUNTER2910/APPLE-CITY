@@ -83,9 +83,8 @@ try {
         $q = $_GET['q'] ?? '';
         $stmt = $pdo->prepare('
             SELECT p.id, p.name, p.sku,
-                   GROUP_CONCAT(pu.id || "|" || pu.unit_name || "|" || pu.unit_price || "|" || pu.cost_price, "||") as units
+                   p.unit_price, p.cost_price
             FROM products p
-            LEFT JOIN product_units pu ON pu.product_id = p.id
             WHERE p.id != 0 AND p.sku != "DELETED"
               AND (? = "" OR p.name LIKE ? OR p.sku LIKE ?)
             GROUP BY p.id ORDER BY p.name ASC LIMIT 30
@@ -99,11 +98,10 @@ try {
     if ($action === 'update_price' && $method === 'POST') {
         $data = json_decode(file_get_contents('php://input'), true) ?? [];
         $unitId   = (int)($data['unit_id'] ?? 0);
+        $productId = (int)($data['product_id'] ?? 0);
         $newPrice = (float)($data['unit_price'] ?? 0);
-        if ($unitId <= 0 || $newPrice <= 0) { http_response_code(400); echo json_encode(['error' => 'Invalid input']); exit; }
-        $pdo->prepare('UPDATE product_units SET unit_price = ? WHERE id = ?')->execute([$newPrice, $unitId]);
-        // Sync price back to products table if this is the base unit (keeps POS search in sync)
-        $pdo->prepare('UPDATE products SET unit_price = ? WHERE id = (SELECT product_id FROM product_units WHERE id = ? AND is_base_unit = 1)')->execute([$newPrice, $unitId]);
+        if ($productId <= 0 || $newPrice <= 0) { http_response_code(400); echo json_encode(['error' => 'Invalid input']); exit; }
+        $pdo->prepare('UPDATE products SET unit_price = ? WHERE id = ?')->execute([$newPrice, $productId]);
         echo json_encode(['success' => true]);
         exit;
     }

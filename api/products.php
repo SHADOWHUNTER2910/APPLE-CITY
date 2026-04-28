@@ -199,11 +199,11 @@ try {
                 $pdo->exec('DELETE FROM receipt_items');
                 $pdo->exec('DELETE FROM receipts');
                 $pdo->exec('DELETE FROM stock_movements');
-                $pdo->exec('DELETE FROM stock_batches');
-                $pdo->exec('DELETE FROM product_units');
+                $pdo->exec('DELETE FROM imei_units');
+                $pdo->exec('DELETE FROM product_variants');
                 $pdo->exec('DELETE FROM stock');
                 $pdo->exec('DELETE FROM products WHERE id != 0 AND sku != "DELETED"');
-                $pdo->exec('DELETE FROM sqlite_sequence WHERE name IN ("products","stock","stock_movements","stock_batches","product_units","receipts","receipt_items","credit_sales","credit_payments")');
+                $pdo->exec('DELETE FROM sqlite_sequence WHERE name IN ("products","stock","stock_movements","imei_units","product_variants","receipts","receipt_items","credit_sales","credit_payments")');
                 $pdo->exec('PRAGMA foreign_keys = ON');
                 $pdo->commit();
                 echo json_encode(['deleted' => 'all']);

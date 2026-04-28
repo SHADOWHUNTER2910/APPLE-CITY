@@ -67,7 +67,7 @@ try {
                 p.sku, 
                 p.name, 
                 p.unit_price,
-                p.has_expiry,
+                p.cost_price,
                 COALESCE(s.quantity, 0) as quantity,
                 COALESCE(s.initial_quantity, 0) as initial_quantity,
                 COALESCE(
@@ -226,5 +226,5 @@ try {
     echo json_encode(['error' => 'Method not allowed']);
 } catch (Throwable $e) {
     http_response_code(500);
-    echo json_encode(['error' => 'Unexpected server error']);
+    echo json_encode(['error' => 'Unexpected server error: ' . $e->getMessage()]);
 }

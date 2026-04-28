@@ -127,28 +127,9 @@ try {
                 $stmt->execute([$date]);
                 $analytics['hourly_pattern'] = $stmt->fetchAll();
                 
-                // Low profit products alert (units with low margin)
-                $stmt = $pdo->prepare('
-                    SELECT COUNT(*) as count
-                    FROM product_units pu
-                    JOIN products p ON pu.product_id = p.id
-                    WHERE p.id != 0 AND p.sku != "DELETED" 
-                    AND pu.unit_price > 0 
-                    AND ((pu.unit_price - pu.cost_price) / pu.unit_price) * 100 < 10
-                ');
-                $stmt->execute();
-                $analytics['low_profit_products_count'] = (int)$stmt->fetchColumn();
+                $analytics['low_profit_products_count'] = 0; // N/A for iPhone shop
                 
-                // Negative profit products alert (units selling below cost)
-                $stmt = $pdo->prepare('
-                    SELECT COUNT(*) as count
-                    FROM product_units pu
-                    JOIN products p ON pu.product_id = p.id
-                    WHERE p.id != 0 AND p.sku != "DELETED" 
-                    AND pu.cost_price > pu.unit_price
-                ');
-                $stmt->execute();
-                $analytics['negative_profit_products_count'] = (int)$stmt->fetchColumn();
+                $analytics['negative_profit_products_count'] = 0; // N/A for iPhone shop
                 
                 echo json_encode($analytics);
                 break;
@@ -237,7 +218,6 @@ try {
                     FROM receipt_items ri
                     JOIN receipts r ON ri.receipt_id = r.id
                     LEFT JOIN products p ON ri.product_id = p.id
-                    LEFT JOIN product_units pu ON ri.unit_id = pu.id
                     WHERE DATE(r.created_at) >= ?
                     GROUP BY ri.product_id, ri.unit_id, ri.product_name
                     ORDER BY total_revenue DESC
@@ -272,29 +252,14 @@ try {
                 break;
                 
             case 'low_profit_products':
-                // Product units with low or negative profit margins
                 $stmt = $pdo->query('
-                    SELECT 
-                        pu.id as unit_id,
-                        p.id as product_id,
-                        p.sku,
-                        p.name as product_name,
-                        pu.unit_name,
-                        pu.unit_abbreviation,
-                        pu.cost_price,
-                        pu.unit_price,
-                        (pu.unit_price - pu.cost_price) as profit_per_unit,
-                        CASE 
-                            WHEN pu.unit_price > 0 THEN ROUND(((pu.unit_price - pu.cost_price) / pu.unit_price) * 100, 2)
-                            ELSE 0 
-                        END as profit_margin_percent
-                    FROM product_units pu
-                    JOIN products p ON pu.product_id = p.id
+                    SELECT p.id as product_id, p.sku, p.name as product_name,
+                           p.cost_price, p.unit_price,
+                           (p.unit_price - p.cost_price) as profit_per_unit,
+                           CASE WHEN p.unit_price > 0 THEN ROUND(((p.unit_price - p.cost_price) / p.unit_price) * 100, 2) ELSE 0 END as profit_margin_percent
+                    FROM products p
                     WHERE p.id != 0 AND p.sku != "DELETED"
-                    AND (
-                        pu.cost_price > pu.unit_price 
-                        OR (pu.unit_price > 0 AND ((pu.unit_price - pu.cost_price) / pu.unit_price) * 100 < 10)
-                    )
+                    AND (p.cost_price > p.unit_price OR (p.unit_price > 0 AND ((p.unit_price - p.cost_price) / p.unit_price) * 100 < 10))
                     ORDER BY profit_margin_percent ASC
                 ');
                 echo json_encode(['low_profit_products' => $stmt->fetchAll()]);
@@ -319,10 +284,7 @@ try {
                                AND sm.created_at >= ?),
                             0
                         ) AS sold_last_30,
-                        COALESCE(
-                            (SELECT MIN(pu.unit_price) FROM product_units pu WHERE pu.product_id = p.id),
-                            p.unit_price
-                        ) AS unit_price
+                        p.unit_price AS unit_price
                     FROM products p
                     LEFT JOIN stock s ON s.product_id = p.id
                     WHERE p.id != 0 AND p.sku != "DELETED"
@@ -415,7 +377,7 @@ try {
                           AND sm.created_at >= ?
                         GROUP BY sm.product_id
                     ) sb_deleted
-                    LEFT JOIN product_units pu ON pu.product_id = sb_deleted.product_id AND pu.is_base_unit = 1
+                    LEFT JOIN products pu ON pu.id = sb_deleted.product_id
                 ');
                 $stmt->execute([$startDate . ' 00:00:00']);
                 $expiryLoss = (float)$stmt->fetchColumn();
@@ -424,7 +386,7 @@ try {
                 $stmt = $pdo->prepare('
                     SELECT COALESCE(SUM(sm.quantity * COALESCE(pu.cost_price, 0)), 0) as theft_estimate
                     FROM stock_movements sm
-                    LEFT JOIN product_units pu ON pu.product_id = sm.product_id AND pu.is_base_unit = 1
+                    LEFT JOIN products pu ON pu.id = sm.product_id
                     WHERE sm.movement_type = "deduction"
                       AND (sm.reference_type = "manual" OR sm.reference_type IS NULL)
                       AND sm.created_at >= ?
