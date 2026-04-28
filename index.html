@@ -795,39 +795,29 @@
               <div class="card-body">
                 <form id="form-product">
                   <div class="row g-3">
+                    <div class="col-md-6">
+                      <label for="product-name" class="form-label fw-semibold">iPhone Model Name *</label>
+                      <input id="product-name" type="text" class="form-control" name="name" placeholder="e.g. iPhone 15 Pro Max" autocomplete="off" required onchange="autoGenerateSKU()">
+                      <small class="text-muted">Just the model name — prices and storage are set per IMEI unit</small>
+                    </div>
                     <div class="col-md-4">
-                      <label for="product-sku" class="form-label">SKU</label>
+                      <label for="product-sku" class="form-label fw-semibold">SKU</label>
                       <div class="input-group">
                         <input id="product-sku" type="text" class="form-control" name="sku" placeholder="Auto-generated" readonly style="background-color: #f8f9fa;" autocomplete="off">
-                        <button type="button" class="btn btn-outline-secondary" onclick="generateSKU()" title="Generate new SKU">
+                        <button type="button" class="btn btn-outline-secondary" onclick="generateSKU()" title="Regenerate SKU">
                           <i class="bi bi-arrow-clockwise"></i>
                         </button>
                       </div>
-                      <small class="text-muted">SKU is auto-generated based on product name</small>
                     </div>
-                    <div class="col-md-4">
-                      <label for="product-name" class="form-label">Product Name</label>
-                      <input id="product-name" type="text" class="form-control" name="name" placeholder="Product Name" autocomplete="off" required onchange="autoGenerateSKU()">
-                    </div>
-                    <div class="col-md-4 admin-only hidden">
-                      <label for="product-cost-price" class="form-label">Base Unit Cost Price</label>
-                      <input id="product-cost-price" type="number" step="0.01" class="form-control" name="cost_price" placeholder="0.00" autocomplete="off">
-                      <small class="text-muted">Cost for the base unit (for profit tracking)</small>
-                    </div>
-                    <div class="col-md-4">
-                      <label for="product-unit-price" class="form-label">Base Unit Selling Price</label>
-                      <input id="product-unit-price" type="number" step="0.01" class="form-control" name="unit_price" placeholder="0.00" autocomplete="off" required>
-                      <small class="text-muted">Selling price for the base unit (e.g., per piece)</small>
-                    </div>
-                    <div class="col-md-4">
-                      <!-- Expiry tracking removed for iPhone shop -->
-                    </div>
-                    <div class="col-12">
-                      <button type="submit" class="btn btn-success">
-                        <i class="bi bi-plus-circle"></i> Add Product
+                    <div class="col-md-2 d-flex align-items-end">
+                      <button type="submit" class="btn btn-success w-100">
+                        <i class="bi bi-plus-circle"></i> Add Model
                       </button>
                     </div>
                   </div>
+                  <!-- Hidden fields with defaults so API doesn't break -->
+                  <input type="hidden" name="unit_price" value="0">
+                  <input type="hidden" name="cost_price" value="0">
                 </form>
               </div>
             </div>
@@ -927,21 +917,17 @@
                   <form id="form-edit-product">
                     <input type="hidden" name="product_id">
                     <div class="mb-3">
-                      <label for="edit-product-sku" class="form-label">SKU</label>
+                      <label for="edit-product-sku" class="form-label fw-semibold">SKU</label>
                       <input id="edit-product-sku" type="text" class="form-control" name="sku" readonly style="background-color: #f8f9fa;" autocomplete="off">
                     </div>
                     <div class="mb-3">
-                      <label for="edit-product-name" class="form-label">Product Name</label>
+                      <label for="edit-product-name" class="form-label fw-semibold">Model Name</label>
                       <input id="edit-product-name" type="text" class="form-control" name="name" autocomplete="off" required>
+                      <small class="text-muted">Prices are set per IMEI unit in IMEI Registry</small>
                     </div>
-                    <div class="mb-3">
-                      <label for="edit-product-price" class="form-label">Unit Price (GH₵)</label>
-                      <input id="edit-product-price" type="number" step="0.01" class="form-control" name="unit_price" autocomplete="off" required>
-                    </div>
-                    <div class="mb-3">
-                      <label for="edit-product-cost-price" class="form-label">Cost Price (GH₵)</label>
-                      <input id="edit-product-cost-price" type="number" step="0.01" class="form-control" name="cost_price" autocomplete="off">
-                    </div>
+                    <!-- Hidden fields with defaults -->
+                    <input type="hidden" name="unit_price" value="0">
+                    <input type="hidden" name="cost_price" value="0">
                   </form>
                 </div>
                 <div class="modal-footer">
@@ -4202,8 +4188,6 @@
             form.querySelector('input[name="product_id"]').value = product.id;
             form.querySelector('input[name="sku"]').value = product.sku;
             form.querySelector('input[name="name"]').value = product.name;
-            form.querySelector('input[name="unit_price"]').value = product.unit_price;
-            form.querySelector('input[name="cost_price"]').value = product.cost_price || 0;
             // Remove listener after first use
             document.getElementById('editProductModal').removeEventListener('shown.bs.modal', handler);
           });
@@ -8522,18 +8506,12 @@
             </div>
           </div>
 
-          <!-- Prices: auto-filled from product, collapsible override -->
-          <div class="alert alert-info py-2 mb-2" id="imei-price-info" style="font-size:13px;">
-            <i class="bi bi-info-circle"></i> Prices will be inherited from the selected model.
-            <a href="#" class="ms-2" onclick="document.getElementById('imei-price-override').classList.toggle('d-none');return false;">Override prices</a>
-          </div>
-          <div id="imei-price-override" class="d-none">
-            <div class="row g-2 mb-3">
-              <div class="col-6"><label class="form-label fw-semibold">Cost Price (GH₵)</label>
-                <input type="number" class="form-control" id="imei-modal-cost" step="0.01" min="0" value="0"></div>
-              <div class="col-6"><label class="form-label fw-semibold">Selling Price (GH₵)</label>
-                <input type="number" class="form-control" id="imei-modal-sell" step="0.01" min="0" value="0"></div>
-            </div>
+          <!-- Prices per unit -->
+          <div class="row g-2 mb-3">
+            <div class="col-6"><label class="form-label fw-semibold">Cost Price (GH₵) *</label>
+              <input type="number" class="form-control" id="imei-modal-cost" step="0.01" min="0" placeholder="0.00"></div>
+            <div class="col-6"><label class="form-label fw-semibold">Selling Price (GH₵) *</label>
+              <input type="number" class="form-control" id="imei-modal-sell" step="0.01" min="0" placeholder="0.00"></div>
           </div>
 
           <div class="mb-3"><label class="form-label fw-semibold">Supplier</label>
