@@ -77,7 +77,13 @@ try {
                 COALESCE(
                     (SELECT SUM(quantity) FROM stock_movements 
                      WHERE product_id = p.id AND movement_type = 'deduction'), 0
-                ) as total_sold
+                ) as total_sold,
+                COALESCE(
+                    (SELECT COUNT(*) FROM product_variants WHERE product_id = p.id), 0
+                ) as variant_count,
+                COALESCE(
+                    (SELECT COUNT(*) FROM imei_units WHERE product_id = p.id AND status = 'in_stock'), 0
+                ) as imei_in_stock
             FROM products p 
             LEFT JOIN stock s ON s.product_id = p.id 
             $whereClause

@@ -3884,8 +3884,8 @@
             : 0;
           
           // Check variant count
-          const variantCount = (item.variants||[]).length;
-          const inStockVariants = (item.variants||[]).reduce((s,v)=>s+(parseInt(v.in_stock)||0),0);
+          const variantCount = parseInt(item.variant_count) || 0;
+          const imeiInStock  = parseInt(item.imei_in_stock)  || 0;
           
           return `
             <tr>
@@ -3897,6 +3897,7 @@
                 ${variantCount > 0
                   ? `<span class="badge bg-info">${variantCount} variant${variantCount>1?'s':''}</span>`
                   : '<span class="badge bg-secondary">No variants</span>'}
+                ${imeiInStock > 0 ? `<br><small class="text-success">${imeiInStock} IMEI in stock</small>` : ''}
               </td>
               <td><span class="badge bg-success fs-6">${item.quantity}</span></td>
               <td>
