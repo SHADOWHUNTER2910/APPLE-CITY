@@ -8556,7 +8556,6 @@
 
     function openAddImeiModal() {
       populateImeiProductFilter();
-      // Build modal dynamically
       let existing = document.getElementById('addImeiModal');
       if (existing) existing.remove();
       const modal = document.createElement('div');
@@ -8566,9 +8565,9 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
         <div class="modal-body">
           <div class="mb-3"><label class="form-label fw-semibold">iPhone Model *</label>
-            <select class="form-select" id="imei-modal-product">
+            <select class="form-select" id="imei-modal-product" onchange="imeiModalProductChanged()">
               <option value="">Select model...</option>
-              ${imeiProductList.map(p=>`<option value="${p.id}">${p.name}</option>`).join('')}
+              ${imeiProductList.map(p=>`<option value="${p.id}" data-cost="${p.cost_price||0}" data-sell="${p.unit_price||0}">${p.name}</option>`).join('')}
             </select></div>
           <div class="row g-2 mb-3">
             <div class="col-6"><label class="form-label fw-semibold">Storage</label>
@@ -8582,18 +8581,23 @@
           </div>
           <div class="mb-3"><label class="form-label fw-semibold">IMEI (15 digits) *</label>
             <input type="text" class="form-control font-monospace" id="imei-modal-imei" maxlength="15" placeholder="000000000000000"></div>
-          <div class="row g-2 mb-3">
-            <div class="col-6"><label class="form-label fw-semibold">Cost Price</label>
-              <input type="number" class="form-control" id="imei-modal-cost" step="0.01" min="0" value="0"></div>
-            <div class="col-6"><label class="form-label fw-semibold">Selling Price</label>
-              <input type="number" class="form-control" id="imei-modal-sell" step="0.01" min="0" value="0"></div>
+
+          <!-- Prices: auto-filled from product, collapsible override -->
+          <div class="alert alert-info py-2 mb-2" id="imei-price-info" style="font-size:13px;">
+            <i class="bi bi-info-circle"></i> Prices will be inherited from the selected model.
+            <a href="#" class="ms-2" onclick="document.getElementById('imei-price-override').classList.toggle('d-none');return false;">Override prices</a>
           </div>
-          <div class="row g-2 mb-3">
-            <div class="col-6"><label class="form-label fw-semibold">Supplier</label>
-              <select class="form-select" id="imei-modal-supplier"><option value="">None</option></select></div>
-            <div class="col-6"><label class="form-label fw-semibold">Purchase Date</label>
-              <input type="date" class="form-control" id="imei-modal-date"></div>
+          <div id="imei-price-override" class="d-none">
+            <div class="row g-2 mb-3">
+              <div class="col-6"><label class="form-label fw-semibold">Cost Price (GH₵)</label>
+                <input type="number" class="form-control" id="imei-modal-cost" step="0.01" min="0" value="0"></div>
+              <div class="col-6"><label class="form-label fw-semibold">Selling Price (GH₵)</label>
+                <input type="number" class="form-control" id="imei-modal-sell" step="0.01" min="0" value="0"></div>
+            </div>
           </div>
+
+          <div class="mb-3"><label class="form-label fw-semibold">Supplier</label>
+            <select class="form-select" id="imei-modal-supplier"><option value="">None</option></select></div>
           <div class="mb-3"><label class="form-label fw-semibold">Notes</label>
             <textarea class="form-control" id="imei-modal-notes" rows="2"></textarea></div>
           <div id="imei-modal-error" class="alert alert-danger d-none"></div>
@@ -8604,7 +8608,6 @@
         </div>
       </div></div>`;
       document.body.appendChild(modal);
-      // Populate suppliers
       apiCall('api/suppliers.php').then(d=>{
         const sel = document.getElementById('imei-modal-supplier');
         if (sel) sel.innerHTML = '<option value="">None</option>' + (d.items||[]).map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
@@ -8612,18 +8615,45 @@
       new bootstrap.Modal(modal).show();
     }
 
+    function imeiModalProductChanged() {
+      const sel = document.getElementById('imei-modal-product');
+      const opt = sel.options[sel.selectedIndex];
+      const cost = opt?.dataset?.cost || 0;
+      const sell = opt?.dataset?.sell || 0;
+      // Update override fields so they reflect product prices if user opens override
+      document.getElementById('imei-modal-cost').value = parseFloat(cost).toFixed(2);
+      document.getElementById('imei-modal-sell').value = parseFloat(sell).toFixed(2);
+      // Update info text
+      const info = document.getElementById('imei-price-info');
+      if (opt?.value && (parseFloat(sell) > 0 || parseFloat(cost) > 0)) {
+        info.innerHTML = `<i class="bi bi-check-circle text-success"></i> Using model prices: Cost <strong>GH₵${parseFloat(cost).toFixed(2)}</strong> · Sell <strong>GH₵${parseFloat(sell).toFixed(2)}</strong>. <a href="#" class="ms-2" onclick="document.getElementById('imei-price-override').classList.toggle('d-none');return false;">Override for this unit</a>`;
+      }
+    }
+
     async function submitAddImei() {
       const errEl = document.getElementById('imei-modal-error');
       errEl.classList.add('d-none');
+
+      const sel = document.getElementById('imei-modal-product');
+      const opt = sel.options[sel.selectedIndex];
+      const overrideVisible = !document.getElementById('imei-price-override').classList.contains('d-none');
+
+      // Use override prices if shown, otherwise fall back to product prices
+      const costPrice  = overrideVisible
+        ? parseFloat(document.getElementById('imei-modal-cost').value)||0
+        : parseFloat(opt?.dataset?.cost||0);
+      const sellPrice  = overrideVisible
+        ? parseFloat(document.getElementById('imei-modal-sell').value)||0
+        : parseFloat(opt?.dataset?.sell||0);
+
       const payload = {
-        product_id:   parseInt(document.getElementById('imei-modal-product').value)||0,
+        product_id:   parseInt(sel.value)||0,
         imei:         document.getElementById('imei-modal-imei').value.trim(),
         storage:      document.getElementById('imei-modal-storage').value,
         color:        document.getElementById('imei-modal-color').value.trim(),
-        cost_price:   parseFloat(document.getElementById('imei-modal-cost').value)||0,
-        selling_price:parseFloat(document.getElementById('imei-modal-sell').value)||0,
+        cost_price:   costPrice,
+        selling_price:sellPrice,
         supplier_id:  document.getElementById('imei-modal-supplier').value||null,
-        purchase_date:document.getElementById('imei-modal-date').value||'',
         notes:        document.getElementById('imei-modal-notes').value.trim()
       };
       if (!payload.product_id){ errEl.textContent='Please select a model.'; errEl.classList.remove('d-none'); return; }
