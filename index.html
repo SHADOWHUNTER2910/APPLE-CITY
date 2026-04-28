@@ -8555,12 +8555,6 @@
     }
 
     async function openAddImeiModal() {
-      // Always fetch fresh product list before building modal
-      try {
-        const data = await apiCall('api/products.php?pageSize=200');
-        imeiProductList = data.items || [];
-      } catch(e) { imeiProductList = []; }
-
       let existing = document.getElementById('addImeiModal');
       if (existing) existing.remove();
       const modal = document.createElement('div');
@@ -8570,10 +8564,15 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
         <div class="modal-body">
           <div class="mb-3"><label class="form-label fw-semibold">iPhone Model *</label>
-            <select class="form-select" id="imei-modal-product" onchange="imeiModalProductChanged()">
-              <option value="">Select model...</option>
-              ${imeiProductList.map(p=>`<option value="${p.id}" data-cost="${p.cost_price||0}" data-sell="${p.unit_price||0}">${p.name}</option>`).join('')}
-            </select></div>
+            <div class="position-relative">
+              <input type="text" class="form-control" id="imei-modal-product-search"
+                placeholder="Type to search model..." autocomplete="off"
+                oninput="imeiModelSearch()">
+              <div id="imei-model-suggestions" class="position-absolute w-100 bg-white border rounded-bottom shadow-sm"
+                style="z-index:2000;max-height:200px;overflow-y:auto;display:none;top:100%;left:0;"></div>
+            </div>
+            <input type="hidden" id="imei-modal-product" data-cost="0" data-sell="0">
+          </div>
           <div class="row g-2 mb-3">
             <div class="col-6"><label class="form-label fw-semibold">Storage</label>
               <select class="form-select" id="imei-modal-storage">
@@ -8621,38 +8620,72 @@
     }
 
     function imeiModalProductChanged() {
-      const sel = document.getElementById('imei-modal-product');
-      const opt = sel.options[sel.selectedIndex];
-      const cost = opt?.dataset?.cost || 0;
-      const sell = opt?.dataset?.sell || 0;
-      // Update override fields so they reflect product prices if user opens override
+      const hidden = document.getElementById('imei-modal-product');
+      const cost = hidden?.dataset?.cost || 0;
+      const sell = hidden?.dataset?.sell || 0;
       document.getElementById('imei-modal-cost').value = parseFloat(cost).toFixed(2);
       document.getElementById('imei-modal-sell').value = parseFloat(sell).toFixed(2);
-      // Update info text
       const info = document.getElementById('imei-price-info');
-      if (opt?.value && (parseFloat(sell) > 0 || parseFloat(cost) > 0)) {
+      if (hidden?.value && (parseFloat(sell) > 0 || parseFloat(cost) > 0)) {
         info.innerHTML = `<i class="bi bi-check-circle text-success"></i> Using model prices: Cost <strong>GH₵${parseFloat(cost).toFixed(2)}</strong> · Sell <strong>GH₵${parseFloat(sell).toFixed(2)}</strong>. <a href="#" class="ms-2" onclick="document.getElementById('imei-price-override').classList.toggle('d-none');return false;">Override for this unit</a>`;
       }
+    }
+
+    let imeiSearchTimeout;
+    function imeiModelSearch() {
+      clearTimeout(imeiSearchTimeout);
+      imeiSearchTimeout = setTimeout(async () => {
+        const q = document.getElementById('imei-modal-product-search').value.trim();
+        const suggestions = document.getElementById('imei-model-suggestions');
+        if (q.length < 2) { suggestions.style.display = 'none'; return; }
+        try {
+          const data = await apiCall('api/products.php?q='+encodeURIComponent(q)+'&pageSize=10');
+          const items = data.items || [];
+          if (items.length === 0) {
+            suggestions.innerHTML = '<div class="p-2 text-muted">No models found</div>';
+            suggestions.style.display = 'block';
+            return;
+          }
+          suggestions.innerHTML = items.map(p => `
+            <div class="p-2 border-bottom" style="cursor:pointer;"
+              onmouseenter="this.style.background='#f0f0f0'"
+              onmouseleave="this.style.background='white'"
+              onclick="selectImeiModel(${p.id},'${p.name.replace(/'/g,"\\'")}',${p.cost_price||0},${p.unit_price||0})">
+              <strong>${p.name}</strong> <small class="text-muted">${p.sku}</small><br>
+              <small class="text-muted">Cost: GH₵${(p.cost_price||0).toFixed(2)} · Sell: GH₵${(p.unit_price||0).toFixed(2)}</small>
+            </div>
+          `).join('');
+          suggestions.style.display = 'block';
+        } catch(e) { suggestions.style.display = 'none'; }
+      }, 300);
+    }
+
+    function selectImeiModel(id, name, cost, sell) {
+      document.getElementById('imei-modal-product-search').value = name;
+      const hidden = document.getElementById('imei-modal-product');
+      hidden.value = id;
+      hidden.dataset.cost = cost;
+      hidden.dataset.sell = sell;
+      document.getElementById('imei-model-suggestions').style.display = 'none';
+      imeiModalProductChanged();
     }
 
     async function submitAddImei() {
       const errEl = document.getElementById('imei-modal-error');
       errEl.classList.add('d-none');
 
-      const sel = document.getElementById('imei-modal-product');
-      const opt = sel.options[sel.selectedIndex];
+      const hidden = document.getElementById('imei-modal-product');
       const overrideVisible = !document.getElementById('imei-price-override').classList.contains('d-none');
 
-      // Use override prices if shown, otherwise fall back to product prices
       const costPrice  = overrideVisible
         ? parseFloat(document.getElementById('imei-modal-cost').value)||0
-        : parseFloat(opt?.dataset?.cost||0);
+        : parseFloat(hidden?.dataset?.cost||0);
       const sellPrice  = overrideVisible
         ? parseFloat(document.getElementById('imei-modal-sell').value)||0
-        : parseFloat(opt?.dataset?.sell||0);
+        : parseFloat(hidden?.dataset?.sell||0);
 
       const payload = {
-        product_id:   parseInt(sel.value)||0,
+        product_id:   parseInt(hidden.value)||0,
         imei:         document.getElementById('imei-modal-imei').value.trim(),
         storage:      document.getElementById('imei-modal-storage').value,
         color:        document.getElementById('imei-modal-color').value.trim(),
