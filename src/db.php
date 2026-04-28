@@ -24,6 +24,11 @@ function ensure_sqlite_initialized(PDO $pdo, string $dbFile): void {
         created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     )');
 
+    // Migrate: add cost_price to existing products tables that don't have it
+    try { $pdo->exec('ALTER TABLE products ADD COLUMN cost_price REAL NOT NULL DEFAULT 0.0'); } catch (Exception $e) {}
+    // Migrate: add default_unit_id if missing
+    try { $pdo->exec('ALTER TABLE products ADD COLUMN default_unit_id INTEGER DEFAULT NULL'); } catch (Exception $e) {}
+
     // ── Product Variants (model + storage + color combinations) ───────
     $pdo->exec('CREATE TABLE IF NOT EXISTS product_variants (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -68,6 +73,11 @@ function ensure_sqlite_initialized(PDO $pdo, string $dbFile): void {
         FOREIGN KEY(product_id) REFERENCES products(id) ON UPDATE CASCADE ON DELETE RESTRICT
     )');
 
+    // Migrate: add initial_quantity if missing
+    try { $pdo->exec('ALTER TABLE stock ADD COLUMN initial_quantity INTEGER NOT NULL DEFAULT 0'); } catch (Exception $e) {}
+    // Migrate: remove old expiry columns from stock if they exist (harmless if not)
+    // SQLite doesn't support DROP COLUMN in older versions, so we just leave them
+
     // ── Suppliers ─────────────────────────────────────────────────────
     $pdo->exec('CREATE TABLE IF NOT EXISTS suppliers (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -108,6 +118,17 @@ function ensure_sqlite_initialized(PDO $pdo, string $dbFile): void {
         FOREIGN KEY(created_by) REFERENCES users(id) ON UPDATE CASCADE ON DELETE SET NULL
     )');
 
+    // Migrate receipts columns for existing databases
+    $receiptCols = ['customer_phone TEXT','customer_address TEXT','cash_received REAL DEFAULT 0.0',
+                    'change_given REAL DEFAULT 0.0','total_cost REAL DEFAULT 0.0',
+                    'total_profit REAL DEFAULT 0.0','profit_margin REAL DEFAULT 0.0',
+                    'discount REAL DEFAULT 0.0','payment_method TEXT DEFAULT "cash"',
+                    'payment_reference TEXT DEFAULT NULL','created_by INTEGER DEFAULT NULL',
+                    'created_by_username TEXT DEFAULT NULL'];
+    foreach ($receiptCols as $col) {
+        try { $pdo->exec('ALTER TABLE receipts ADD COLUMN '.$col); } catch (Exception $e) {}
+    }
+
     // ── Receipt Items ─────────────────────────────────────────────────
     $pdo->exec('CREATE TABLE IF NOT EXISTS receipt_items (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -125,6 +146,14 @@ function ensure_sqlite_initialized(PDO $pdo, string $dbFile): void {
         FOREIGN KEY(receipt_id) REFERENCES receipts(id) ON UPDATE CASCADE ON DELETE CASCADE,
         FOREIGN KEY(product_id) REFERENCES products(id) ON UPDATE CASCADE ON DELETE SET NULL
     )');
+
+    // Migrate receipt_items columns for existing databases
+    $riCols = ['product_name TEXT','imei_unit_id INTEGER DEFAULT NULL','imei TEXT DEFAULT NULL',
+               'variant_label TEXT DEFAULT NULL','cost_price REAL DEFAULT 0.0',
+               'profit REAL DEFAULT 0.0'];
+    foreach ($riCols as $col) {
+        try { $pdo->exec('ALTER TABLE receipt_items ADD COLUMN '.$col); } catch (Exception $e) {}
+    }
 
     // ── Users ─────────────────────────────────────────────────────────
     $pdo->exec('CREATE TABLE IF NOT EXISTS users (
