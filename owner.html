@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <title>ShelfSense — Owner Dashboard</title>
+  <title>Apple City — Owner Dashboard</title>
   <link href="assets/css/bootstrap.min.css" rel="stylesheet">
   <link href="assets/css/bootstrap-icons.css" rel="stylesheet">
   <style>
@@ -46,8 +46,8 @@
 <div id="pin-screen" class="pin-screen">
   <div class="pin-card">
     <div style="font-size:48px;margin-bottom:12px;">🔐</div>
-    <h2 style="font-size:20px;font-weight:700;margin-bottom:4px;">Owner Dashboard</h2>
-    <p style="color:#94a3b8;font-size:13px;margin-bottom:24px;">Sign in with your admin account</p>
+    <h2 style="font-size:20px;font-weight:700;margin-bottom:4px;">Apple City</h2>
+    <p style="color:#94a3b8;font-size:13px;margin-bottom:24px;">Owner Dashboard — Sign in</p>
     <input type="text" id="login-username" class="input-dark mb-2" placeholder="Username"
            autocomplete="username" onkeydown="if(event.key==='Enter')document.getElementById('login-password').focus()">
     <input type="password" id="login-password" class="input-dark mb-2" placeholder="Password"
@@ -111,10 +111,6 @@
         <div id="weekly-labels" class="d-flex gap-1 mt-1" style="font-size:9px;color:#64748b;"></div>
         <div id="weekly-profit-row" class="d-flex gap-1 mt-1" style="font-size:9px;color:#22c55e;"></div>
       </div>
-
-      <!-- Expiring Soon -->
-      <div class="section-title">⏰ Expiring Soon</div>
-      <div id="ov-expiring"></div>
 
       <!-- Stock Alerts -->
       <div class="section-title">📦 Stock Alerts</div>
@@ -289,18 +285,16 @@ function loadCurrentTab(){
   else if(currentTab==='financial') loadFinancial();
 }
 
-// ── OVERVIEW ─────────────────────────────────────────────────────
+  // ── OVERVIEW ─────────────────────────────────────────────────────
 async function loadOverview(){
-  // Fetch main dashboard + expiry + inventory predictions in parallel
-  const [d, expiryData, predictData, debtData] = await Promise.all([
+  const [d, predictData, debtData] = await Promise.all([
     api(''),
-    fetch('api/batches.php?status=expiring').then(r=>r.json()).catch(()=>({items:[]})),
     fetch('api/analytics.php?type=inventory_predictions').then(r=>r.json()).catch(()=>({predictions:[]})),
     api('customers')
   ]);
   if(!d) return;
 
-  document.getElementById('company-name-bar').textContent = d.company?.company_name||'ShelfSense';
+  document.getElementById('company-name-bar').textContent = d.company?.company_name||'Apple City';
   document.getElementById('last-updated').textContent = 'Updated '+new Date().toLocaleTimeString();
   document.getElementById('ov-revenue').textContent  = fmt(d.today?.revenue);
   document.getElementById('ov-profit').textContent   = fmt(d.today?.profit);
@@ -323,19 +317,6 @@ async function loadOverview(){
   }).join('');
   document.getElementById('weekly-labels').innerHTML = tr.map(t=>`<div style="flex:1;text-align:center;">${new Date(t.date).toLocaleDateString('en',{weekday:'short'})}</div>`).join('');
   document.getElementById('weekly-profit-row').innerHTML = tr.map(t=>`<div style="flex:1;text-align:center;">${fmt(t.profit||0).replace('GH₵','')}</div>`).join('');
-
-  // Expiring soon
-  const expiring = (expiryData.items||[]).slice(0,8);
-  document.getElementById('ov-expiring').innerHTML = expiring.length===0
-    ? '<div class="list-item" style="color:#22c55e;"><i class="bi bi-check-circle"></i> No products expiring soon</div>'
-    : expiring.map(b=>{
-        const days = b.days_until_expiry;
-        const color = days<=7?'#ef4444':days<=30?'#f59e0b':'#94a3b8';
-        return `<div class="list-item d-flex justify-content-between align-items-center">
-          <div><div class="name">${b.product_name}</div><div class="sub">Batch ${b.batch_number} · ${b.quantity} units</div></div>
-          <span class="badge-pill" style="background:${color};color:${days<=30&&days>7?'#000':'white'};">${days}d left</span>
-        </div>`;
-      }).join('');
 
   // Stock alerts
   let stockHtml = '';
@@ -381,8 +362,7 @@ async function loadOverview(){
         <div style="color:#f59e0b;font-weight:700;">${fmt(p.revenue)}</div>
       </div>`).join('');
 
-  // WhatsApp summary
-  const company = d.company?.company_name||'ShelfSense';
+  const company = d.company?.company_name||'Apple City';
   const now = new Date().toLocaleString('en-GH');
   document.getElementById('whatsapp-summary').value =
     `📊 *${company} — Daily Summary*\n🗓 ${now}\n\n`+
@@ -391,11 +371,10 @@ async function loadOverview(){
     `💸 *Cost:* ${fmt(d.today?.cost)}\n`+
     `🧾 *Receipts:* ${d.today?.receipts||0}\n`+
     `💳 *Total Debt:* ${fmt(d.total_debt)}\n\n`+
-    (expiring.length>0?`⏰ *Expiring Soon:*\n${expiring.slice(0,3).map(b=>`• ${b.product_name} (${b.days_until_expiry}d)`).join('\n')}\n\n`:'')+
     (d.out_of_stock?.length>0?`🔴 *Out of Stock:*\n${d.out_of_stock.map(p=>`• ${p.name}`).join('\n')}\n\n`:'')+
     (d.low_stock?.length>0?`⚠️ *Low Stock:*\n${d.low_stock.map(p=>`• ${p.name} (${p.quantity})`).join('\n')}\n\n`:'')+
     (debtors.length>0?`💳 *Top Debtors:*\n${debtors.slice(0,3).map(c=>`• ${c.name}: ${fmt(c.total_debt)}`).join('\n')}\n\n`:'')+
-    `_Sent from ShelfSense POS_`;
+    `_Sent from Apple City POS_`;
 }
 
 // ── LIVE RECEIPTS ─────────────────────────────────────────────────

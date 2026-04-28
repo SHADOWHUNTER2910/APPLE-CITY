@@ -47,9 +47,9 @@ try {
                 echo json_encode(['error' => 'Product not found']);
                 exit;
             }
-            $unitsStmt = $pdo->prepare('SELECT * FROM product_units WHERE product_id = ? ORDER BY is_base_unit DESC, unit_name ASC');
-            $unitsStmt->execute([$product['id']]);
-            $product['units'] = $unitsStmt->fetchAll();
+            $varStmt = $pdo->prepare('SELECT v.*, SUM(CASE WHEN u.status="in_stock" THEN 1 ELSE 0 END) as in_stock FROM product_variants v LEFT JOIN imei_units u ON u.variant_id = v.id WHERE v.product_id = ? GROUP BY v.id ORDER BY v.storage, v.color');
+            $varStmt->execute([$product['id']]);
+            $product['variants'] = $varStmt->fetchAll();
             echo json_encode(['item' => $product]);
             exit;
         }
@@ -80,11 +80,11 @@ try {
         $totalItems = (int)$countStmt->fetchColumn();
         $totalPages = (int)ceil($totalItems / $pageSize);
         
-        // Fetch units for each product
-        $unitsStmt = $pdo->prepare('SELECT * FROM product_units WHERE product_id = ? ORDER BY is_base_unit DESC, unit_name ASC');
+        // Fetch variants and IMEI stock counts for each product
+        $varStmt  = $pdo->prepare('SELECT v.*, SUM(CASE WHEN u.status="in_stock" THEN 1 ELSE 0 END) as in_stock FROM product_variants v LEFT JOIN imei_units u ON u.variant_id = v.id WHERE v.product_id = ? GROUP BY v.id ORDER BY v.storage, v.color');
         foreach ($products as &$product) {
-            $unitsStmt->execute([$product['id']]);
-            $product['units'] = $unitsStmt->fetchAll();
+            $varStmt->execute([$product['id']]);
+            $product['variants'] = $varStmt->fetchAll();
         }
         
         echo json_encode([
@@ -101,11 +101,10 @@ try {
 
     if ($method === 'POST') {
         $data = json_input();
-        $sku = trim((string)($data['sku'] ?? ''));
-        $name = trim((string)($data['name'] ?? ''));
+        $sku        = trim((string)($data['sku'] ?? ''));
+        $name       = trim((string)($data['name'] ?? ''));
         $unit_price = (float)($data['unit_price'] ?? 0);
         $cost_price = (float)($data['cost_price'] ?? 0);
-        $has_expiry = (int)($data['has_expiry'] ?? 0);
         if ($sku === '' || $name === '') {
             http_response_code(400);
             echo json_encode(['error' => 'sku and name are required']);
@@ -116,38 +115,18 @@ try {
         $checkName = $pdo->prepare('SELECT id, name FROM products WHERE LOWER(name) = LOWER(?) AND id != 0 AND sku != "DELETED"');
         $checkName->execute([$name]);
         $existingProduct = $checkName->fetch();
-        
         if ($existingProduct) {
             http_response_code(409);
-            echo json_encode([
-                'error' => 'duplicate_name',
-                'message' => 'A product with this name already exists',
-                'existing_product' => $existingProduct['name']
-            ]);
+            echo json_encode(['error' => 'duplicate_name', 'message' => 'A product with this name already exists', 'existing_product' => $existingProduct['name']]);
             exit;
         }
 
         $pdo->beginTransaction();
         try {
-            $ins = $pdo->prepare('INSERT INTO products (sku, name, unit_price, has_expiry) VALUES (?, ?, ?, ?)');
-            $ins->execute([$sku, $name, $unit_price, $has_expiry]);
+            $ins = $pdo->prepare('INSERT INTO products (sku, name, unit_price, cost_price) VALUES (?, ?, ?, ?)');
+            $ins->execute([$sku, $name, $unit_price, $cost_price]);
             $pid = (int)$pdo->lastInsertId();
-            
-            // Ensure stock row exists
-            $stk = $pdo->prepare('INSERT INTO stock (product_id, quantity) VALUES (?, 0)');
-            $stk->execute([$pid]);
-            
-            // Create default unit (base unit) with cost_price
-            $unitStmt = $pdo->prepare('
-                INSERT INTO product_units (product_id, unit_name, unit_abbreviation, conversion_factor, unit_price, cost_price, is_base_unit) 
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            ');
-            $unitStmt->execute([$pid, 'Unit', 'unit', 1.0, $unit_price, $cost_price, 1]);
-            $defaultUnitId = (int)$pdo->lastInsertId();
-            
-            // Set default_unit_id in products table
-            $pdo->prepare('UPDATE products SET default_unit_id = ? WHERE id = ?')->execute([$defaultUnitId, $pid]);
-            
+            $pdo->prepare('INSERT INTO stock (product_id, quantity) VALUES (?, 0)')->execute([$pid]);
             $pdo->commit();
             echo json_encode(['id' => $pid]);
         } catch (Throwable $e) {
@@ -167,16 +146,16 @@ try {
         }
         
         $data = json_input();
-        $name = trim((string)($data['name'] ?? ''));
+        $name       = trim((string)($data['name'] ?? ''));
         $unit_price = (float)($data['unit_price'] ?? 0);
-        $has_expiry = isset($data['has_expiry']) ? (int)$data['has_expiry'] : null;
-        
+        $cost_price = (float)($data['cost_price'] ?? 0);
+
         if ($name === '') {
             http_response_code(400);
             echo json_encode(['error' => 'name is required']);
             exit;
         }
-        
+
         // Check for duplicate name (excluding current product)
         $checkName = $pdo->prepare('SELECT id FROM products WHERE LOWER(name) = LOWER(?) AND id != ? AND sku != "DELETED"');
         $checkName->execute([$name, $id]);
@@ -185,15 +164,10 @@ try {
             echo json_encode(['error' => 'duplicate_name', 'message' => 'A product with this name already exists']);
             exit;
         }
-        
+
         try {
-            if ($has_expiry !== null) {
-                $stmt = $pdo->prepare('UPDATE products SET name = ?, unit_price = ?, has_expiry = ? WHERE id = ?');
-                $stmt->execute([$name, $unit_price, $has_expiry, $id]);
-            } else {
-                $stmt = $pdo->prepare('UPDATE products SET name = ?, unit_price = ? WHERE id = ?');
-                $stmt->execute([$name, $unit_price, $id]);
-            }
+            $stmt = $pdo->prepare('UPDATE products SET name = ?, unit_price = ?, cost_price = ? WHERE id = ?');
+            $stmt->execute([$name, $unit_price, $cost_price, $id]);
             echo json_encode(['updated' => $stmt->rowCount()]);
         } catch (Throwable $e) {
             http_response_code(500);

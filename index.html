@@ -1,9 +1,9 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ShelfSense POS - Smart Retail Management</title>
+  <title>Apple City POS - iPhone Sales & Service</title>
   <link rel="icon" type="image/png" href="assets/logo.png">
   <link href="assets/css/bootstrap.min.css" rel="stylesheet">
   <link href="assets/css/bootstrap-icons.css" rel="stylesheet">
@@ -335,12 +335,12 @@
                style="max-height: 120px; width: auto;"
                onerror="this.style.display='none'; document.getElementById('fallback-icon').style.display='block';">
           <div id="fallback-icon" style="display: none;">
-            <div style="width: 80px; height: 80px; background: #667eea; border-radius: 50%; margin: 0 auto; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 14px; text-align: center; line-height: 1.2;">
-              SHELF<br>SENSE
+            <div style="width: 80px; height: 80px; background: #1d1d1f; border-radius: 50%; margin: 0 auto; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 14px; text-align: center; line-height: 1.2;">
+              APPLE<br>CITY
             </div>
           </div>
         </div>
-        <p class="text-muted mb-1" style="font-size: 13px; font-weight: 600; letter-spacing: 0.5px;">Track Stock. Prevent Loss. Grow Profit.</p>
+        <p class="text-muted mb-1" style="font-size: 13px; font-weight: 600; letter-spacing: 0.5px;">Apple City — Authorised iPhone Dealer</p>
         <p class="text-muted small">Sign in to your account</p>
       </div>
       <form id="form-login">
@@ -373,7 +373,7 @@
     <nav class="navbar navbar-expand-lg navbar-dark" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);">
       <div class="container-fluid">
         <a class="navbar-brand d-flex align-items-center" href="#">
-          <img src="assets/logo.png" alt="ShelfSense POS" 
+          <img src="assets/logo.png" alt="Apple City POS" 
                style="height: 36px; width: auto; background: white; padding: 3px; border-radius: 4px; margin-right: 8px;" 
                onerror="this.style.display='none';">
         </a>
@@ -393,8 +393,8 @@
               Dashboard
             </a>
             <a class="nav-link" href="#" data-section="stock">
-              <i class="bi bi-boxes"></i>
-              Stock Management
+              <i class="bi bi-phone"></i>
+              iPhone Inventory
             </a>
             <a class="nav-link" href="#" data-section="receipts">
               <i class="bi bi-receipt"></i>
@@ -408,10 +408,22 @@
               <i class="bi bi-box"></i>
               Product Management
             </a>
-            <a class="nav-link admin-only hidden" href="#" data-section="expiry">
-              <i class="bi bi-calendar-check"></i>
-              Expiry Management
-              <span id="expiry-badge" class="badge bg-danger ms-2" style="display: none;">0</span>
+            <a class="nav-link admin-only hidden" href="#" data-section="imei">
+              <i class="bi bi-upc-scan"></i>
+              IMEI Registry
+            </a>
+            <a class="nav-link" href="#" data-section="repairs">
+              <i class="bi bi-tools"></i>
+              Repairs & Service
+              <span id="repairs-badge" class="badge bg-warning ms-1" style="display:none;">0</span>
+            </a>
+            <a class="nav-link" href="#" data-section="trade-ins">
+              <i class="bi bi-arrow-left-right"></i>
+              Trade-ins
+            </a>
+            <a class="nav-link" href="#" data-section="warranties">
+              <i class="bi bi-shield-check"></i>
+              Warranties
             </a>
             <a class="nav-link admin-only hidden" href="#" data-section="analytics">
               <i class="bi bi-graph-up"></i>
@@ -422,10 +434,9 @@
               Inventory Predictions
               <span id="predictions-badge" class="badge bg-danger ms-1" style="display:none;">0</span>
             </a>
-            <a class="nav-link admin-only hidden" href="#" data-section="antitheft">
-              <i class="bi bi-shield-exclamation"></i>
-              Anti-Theft Monitor
-              <span id="antitheft-badge" class="badge bg-danger ms-1" style="display:none;">!</span>
+            <a class="nav-link admin-only hidden" href="#" data-section="suppliers">
+              <i class="bi bi-truck"></i>
+              Suppliers
             </a>
             <a class="nav-link admin-only hidden" href="#" data-section="users">
               <i class="bi bi-people"></i>
@@ -459,9 +470,9 @@
                     <img src="assets/logo.png" alt="Company Logo" style="height: 60px; width: auto;" onerror="this.style.display='none'">
                   </div>
                   <div class="col-md-10">
-                    <h3 class="mb-1">Welcome to ShelfSense POS</h3>
-                    <p class="mb-0">Smart POS & Inventory System for Modern Retail</p>
-                    <small class="opacity-75">Track Stock. Prevent Loss. Grow Profit.</small>
+                    <h3 class="mb-1">Welcome to Apple City POS</h3>
+                    <p class="mb-0">iPhone Sales, Repairs & Service Management</p>
+                    <small class="opacity-75">Authorised iPhone Dealer</small>
                   </div>
                 </div>
               </div>
@@ -515,21 +526,21 @@
             <!-- Stats Cards Row 2 -->
             <div class="row mb-4">
               <div class="col-md-4">
-                <div class="stat-card danger" onclick="showSection('expiry')" style="cursor:pointer;" title="Go to Expiry Management">
+                <div class="stat-card danger" onclick="showSection('repairs')" style="cursor:pointer;" title="Go to Repairs">
                   <div class="d-flex justify-content-between align-items-center">
                     <div>
                       <div class="d-flex align-items-center gap-3 mb-1">
                         <div>
-                          <h3 id="expiring-items" class="mb-0">0</h3>
-                          <small><i class="bi bi-clock-history text-warning"></i> Expiring Soon</small>
+                          <h3 id="active-repairs" class="mb-0">0</h3>
+                          <small><i class="bi bi-tools text-warning"></i> Active Repairs</small>
                         </div>
                         <div class="border-start ps-3">
-                          <h3 id="expired-items" class="mb-0">0</h3>
-                          <small><i class="bi bi-x-circle text-danger"></i> Expired</small>
+                          <h3 id="ready-repairs" class="mb-0">0</h3>
+                          <small><i class="bi bi-check-circle text-success"></i> Ready</small>
                         </div>
                       </div>
                     </div>
-                    <i class="bi bi-calendar-x display-4 opacity-50"></i>
+                    <i class="bi bi-tools display-4 opacity-50"></i>
                   </div>
                 </div>
               </div>
@@ -558,18 +569,18 @@
             </div>
 
             <div class="row">
-              <!-- Expiring Products -->
+              <!-- Active Repairs -->
               <div class="col-md-6">
                 <div class="card">
                   <div class="card-header">
                     <h5 class="mb-0">
-                      <i class="bi bi-calendar-x text-danger"></i>
-                      Expiring Products (Next 3 Months)
+                      <i class="bi bi-tools text-warning"></i>
+                      Active Repairs
                     </h5>
                   </div>
                   <div class="card-body">
-                    <div id="expiring-products-list">
-                      <!-- Expiring products will be populated here -->
+                    <div id="active-repairs-list">
+                      <!-- Active repairs will be populated here -->
                     </div>
                   </div>
                 </div>
@@ -610,10 +621,10 @@
               </div>
             </div>
           </div>
-          <!-- Stock Management Section -->
+          <!-- iPhone Inventory Section -->
           <div id="section-stock" class="content-section hidden">
             <div class="d-flex justify-content-between align-items-center mb-4">
-              <h2><i class="bi bi-boxes"></i> Stock Management</h2>
+              <h2><i class="bi bi-phone"></i> iPhone Inventory</h2>
               <button class="btn btn-outline-primary" onclick="refreshWithFeedback(this, loadStock)">
                 <i class="bi bi-arrow-clockwise"></i> Refresh
               </button>
@@ -625,14 +636,14 @@
                   <div class="col-md-12">
                     <h5 class="mb-0"><i class="bi bi-list"></i> Stock Levels</h5>
                   </div>
-                  <div class="col-md-4">
+                  <div class="col-md-5">
                     <div class="input-group">
                       <span class="input-group-text"><i class="bi bi-search"></i></span>
                       <input 
                         type="text" 
                         class="form-control" 
                         id="stock-search" 
-                        placeholder="Search by name or SKU..." 
+                        placeholder="Search by model name or SKU..." 
                         autocomplete="off"
                         onkeyup="filterStock()"
                       >
@@ -641,7 +652,7 @@
                       </button>
                     </div>
                   </div>
-                  <div class="col-md-3">
+                  <div class="col-md-4">
                     <select class="form-select" id="stock-status-filter" onchange="filterStock()">
                       <option value="all">All Status</option>
                       <option value="in-stock">In Stock</option>
@@ -650,13 +661,6 @@
                     </select>
                   </div>
                   <div class="col-md-3">
-                    <select class="form-select" id="stock-expiry-filter" onchange="filterStock()">
-                      <option value="all">All Products</option>
-                      <option value="with-expiry">With Expiry Tracking</option>
-                      <option value="without-expiry">Without Expiry</option>
-                    </select>
-                  </div>
-                  <div class="col-md-2">
                     <button class="btn btn-outline-primary w-100" onclick="clearAllStockFilters()">
                       <i class="bi bi-arrow-counterclockwise"></i> Reset
                     </button>
@@ -670,12 +674,11 @@
                       <tr>
                         <th>ID</th>
                         <th>SKU</th>
-                        <th>Product Name</th>
-                        <th>Unit Price</th>
-                        <th>Initial Qty</th>
-                        <th>Current Qty</th>
+                        <th>Model</th>
+                        <th>Base Price</th>
+                        <th>Variants</th>
+                        <th>In Stock</th>
                         <th>Sold</th>
-                        <th>Total Received</th>
                         <th>Status</th>
                         <th class="no-print">Actions</th>
                       </tr>
@@ -768,9 +771,6 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
               <h2><i class="bi bi-box"></i> Product Management</h2>
               <div>
-                <button class="btn btn-success me-2" onclick="openBulkImportModal()">
-                  <i class="bi bi-upload"></i> Bulk Import
-                </button>
                 <button class="btn btn-danger me-2" onclick="deleteAllProducts()">
                   <i class="bi bi-trash"></i> Delete All Products
                 </button>
@@ -816,12 +816,7 @@
                       <small class="text-muted">Selling price for the base unit (e.g., per piece)</small>
                     </div>
                     <div class="col-md-4">
-                      <div class="form-check mt-4">
-                        <input class="form-check-input" type="checkbox" id="product-has-expiry" name="has_expiry" value="1" style="cursor: pointer !important; pointer-events: auto !important;">
-                        <label class="form-check-label" for="product-has-expiry" style="cursor: pointer; user-select: none;" onclick="document.getElementById('product-has-expiry').checked = !document.getElementById('product-has-expiry').checked;"></label>
-                          <strong>Product has expiry date</strong>
-                        </label>
-                      </div>
+                      <!-- Expiry tracking removed for iPhone shop -->
                     </div>
                     <div class="col-12">
                       <button type="submit" class="btn btn-success">
@@ -884,10 +879,9 @@
                       <tr>
                         <th>ID</th>
                         <th>SKU</th>
-                        <th>Product Name</th>
-                        <th>Base Unit Price</th>
-                        <th>Units</th>
-                        <th>Has Expiry</th>
+                        <th>Model Name</th>
+                        <th>Base Price</th>
+                        <th>Variants</th>
                         <th>Created</th>
                         <th class="no-print">Actions</th>
                       </tr>
@@ -2245,282 +2239,332 @@
             </div>
           </div>
 
-          <!-- Expiry Management Section (Admin Only) -->
-          <div id="section-expiry" class="content-section hidden">
+
+          <!-- IMEI Registry Section (Admin Only) -->
+          <div id="section-imei" class="content-section hidden">
             <div class="d-flex justify-content-between align-items-center mb-4">
-              <h2><i class="bi bi-calendar-check"></i> Expiry Management</h2>
+              <h2><i class="bi bi-upc-scan"></i> IMEI Registry</h2>
               <div>
-                <button class="btn btn-warning me-2" onclick="openClearanceModeModal()">
-                  <i class="bi bi-tag"></i> Clearance Mode
+                <button class="btn btn-success me-2" onclick="openAddImeiModal()">
+                  <i class="bi bi-plus-circle"></i> Add IMEI Unit
                 </button>
-                <button class="btn btn-danger me-2" onclick="deleteAllExpiredBatches()">
-                  <i class="bi bi-trash"></i> Delete All Expired
-                </button>
-                <button class="btn btn-outline-secondary me-2" onclick="clearAcknowledgedBatches()" title="Reset notification dismissals">
-                  <i class="bi bi-bell"></i> Reset Notifications
-                </button>
-                <button class="btn btn-outline-primary" onclick="refreshWithFeedback(this, () => loadBatches('all'))">
+                <button class="btn btn-outline-primary" onclick="refreshWithFeedback(this, loadImeiRegistry)">
                   <i class="bi bi-arrow-clockwise"></i> Refresh
                 </button>
               </div>
             </div>
-            
-            <!-- Notification Status -->
-            <div id="notification-status" class="alert alert-info mb-3" style="display: none;">
-              <i class="bi bi-info-circle"></i> 
-              <span id="notification-status-text"></span>
-            </div>
-
-            <!-- Filter Tabs -->
-            <ul class="nav nav-tabs mb-3" role="tablist">
-              <li class="nav-item">
-                <button class="nav-link active" onclick="loadBatches('all')">All Batches</button>
-              </li>
-              <li class="nav-item">
-                <button class="nav-link" onclick="loadBatches('expiring')">Expiring Soon (30 days)</button>
-              </li>
-              <li class="nav-item">
-                <button class="nav-link" onclick="loadBatches('expired')">Expired</button>
-              </li>
-            </ul>
-
-            <!-- Batches Table -->
-            <div class="card">
-              <div class="card-body">
+            <div class="card mb-3">
+              <div class="card-header">
+                <div class="row g-2 align-items-center">
+                  <div class="col-md-4">
+                    <input type="text" class="form-control" id="imei-search" placeholder="Search IMEI, model..." oninput="loadImeiRegistry()">
+                  </div>
+                  <div class="col-md-3">
+                    <select class="form-select" id="imei-status-filter" onchange="loadImeiRegistry()">
+                      <option value="all">All Status</option>
+                      <option value="in_stock">In Stock</option>
+                      <option value="sold">Sold</option>
+                    </select>
+                  </div>
+                  <div class="col-md-3">
+                    <select class="form-select" id="imei-product-filter" onchange="loadImeiRegistry()">
+                      <option value="">All Models</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div class="card-body p-0">
                 <div class="table-responsive">
-                  <table class="table table-hover">
+                  <table class="table table-hover mb-0">
                     <thead class="table-dark">
                       <tr>
-                        <th>Product</th>
-                        <th>Batch #</th>
-                        <th>Mfg Date</th>
-                        <th>Expiry Date</th>
-                        <th>Quantity</th>
+                        <th>IMEI</th>
+                        <th>Model</th>
+                        <th>Storage</th>
+                        <th>Color</th>
+                        <th>Cost</th>
+                        <th>Selling Price</th>
+                        <th>Supplier</th>
                         <th>Status</th>
-                        <th>Days Left</th>
-                        <th>Suggested Discount</th>
-                        <th class="no-print">Actions</th>
+                        <th>Actions</th>
                       </tr>
                     </thead>
-                    <tbody id="tbl-batches">
-                      <!-- Batches will be populated here -->
-                    </tbody>
+                    <tbody id="tbl-imei"></tbody>
                   </table>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Clearance Mode Modal -->
-          <div class="modal fade" id="clearanceModeModal" tabindex="-1">
-            <div class="modal-dialog">
-              <div class="modal-content">
-                <div class="modal-header bg-warning text-dark">
-                  <h5 class="modal-title"><i class="bi bi-tag"></i> Clearance Mode — Apply Bulk Discount</h5>
-                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                  <div class="alert alert-warning">
-                    <i class="bi bi-exclamation-triangle"></i>
-                    This will apply a discount to the selling price of all products expiring within the selected number of days.
+          <!-- Repairs & Service Section -->
+          <div id="section-repairs" class="content-section hidden">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+              <h2><i class="bi bi-tools"></i> Repairs & Service</h2>
+              <div>
+                <button class="btn btn-success me-2" onclick="openNewRepairModal()">
+                  <i class="bi bi-plus-circle"></i> New Job Card
+                </button>
+                <button class="btn btn-outline-primary" onclick="refreshWithFeedback(this, loadRepairs)">
+                  <i class="bi bi-arrow-clockwise"></i> Refresh
+                </button>
+              </div>
+            </div>
+            <!-- Summary Cards -->
+            <div class="row mb-4">
+              <div class="col-md-3">
+                <div class="stat-card warning">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div><h3 id="rep-received" class="mb-0">0</h3><p class="mb-0">Received</p></div>
+                    <i class="bi bi-inbox display-4 opacity-50"></i>
                   </div>
-                  <div class="mb-3">
-                    <label class="form-label">Apply to products expiring within</label>
-                    <select class="form-select" id="clearance-days">
-                      <option value="7">7 days</option>
-                      <option value="14">14 days</option>
-                      <option value="30" selected>30 days</option>
-                      <option value="60">60 days</option>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="stat-card info">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div><h3 id="rep-in-progress" class="mb-0">0</h3><p class="mb-0">In Progress</p></div>
+                    <i class="bi bi-gear display-4 opacity-50"></i>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="stat-card success">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div><h3 id="rep-ready" class="mb-0">0</h3><p class="mb-0">Ready for Collection</p></div>
+                    <i class="bi bi-check-circle display-4 opacity-50"></i>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="stat-card">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div><h3 id="rep-revenue" class="mb-0">GH0</h3><p class="mb-0">Repair Revenue (30d)</p></div>
+                    <i class="bi bi-cash-coin display-4 opacity-50"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header">
+                <div class="row g-2 align-items-center">
+                  <div class="col-md-4">
+                    <input type="text" class="form-control" id="repair-search" placeholder="Search job#, customer, IMEI..." oninput="loadRepairs()">
+                  </div>
+                  <div class="col-md-3">
+                    <select class="form-select" id="repair-status-filter" onchange="loadRepairs()">
+                      <option value="">All Status</option>
+                      <option value="received">Received</option>
+                      <option value="diagnosing">Diagnosing</option>
+                      <option value="awaiting_parts">Awaiting Parts</option>
+                      <option value="in_repair">In Repair</option>
+                      <option value="ready">Ready</option>
+                      <option value="collected">Collected</option>
+                      <option value="cancelled">Cancelled</option>
                     </select>
                   </div>
-                  <div class="mb-3">
-                    <label class="form-label">Discount Percentage</label>
-                    <div class="input-group">
-                      <input type="number" class="form-control" id="clearance-discount" value="20" min="1" max="90" autocomplete="off">
-                      <span class="input-group-text">%</span>
-                    </div>
+                </div>
+              </div>
+              <div class="card-body p-0">
+                <div class="table-responsive">
+                  <table class="table table-hover mb-0">
+                    <thead class="table-dark">
+                      <tr>
+                        <th>Job #</th>
+                        <th>Customer</th>
+                        <th>Device</th>
+                        <th>IMEI</th>
+                        <th>Issue</th>
+                        <th>Charge</th>
+                        <th>Payment</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="tbl-repairs"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Trade-ins Section -->
+          <div id="section-trade-ins" class="content-section hidden">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+              <h2><i class="bi bi-arrow-left-right"></i> Trade-ins</h2>
+              <div>
+                <button class="btn btn-success me-2" onclick="openNewTradeInModal()">
+                  <i class="bi bi-plus-circle"></i> New Trade-in
+                </button>
+                <button class="btn btn-outline-primary" onclick="refreshWithFeedback(this, loadTradeIns)">
+                  <i class="bi bi-arrow-clockwise"></i> Refresh
+                </button>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header">
+                <div class="row g-2 align-items-center">
+                  <div class="col-md-4">
+                    <input type="text" class="form-control" id="tradein-search" placeholder="Search customer, model, IMEI..." oninput="loadTradeIns()">
                   </div>
-                  <div id="clearance-preview" class="mt-3"></div>
+                  <div class="col-md-3">
+                    <select class="form-select" id="tradein-status-filter" onchange="loadTradeIns()">
+                      <option value="">All Status</option>
+                      <option value="pending">Pending</option>
+                      <option value="completed">Completed</option>
+                      <option value="cancelled">Cancelled</option>
+                    </select>
+                  </div>
                 </div>
-                <div class="modal-footer">
-                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                  <button type="button" class="btn btn-warning" onclick="previewClearance()">
-                    <i class="bi bi-eye"></i> Preview
-                  </button>
-                  <button type="button" class="btn btn-danger" id="clearance-apply-btn" style="display:none;" onclick="applyClearanceDiscount()">
-                    <i class="bi bi-check-circle"></i> Apply Discount
-                  </button>
+              </div>
+              <div class="card-body p-0">
+                <div class="table-responsive">
+                  <table class="table table-hover mb-0">
+                    <thead class="table-dark">
+                      <tr>
+                        <th>Customer</th>
+                        <th>Phone</th>
+                        <th>Device</th>
+                        <th>IMEI</th>
+                        <th>Condition</th>
+                        <th>Agreed Value</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="tbl-trade-ins"></tbody>
+                  </table>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Batch Modal -->
-          <div class="modal fade" id="batchModal" tabindex="-1">
-            <div class="modal-dialog">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h5 class="modal-title">Add New Batch</h5>
-                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          <!-- Warranties Section -->
+          <div id="section-warranties" class="content-section hidden">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+              <h2><i class="bi bi-shield-check"></i> Warranties</h2>
+              <div>
+                <button class="btn btn-outline-primary" onclick="refreshWithFeedback(this, loadWarranties)">
+                  <i class="bi bi-arrow-clockwise"></i> Refresh
+                </button>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header">
+                <div class="row g-2 align-items-center">
+                  <div class="col-md-4">
+                    <input type="text" class="form-control" id="warranty-search" placeholder="Search IMEI, customer, model..." oninput="loadWarranties()">
+                  </div>
+                  <div class="col-md-3">
+                    <select class="form-select" id="warranty-status-filter" onchange="loadWarranties()">
+                      <option value="">All</option>
+                      <option value="active">Active</option>
+                      <option value="expired">Expired</option>
+                    </select>
+                  </div>
                 </div>
-                <div class="modal-body">
-                  <form id="form-batch">
-                    <input type="hidden" name="product_id" id="batch-product-id">
-                    <div class="mb-3">
-                      <label class="form-label">Batch Number *</label>
-                      <div class="input-group">
-                        <input type="text" class="form-control" id="batch-number-input" name="batch_number" placeholder="Auto-generated" readonly style="background-color: #f8f9fa;">
-                        <button type="button" class="btn btn-outline-secondary" onclick="generateBatchNumber()" title="Generate new batch number">
-                          <i class="bi bi-arrow-clockwise"></i>
-                        </button>
-                      </div>
-                      <small class="text-muted">Batch number is auto-generated. Click refresh to generate a new one.</small>
-                    </div>
-                    <div class="mb-3">
-                      <label class="form-label">Manufacturing Date</label>
-                      <input type="date" class="form-control" name="manufacturing_date">
-                    </div>
-                    <div class="mb-3">
-                      <label class="form-label">Expiry Date *</label>
-                      <input type="date" class="form-control" name="expiry_date" required>
-                    </div>
-                    <div class="mb-3">
-                      <label class="form-label">Quantity *</label>
-                      <input type="number" class="form-control" name="quantity" min="1" required>
-                    </div>
-                  </form>
-                </div>
-                <div class="modal-footer">
-                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                  <button type="button" class="btn btn-primary" onclick="addBatch()">Add Batch</button>
+              </div>
+              <div class="card-body p-0">
+                <div class="table-responsive">
+                  <table class="table table-hover mb-0">
+                    <thead class="table-dark">
+                      <tr>
+                        <th>IMEI</th>
+                        <th>Product</th>
+                        <th>Customer</th>
+                        <th>Phone</th>
+                        <th>Start Date</th>
+                        <th>End Date</th>
+                        <th>Days Left</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody id="tbl-warranties"></tbody>
+                  </table>
                 </div>
               </div>
             </div>
           </div>
 
+          <!-- Suppliers Section (Admin Only) -->
+          <div id="section-suppliers" class="content-section hidden">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+              <h2><i class="bi bi-truck"></i> Suppliers</h2>
+              <div>
+                <button class="btn btn-success me-2" onclick="openAddSupplierModal()">
+                  <i class="bi bi-plus-circle"></i> Add Supplier
+                </button>
+                <button class="btn btn-outline-primary" onclick="refreshWithFeedback(this, loadSuppliers)">
+                  <i class="bi bi-arrow-clockwise"></i> Refresh
+                </button>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-body p-0">
+                <div class="table-responsive">
+                  <table class="table table-hover mb-0">
+                    <thead class="table-dark">
+                      <tr>
+                        <th>Name</th>
+                        <th>Phone</th>
+                        <th>Email</th>
+                        <th>Address</th>
+                        <th>Units Supplied</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="tbl-suppliers"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
           <!-- System Settings Section (Admin Only) -->
           <div id="section-settings" class="content-section hidden">
             <div class="d-flex justify-content-between align-items-center mb-4">
               <h2><i class="bi bi-gear"></i> System Settings</h2>
+              <button class="btn btn-outline-primary" onclick="refreshWithFeedback(this, loadCompanySettings)">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+              </button>
             </div>
-
-            <!-- Company Information Settings -->
             <div class="card mb-4">
-              <div class="card-header">
-                <h5 class="mb-0">
-                  <i class="bi bi-building"></i>
-                  Company Information
-                </h5>
-              </div>
+              <div class="card-header"><h5 class="mb-0"><i class="bi bi-building"></i> Company Information</h5></div>
               <div class="card-body">
+                <div id="company-preview" class="border rounded p-3 mb-3 text-center bg-light"></div>
                 <form id="form-company-settings">
                   <div class="row g-3">
                     <div class="col-md-6">
-                      <label class="form-label">Company Name</label>
-                      <input type="text" class="form-control" name="company_name" required>
+                      <label class="form-label fw-semibold">Company Name</label>
+                      <input type="text" class="form-control" name="company_name" autocomplete="off">
                     </div>
                     <div class="col-md-6">
-                      <label class="form-label">Services/Subtitle</label>
-                      <input type="text" class="form-control" name="company_subtitle" required>
+                      <label class="form-label fw-semibold">Subtitle / Description</label>
+                      <input type="text" class="form-control" name="company_subtitle" autocomplete="off">
                     </div>
                     <div class="col-md-6">
-                      <label class="form-label">Location</label>
-                      <input type="text" class="form-control" name="company_location" required>
+                      <label class="form-label fw-semibold">Location / Address</label>
+                      <input type="text" class="form-control" name="company_location" autocomplete="off">
                     </div>
                     <div class="col-md-6">
-                      <label class="form-label">Phone</label>
-                      <input type="text" class="form-control" name="company_phone" required>
+                      <label class="form-label fw-semibold">Phone Number</label>
+                      <input type="text" class="form-control" name="company_phone" autocomplete="off">
                     </div>
                     <div class="col-md-6">
-                      <label class="form-label">Email (Optional)</label>
-                      <input type="email" class="form-control" name="company_email">
+                      <label class="form-label fw-semibold">Email</label>
+                      <input type="email" class="form-control" name="company_email" autocomplete="off">
                     </div>
                     <div class="col-md-6">
-                      <label class="form-label">Website (Optional)</label>
-                      <input type="url" class="form-control" name="company_website">
+                      <label class="form-label fw-semibold">Website</label>
+                      <input type="text" class="form-control" name="company_website" autocomplete="off">
                     </div>
                     <div class="col-12">
                       <button type="submit" class="btn btn-success">
-                        <i class="bi bi-check-circle"></i> Save Company Information
+                        <i class="bi bi-save"></i> Save Settings
                       </button>
-                      <button type="button" class="btn btn-outline-secondary ms-2" onclick="loadCompanySettings()">
-                        <i class="bi bi-arrow-clockwise"></i> Reset
-                      </button>
-                      <a href="owner.html" target="_blank" class="btn btn-outline-primary ms-2">
-                        <i class="bi bi-phone"></i> Open Owner Dashboard
-                      </a>
                     </div>
                   </div>
                 </form>
-              </div>
-            </div>
-
-            <!-- Current Company Information Preview -->
-            <div class="card mb-4">
-              <div class="card-header">
-                <h6 class="mb-0">Current Company Information (as shown on receipts)</h6>
-              </div>
-              <div class="card-body">
-                <div id="company-preview" class="border p-3" style="background-color: #f8f9fa;">
-                  <!-- Company preview will be loaded here -->
-                </div>
-              </div>
-            </div>
-
-            <!-- Tailscale Remote Access Guide -->
-            <div class="card">
-              <div class="card-header d-flex justify-content-between align-items-center">
-                <h6 class="mb-0"><i class="bi bi-wifi text-primary"></i> Remote Access — Owner Dashboard from Anywhere</h6>
-                <a href="owner.html" target="_blank" class="btn btn-sm btn-primary">
-                  <i class="bi bi-phone"></i> Open Owner Dashboard
-                </a>
-              </div>
-              <div class="card-body">
-                <div class="alert alert-info mb-3">
-                  <i class="bi bi-info-circle"></i>
-                  Use <strong>Tailscale</strong> (free) to access the owner dashboard from your phone anywhere — even outside the shop network.
-                </div>
-                <div class="row g-3">
-                  <div class="col-md-4">
-                    <div class="card border-primary h-100">
-                      <div class="card-body">
-                        <h6 class="text-primary"><i class="bi bi-1-circle-fill"></i> Shop Computer</h6>
-                        <ol class="small mb-0 ps-3">
-                          <li>Go to <strong>tailscale.com</strong></li>
-                          <li>Create a free account</li>
-                          <li>Download & install Tailscale for Windows</li>
-                          <li>Sign in — note your <strong>Tailscale IP</strong> (100.x.x.x)</li>
-                        </ol>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="col-md-4">
-                    <div class="card border-success h-100">
-                      <div class="card-body">
-                        <h6 class="text-success"><i class="bi bi-2-circle-fill"></i> Owner's Phone</h6>
-                        <ol class="small mb-0 ps-3">
-                          <li>Install <strong>Tailscale</strong> from App/Play Store</li>
-                          <li>Sign in with the <strong>same account</strong></li>
-                          <li>Both devices are now connected</li>
-                        </ol>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="col-md-4">
-                    <div class="card border-warning h-100">
-                      <div class="card-body">
-                        <h6 class="text-warning"><i class="bi bi-3-circle-fill"></i> Access Dashboard</h6>
-                        <p class="small mb-1">Open phone browser and go to:</p>
-                        <code class="small">http://100.x.x.x:8000/owner.html</code>
-                        <p class="small text-muted mt-1 mb-0">Replace 100.x.x.x with your Tailscale IP</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div class="alert alert-success mt-3 mb-0">
-                  <i class="bi bi-shield-check"></i>
-                  <strong>Secure:</strong> Only devices signed into your Tailscale account can connect. No one else can access your dashboard.
-                </div>
               </div>
             </div>
           </div>
@@ -2533,58 +2577,26 @@
                 <i class="bi bi-arrow-clockwise"></i> Refresh
               </button>
             </div>
-
             <div class="alert alert-info">
               <i class="bi bi-info-circle"></i>
               Based on your last 30 days of sales. Products with no recent sales are not shown.
             </div>
-
-            <!-- Summary Cards -->
             <div class="row mb-4">
-              <div class="col-md-3">
-                <div class="stat-card danger">
-                  <div class="d-flex justify-content-between align-items-center">
-                    <div><h3 id="pred-out" class="mb-0">0</h3><p class="mb-0">Out of Stock</p></div>
-                    <i class="bi bi-x-circle display-4 opacity-50"></i>
-                  </div>
-                </div>
-              </div>
-              <div class="col-md-3">
-                <div class="stat-card danger">
-                  <div class="d-flex justify-content-between align-items-center">
-                    <div><h3 id="pred-critical" class="mb-0">0</h3><p class="mb-0">Finish in ≤3 Days</p></div>
-                    <i class="bi bi-exclamation-triangle display-4 opacity-50"></i>
-                  </div>
-                </div>
-              </div>
-              <div class="col-md-3">
-                <div class="stat-card warning">
-                  <div class="d-flex justify-content-between align-items-center">
-                    <div><h3 id="pred-urgent" class="mb-0">0</h3><p class="mb-0">Finish in ≤7 Days</p></div>
-                    <i class="bi bi-clock display-4 opacity-50"></i>
-                  </div>
-                </div>
-              </div>
-              <div class="col-md-3">
-                <div class="stat-card info">
-                  <div class="d-flex justify-content-between align-items-center">
-                    <div><h3 id="pred-watch" class="mb-0">0</h3><p class="mb-0">Watch (≤30 Days)</p></div>
-                    <i class="bi bi-eye display-4 opacity-50"></i>
-                  </div>
-                </div>
-              </div>
+              <div class="col-md-3"><div class="stat-card danger"><div class="d-flex justify-content-between align-items-center"><div><h3 id="pred-out" class="mb-0">0</h3><p class="mb-0">Out of Stock</p></div><i class="bi bi-x-circle display-4 opacity-50"></i></div></div></div>
+              <div class="col-md-3"><div class="stat-card warning"><div class="d-flex justify-content-between align-items-center"><div><h3 id="pred-critical" class="mb-0">0</h3><p class="mb-0">Critical (&le;3 days)</p></div><i class="bi bi-exclamation-triangle display-4 opacity-50"></i></div></div></div>
+              <div class="col-md-3"><div class="stat-card info"><div class="d-flex justify-content-between align-items-center"><div><h3 id="pred-urgent" class="mb-0">0</h3><p class="mb-0">Urgent (&le;7 days)</p></div><i class="bi bi-clock display-4 opacity-50"></i></div></div></div>
+              <div class="col-md-3"><div class="stat-card"><div class="d-flex justify-content-between align-items-center"><div><h3 id="pred-watch" class="mb-0">0</h3><p class="mb-0">Watch</p></div><i class="bi bi-eye display-4 opacity-50"></i></div></div></div>
             </div>
-
             <div class="card">
               <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Reorder Suggestions</h5>
+                <h5 class="mb-0">Stock Predictions</h5>
                 <select class="form-select form-select-sm" id="pred-filter" onchange="filterPredictions()" style="width:auto;">
-                  <option value="all">All Flagged</option>
+                  <option value="all">All</option>
                   <option value="out_of_stock">Out of Stock</option>
-                  <option value="critical">Critical (≤3 days)</option>
-                  <option value="urgent">Urgent (≤7 days)</option>
-                  <option value="low">Low (≤14 days)</option>
-                  <option value="watch">Watch (≤30 days)</option>
+                  <option value="critical">Critical</option>
+                  <option value="urgent">Urgent</option>
+                  <option value="low">Low</option>
+                  <option value="watch">Watch</option>
                 </select>
               </div>
               <div class="card-body p-0">
@@ -2592,8 +2604,8 @@
                   <table class="table table-hover mb-0">
                     <thead class="table-dark">
                       <tr>
-                        <th>Product</th>
-                        <th>Current Stock</th>
+                        <th>Model</th>
+                        <th>In Stock</th>
                         <th>Sold (30d)</th>
                         <th>Daily Rate</th>
                         <th>Days Left</th>
@@ -2608,253 +2620,202 @@
             </div>
           </div>
 
-          <!-- Anti-Theft Monitor Section (Admin Only) -->
-          <div id="section-antitheft" class="content-section hidden">
+          <!-- System Settings Section (Admin Only) -->
+          <div id="section-settings" class="content-section hidden">
             <div class="d-flex justify-content-between align-items-center mb-4">
-              <h2><i class="bi bi-shield-exclamation text-danger"></i> Anti-Theft Monitor</h2>
-              <div class="d-flex align-items-center gap-2">
-                <select class="form-select form-select-sm" id="antitheft-period" onchange="loadAntiTheft()" style="width:auto;">
-                  <option value="7">Last 7 days</option>
-                  <option value="30" selected>Last 30 days</option>
-                  <option value="90">Last 90 days</option>
-                  <option value="365">Last year</option>
-                </select>
-                <button class="btn btn-outline-primary btn-sm" onclick="refreshWithFeedback(this, loadAntiTheft)">
-                  <i class="bi bi-arrow-clockwise"></i> Refresh
-                </button>
+              <h2><i class="bi bi-gear"></i> System Settings</h2>
+              <button class="btn btn-outline-primary" onclick="refreshWithFeedback(this, loadCompanySettings)">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+              </button>
+            </div>
+            <div class="card mb-4">
+              <div class="card-header"><h5 class="mb-0"><i class="bi bi-building"></i> Company Information</h5></div>
+              <div class="card-body">
+                <div id="company-preview" class="border rounded p-3 mb-3 text-center bg-light"></div>
+                <form id="form-company-settings">
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <label class="form-label fw-semibold">Company Name</label>
+                      <input type="text" class="form-control" name="company_name" autocomplete="off">
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label fw-semibold">Subtitle / Description</label>
+                      <input type="text" class="form-control" name="company_subtitle" autocomplete="off">
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label fw-semibold">Location / Address</label>
+                      <input type="text" class="form-control" name="company_location" autocomplete="off">
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label fw-semibold">Phone Number</label>
+                      <input type="text" class="form-control" name="company_phone" autocomplete="off">
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label fw-semibold">Email</label>
+                      <input type="email" class="form-control" name="company_email" autocomplete="off">
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label fw-semibold">Website</label>
+                      <input type="text" class="form-control" name="company_website" autocomplete="off">
+                    </div>
+                    <div class="col-12">
+                      <button type="submit" class="btn btn-success">
+                        <i class="bi bi-save"></i> Save Settings
+                      </button>
+                    </div>
+                  </div>
+                </form>
               </div>
             </div>
+          </div>
 
-            <!-- Summary Cards -->
+          <!-- Inventory Predictions Section (Admin Only) -->
+          <div id="section-predictions" class="content-section hidden">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+              <h2><i class="bi bi-cpu"></i> Inventory Predictions</h2>
+              <button class="btn btn-outline-primary" onclick="refreshWithFeedback(this, loadPredictions)">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+              </button>
+            </div>
+            <div class="alert alert-info">
+              <i class="bi bi-info-circle"></i>
+              Based on your last 30 days of sales. Products with no recent sales are not shown.
+            </div>
             <div class="row mb-4">
-              <div class="col-md-3">
-                <div class="stat-card danger">
-                  <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                      <h3 id="at-missing-count" class="mb-0">0</h3>
-                      <p class="mb-0">Products with Missing Stock</p>
-                    </div>
-                    <i class="bi bi-box-seam display-4 opacity-50"></i>
-                  </div>
-                </div>
+              <div class="col-md-3"><div class="stat-card danger"><div class="d-flex justify-content-between align-items-center"><div><h3 id="pred-out" class="mb-0">0</h3><p class="mb-0">Out of Stock</p></div><i class="bi bi-x-circle display-4 opacity-50"></i></div></div></div>
+              <div class="col-md-3"><div class="stat-card warning"><div class="d-flex justify-content-between align-items-center"><div><h3 id="pred-critical" class="mb-0">0</h3><p class="mb-0">Critical (&le;3 days)</p></div><i class="bi bi-exclamation-triangle display-4 opacity-50"></i></div></div></div>
+              <div class="col-md-3"><div class="stat-card info"><div class="d-flex justify-content-between align-items-center"><div><h3 id="pred-urgent" class="mb-0">0</h3><p class="mb-0">Urgent (&le;7 days)</p></div><i class="bi bi-clock display-4 opacity-50"></i></div></div></div>
+              <div class="col-md-3"><div class="stat-card"><div class="d-flex justify-content-between align-items-center"><div><h3 id="pred-watch" class="mb-0">0</h3><p class="mb-0">Watch</p></div><i class="bi bi-eye display-4 opacity-50"></i></div></div></div>
+            </div>
+            <div class="card">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Stock Predictions</h5>
+                <select class="form-select form-select-sm" id="pred-filter" onchange="filterPredictions()" style="width:auto;">
+                  <option value="all">All</option>
+                  <option value="out_of_stock">Out of Stock</option>
+                  <option value="critical">Critical</option>
+                  <option value="urgent">Urgent</option>
+                  <option value="low">Low</option>
+                  <option value="watch">Watch</option>
+                </select>
               </div>
-              <div class="col-md-3">
-                <div class="stat-card warning">
-                  <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                      <h3 id="at-missing-units" class="mb-0">0</h3>
-                      <p class="mb-0">Total Missing Units</p>
-                    </div>
-                    <i class="bi bi-exclamation-triangle display-4 opacity-50"></i>
-                  </div>
-                </div>
-              </div>
-              <div class="col-md-3">
-                <div class="stat-card danger">
-                  <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                      <h3 id="at-suspicious-count" class="mb-0">0</h3>
-                      <p class="mb-0">Suspicious Activities</p>
-                    </div>
-                    <i class="bi bi-eye display-4 opacity-50"></i>
-                  </div>
-                </div>
-              </div>
-              <div class="col-md-3">
-                <div class="stat-card success">
-                  <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                      <h3 id="at-ok-count" class="mb-0">0</h3>
-                      <p class="mb-0">Products Balanced</p>
-                    </div>
-                    <i class="bi bi-check-circle display-4 opacity-50"></i>
-                  </div>
+              <div class="card-body p-0">
+                <div class="table-responsive">
+                  <table class="table table-hover mb-0">
+                    <thead class="table-dark">
+                      <tr>
+                        <th>Model</th>
+                        <th>In Stock</th>
+                        <th>Sold (30d)</th>
+                        <th>Daily Rate</th>
+                        <th>Days Left</th>
+                        <th>Suggested Reorder</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody id="tbl-predictions"></tbody>
+                  </table>
                 </div>
               </div>
             </div>
+          </div>
 
-            <!-- Tabs -->
-            <ul class="nav nav-tabs mb-3" id="antitheft-tabs">
-              <li class="nav-item">
-                <button class="nav-link active" onclick="showAntiTheftTab('variance')">
-                  <i class="bi bi-bar-chart text-danger"></i> Stock Variance
-                </button>
-              </li>
-              <li class="nav-item">
-                <button class="nav-link" onclick="showAntiTheftTab('suspicious')">
-                  <i class="bi bi-exclamation-triangle text-warning"></i> Suspicious Activity
-                </button>
-              </li>
-              <li class="nav-item">
-                <button class="nav-link" onclick="showAntiTheftTab('daily')">
-                  <i class="bi bi-calendar-x text-danger"></i> Daily Loss Log
-                </button>
-              </li>
-              <li class="nav-item">
-                <button class="nav-link" onclick="showAntiTheftTab('nosale')">
-                  <i class="bi bi-clock text-danger"></i> No-Sale Gaps
-                </button>
-              </li>
-              <li class="nav-item">
-                <button class="nav-link" onclick="showAntiTheftTab('salescheck')">
-                  <i class="bi bi-graph-down text-warning"></i> Daily Sales Check
-                </button>
-              </li>
-            </ul>
 
-            <!-- Stock Variance Tab -->
-            <div id="at-tab-variance">
-              <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                  <h5 class="mb-0">Expected vs Actual Stock</h5>
-                  <div class="d-flex gap-2">
-                    <input type="text" class="form-control form-control-sm" id="variance-search" placeholder="Search product..." oninput="filterVarianceTable()" style="width:200px;">
-                    <select class="form-select form-select-sm" id="variance-filter" onchange="filterVarianceTable()" style="width:auto;">
-                      <option value="all">All Products</option>
-                      <option value="missing" selected>Missing Stock Only</option>
-                      <option value="surplus">Surplus Only</option>
-                      <option value="ok">Balanced Only</option>
-                    </select>
-                  </div>
-                </div>
-                <div class="card-body p-0">
-                  <div class="table-responsive">
-                    <table class="table table-hover mb-0">
-                      <thead class="table-dark">
-                        <tr>
-                          <th>Product</th>
-                          <th>SKU</th>
-                          <th>Initial</th>
-                          <th>Restocked</th>
-                          <th>Sold</th>
-                          <th>Manual Deductions</th>
-                          <th>Expected</th>
-                          <th>Actual</th>
-                          <th>Variance</th>
-                          <th>Status</th>
-                        </tr>
-                      </thead>
-                      <tbody id="tbl-variance"></tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
+          <!-- System Settings Section (Admin Only) -->
+          <div id="section-settings" class="content-section hidden">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+              <h2><i class="bi bi-gear"></i> System Settings</h2>
+              <button class="btn btn-outline-primary" onclick="refreshWithFeedback(this, loadCompanySettings)">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+              </button>
             </div>
-
-            <!-- Suspicious Activity Tab -->
-            <div id="at-tab-suspicious" style="display:none;">
-              <div class="row">
-                <div class="col-md-6">
-                  <div class="card mb-3">
-                    <div class="card-header bg-danger text-white">
-                      <h6 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Manual Stock Deductions & Large Adjustments</h6>
+            <div class="card mb-4">
+              <div class="card-header"><h5 class="mb-0"><i class="bi bi-building"></i> Company Information</h5></div>
+              <div class="card-body">
+                <div id="company-preview" class="border rounded p-3 mb-3 text-center bg-light"></div>
+                <form id="form-company-settings">
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <label class="form-label fw-semibold">Company Name</label>
+                      <input type="text" class="form-control" name="company_name" autocomplete="off">
                     </div>
-                    <div class="card-body p-0">
-                      <div class="table-responsive">
-                        <table class="table table-sm table-hover mb-0">
-                          <thead class="table-light">
-                            <tr><th>Date</th><th>Product</th><th>Qty</th><th>Type</th><th>By</th><th>Notes</th></tr>
-                          </thead>
-                          <tbody id="tbl-manual-deductions"></tbody>
-                        </table>
-                      </div>
+                    <div class="col-md-6">
+                      <label class="form-label fw-semibold">Subtitle / Description</label>
+                      <input type="text" class="form-control" name="company_subtitle" autocomplete="off">
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label fw-semibold">Location / Address</label>
+                      <input type="text" class="form-control" name="company_location" autocomplete="off">
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label fw-semibold">Phone Number</label>
+                      <input type="text" class="form-control" name="company_phone" autocomplete="off">
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label fw-semibold">Email</label>
+                      <input type="email" class="form-control" name="company_email" autocomplete="off">
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label fw-semibold">Website</label>
+                      <input type="text" class="form-control" name="company_website" autocomplete="off">
+                    </div>
+                    <div class="col-12">
+                      <button type="submit" class="btn btn-success">
+                        <i class="bi bi-save"></i> Save Settings
+                      </button>
                     </div>
                   </div>
-                </div>
-                <div class="col-md-6">
-                  <div class="card mb-3">
-                    <div class="card-header bg-warning text-dark">
-                      <h6 class="mb-0"><i class="bi bi-cart-x"></i> Unusually Large Receipt Deductions (≥20 units)</h6>
-                    </div>
-                    <div class="card-body p-0">
-                      <div class="table-responsive">
-                        <table class="table table-sm table-hover mb-0">
-                          <thead class="table-light">
-                            <tr><th>Date</th><th>Product</th><th>Qty</th><th>Receipt</th><th>By</th></tr>
-                          </thead>
-                          <tbody id="tbl-large-deductions"></tbody>
-                        </table>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                </form>
               </div>
             </div>
+          </div>
 
-            <!-- Daily Loss Log Tab -->
-            <div id="at-tab-daily" style="display:none;">
-              <div class="card">
-                <div class="card-header">
-                  <h5 class="mb-0"><i class="bi bi-calendar-x text-danger"></i> Daily Unexplained Stock Loss</h5>
-                </div>
-                <div class="card-body p-0">
-                  <div class="table-responsive">
-                    <table class="table table-hover mb-0">
-                      <thead class="table-dark">
-                        <tr><th>Date</th><th>Products Affected</th><th>Units Lost</th><th>Products</th></tr>
-                      </thead>
-                      <tbody id="tbl-daily-loss"></tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
+          <!-- Inventory Predictions Section (Admin Only) -->
+          <div id="section-predictions" class="content-section hidden">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+              <h2><i class="bi bi-cpu"></i> Inventory Predictions</h2>
+              <button class="btn btn-outline-primary" onclick="refreshWithFeedback(this, loadPredictions)">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+              </button>
             </div>
-
-            <!-- No-Sale Gaps Tab -->
-            <div id="at-tab-nosale" style="display:none;">
-              <div class="card mb-3">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                  <h5 class="mb-0"><i class="bi bi-clock text-danger"></i> No-Sale Activity Gaps</h5>
-                  <div class="d-flex align-items-center gap-2">
-                    <label class="mb-0 small">Flag gaps longer than</label>
-                    <select class="form-select form-select-sm" id="nosale-threshold" onchange="loadNoSaleGaps()" style="width:auto;">
-                      <option value="1">1 hour</option>
-                      <option value="2" selected>2 hours</option>
-                      <option value="3">3 hours</option>
-                      <option value="4">4 hours</option>
-                    </select>
-                  </div>
-                </div>
-                <div class="card-body">
-                  <div id="nosale-last-sale" class="alert alert-info mb-3"></div>
-                  <div class="table-responsive">
-                    <table class="table table-hover mb-0">
-                      <thead class="table-dark">
-                        <tr><th>Date</th><th>Gap From</th><th>Gap To</th><th>Duration</th><th>Severity</th></tr>
-                      </thead>
-                      <tbody id="tbl-nosale-gaps"></tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
+            <div class="alert alert-info">
+              <i class="bi bi-info-circle"></i>
+              Based on your last 30 days of sales. Products with no recent sales are not shown.
             </div>
-
-            <!-- Daily Sales Check Tab -->
-            <div id="at-tab-salescheck" style="display:none;">
-              <div class="card">
-                <div class="card-header">
-                  <h5 class="mb-0"><i class="bi bi-graph-down text-warning"></i> Daily Sales Performance Check</h5>
-                </div>
-                <div class="card-body">
-                  <div id="salescheck-summary" class="row mb-3"></div>
-                  <h6 class="text-danger"><i class="bi bi-flag"></i> Flagged Days (below 50% of average)</h6>
-                  <div class="table-responsive mb-4">
-                    <table class="table table-hover mb-0">
-                      <thead class="table-dark">
-                        <tr><th>Date</th><th>Sales</th><th>Receipts</th><th>7-Day Avg</th><th>% of Average</th><th>Severity</th></tr>
-                      </thead>
-                      <tbody id="tbl-flagged-days"></tbody>
-                    </table>
-                  </div>
-                  <h6><i class="bi bi-calendar3"></i> Last 30 Days</h6>
-                  <div class="table-responsive">
-                    <table class="table table-sm table-hover mb-0">
-                      <thead class="table-light">
-                        <tr><th>Date</th><th>Receipts</th><th>Total Sales</th><th>Profit</th></tr>
-                      </thead>
-                      <tbody id="tbl-daily-sales"></tbody>
-                    </table>
-                  </div>
+            <div class="row mb-3">
+              <div class="col-md-3"><div class="stat-card danger"><div class="d-flex justify-content-between align-items-center"><div><h3 id="pred-out" class="mb-0">0</h3><p class="mb-0">Out of Stock</p></div><i class="bi bi-x-circle display-4 opacity-50"></i></div></div></div>
+              <div class="col-md-3"><div class="stat-card warning"><div class="d-flex justify-content-between align-items-center"><div><h3 id="pred-critical" class="mb-0">0</h3><p class="mb-0">Critical (&le;3 days)</p></div><i class="bi bi-exclamation-triangle display-4 opacity-50"></i></div></div></div>
+              <div class="col-md-3"><div class="stat-card info"><div class="d-flex justify-content-between align-items-center"><div><h3 id="pred-urgent" class="mb-0">0</h3><p class="mb-0">Urgent (&le;7 days)</p></div><i class="bi bi-clock display-4 opacity-50"></i></div></div></div>
+              <div class="col-md-3"><div class="stat-card"><div class="d-flex justify-content-between align-items-center"><div><h3 id="pred-watch" class="mb-0">0</h3><p class="mb-0">Watch</p></div><i class="bi bi-eye display-4 opacity-50"></i></div></div></div>
+            </div>
+            <div class="card">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Restock Predictions</h5>
+                <select class="form-select form-select-sm" id="pred-filter" onchange="filterPredictions()" style="width:auto;">
+                  <option value="all">All</option>
+                  <option value="out_of_stock">Out of Stock</option>
+                  <option value="critical">Critical</option>
+                  <option value="urgent">Urgent</option>
+                  <option value="low">Low</option>
+                  <option value="watch">Watch</option>
+                </select>
+              </div>
+              <div class="card-body p-0">
+                <div class="table-responsive">
+                  <table class="table table-hover mb-0">
+                    <thead class="table-dark">
+                      <tr>
+                        <th>Model</th>
+                        <th>In Stock</th>
+                        <th>Sold (30d)</th>
+                        <th>Daily Rate</th>
+                        <th>Days Left</th>
+                        <th>Suggested Reorder</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody id="tbl-predictions"></tbody>
+                  </table>
                 </div>
               </div>
             </div>
@@ -3577,6 +3538,10 @@
       
       // Show selected section
       const activeSection = document.getElementById(`section-${sectionName}`);
+      if (!activeSection) {
+        console.warn(`Section not found: section-${sectionName}`);
+        return;
+      }
       activeSection.classList.remove('hidden');
       
       // Add active class to clicked nav link
@@ -3609,9 +3574,20 @@
         case 'receipt-history':
           loadReceiptHistory();
           break;
-        case 'expiry':
-          loadBatches('all');
-          showNotificationStatus();
+        case 'imei':
+          loadImeiRegistry();
+          break;
+        case 'repairs':
+          loadRepairs();
+          break;
+        case 'trade-ins':
+          loadTradeIns();
+          break;
+        case 'warranties':
+          loadWarranties();
+          break;
+        case 'suppliers':
+          loadSuppliers();
           break;
         case 'users':
           loadUsers();
@@ -3621,9 +3597,6 @@
           break;
         case 'logs':
           loadLogs();
-          break;
-        case 'antitheft':
-          loadAntiTheft();
           break;
         case 'predictions':
           loadPredictions();
@@ -3641,275 +3614,7 @@
       }
     }
 
-    // Expiry Management Functions
-    
-    // Load expiring products for dashboard
-    async function loadExpiringProducts() {
-      try {
-        const [expiringData, expiredData] = await Promise.all([
-          apiCall('api/batches.php?status=expiring').catch(()=>({items:[]})),
-          apiCall('api/batches.php?status=expired').catch(()=>({items:[]}))
-        ]);
-        
-        const container = document.getElementById('expiring-products-list');
-        const expiringSoon = expiringData.items || [];
-        const expired = expiredData.items || [];
-        const allCritical = [...expired, ...expiringSoon];
-        
-        if (allCritical.length === 0) {
-          container.innerHTML = '<p class="text-muted text-center">No products expiring soon</p>';
-          document.getElementById('expiring-items').textContent = '0';
-          const expiredEl = document.getElementById('expired-items');
-          if (expiredEl) expiredEl.textContent = '0';
-          return;
-        }
-        
-        container.innerHTML = allCritical.map(item => `
-          <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
-            <div>
-              <strong>${item.product_name}</strong><br>
-              <small class="text-muted">Batch: ${item.batch_number}</small>
-            </div>
-            <div class="text-end">
-              <span class="badge bg-${getExpiryBadgeColor(item.status)}">
-                ${item.status === 'expired' ? 'EXPIRED' : item.days_until_expiry + ' days'}
-              </span><br>
-              <small class="text-muted">${item.quantity} units</small>
-            </div>
-          </div>
-        `).join('');
-        
-        // Card shows expiring soon and expired counts separately
-        document.getElementById('expiring-items').textContent = expiringSoon.length;
-        const expiredEl = document.getElementById('expired-items');
-        if (expiredEl) expiredEl.textContent = expired.length;
-      } catch (error) {
-        console.error('Failed to load expiring products:', error);
-        document.getElementById('expiring-products-list').innerHTML = 
-          '<p class="text-muted text-center">Unable to load expiring products</p>';
-      }
-    }
-
-    // Get badge color based on expiry status
-    function getExpiryBadgeColor(status) {
-      switch(status) {
-        case 'expired': return 'danger';
-        case 'expiring_soon': return 'warning';
-        default: return 'success';
-      }
-    }
-
-    // Get table row class based on expiry status
-    function getExpiryRowClass(status) {
-      switch(status) {
-        case 'expired': return 'danger';
-        case 'expiring_soon': return 'warning';
-        default: return '';
-      }
-    }
-
-    // Show batch modal
-    function showBatchModal(productId) {
-      // Get product name
-      const product = products.find(p => p.id === productId);
-      const productName = product ? product.name : 'Product';
-      
-      // Update modal title
-      document.querySelector('#batchModal .modal-title').textContent = `Add Batch for ${productName}`;
-      
-      // Set product ID
-      document.getElementById('batch-product-id').value = productId;
-      
-      // Auto-generate batch number
-      generateBatchNumber();
-      
-      // Show modal
-      const modal = new bootstrap.Modal(document.getElementById('batchModal'));
-      modal.show();
-    }
-
-    // Generate batch number
-    function generateBatchNumber() {
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      const day = String(now.getDate()).padStart(2, '0');
-      const hours = String(now.getHours()).padStart(2, '0');
-      const minutes = String(now.getMinutes()).padStart(2, '0');
-      const seconds = String(now.getSeconds()).padStart(2, '0');
-      const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-      
-      // Format: BATCH-YYYYMMDD-HHMMSS-RRR
-      const batchNumber = `BATCH-${year}${month}${day}-${hours}${minutes}${seconds}-${random}`;
-      document.getElementById('batch-number-input').value = batchNumber;
-      return batchNumber;
-    }
-
-    // Add batch
-    async function addBatch() {
-      const form = document.getElementById('form-batch');
-      const formData = new FormData(form);
-      const batchData = Object.fromEntries(formData);
-      
-      // Get batch number from the input (even if readonly)
-      const batchNumberInput = document.getElementById('batch-number-input');
-      batchData.batch_number = batchNumberInput.value;
-      
-      // Ensure batch number is generated if somehow empty
-      if (!batchData.batch_number) {
-        batchData.batch_number = generateBatchNumber();
-      }
-      
-      // If no manufacturing date provided, use current date
-      if (!batchData.manufacturing_date || batchData.manufacturing_date === '') {
-        const today = new Date();
-        batchData.manufacturing_date = today.toISOString().split('T')[0]; // Format: YYYY-MM-DD
-      }
-      
-      // Convert types
-      batchData.product_id = parseInt(batchData.product_id);
-      batchData.quantity = parseInt(batchData.quantity);
-      
-      // Validate required fields
-      if (!batchData.product_id || isNaN(batchData.product_id)) {
-        alert('Product ID is missing. Please close and reopen the modal.');
-        return;
-      }
-      
-      if (!batchData.batch_number) {
-        alert('Batch number is missing. Please click the refresh button to generate one.');
-        return;
-      }
-      
-      if (!batchData.expiry_date) {
-        alert('Expiry date is required.');
-        return;
-      }
-      
-      if (!batchData.quantity || isNaN(batchData.quantity) || batchData.quantity <= 0) {
-        alert('Please enter a valid quantity.');
-        return;
-      }
-      
-      try {
-        await apiCall('api/batches.php', {
-          method: 'POST',
-          body: JSON.stringify(batchData)
-        });
-        
-        bootstrap.Modal.getInstance(document.getElementById('batchModal')).hide();
-        form.reset();
-        
-        // Refresh relevant sections
-        loadProducts(); // Refresh product list
-        loadStock(); // Refresh stock
-        loadDashboard(); // Refresh dashboard
-        
-        alert('Batch added successfully! Stock quantity updated.');
-        AppLogger.action('BATCH', `Batch added for product ID: ${batchData.product_id} | Batch: ${batchData.batch_number} | Qty: ${batchData.quantity} | Expiry: ${batchData.expiry_date}`);
-      } catch (error) {
-        alert('Failed to add batch: ' + error.message);
-      }
-    }
-
-    // Load batches for expiry management section
-    async function loadBatches(status = 'all') {
-      try {
-        // Show loading feedback
-        const tbody = document.getElementById('tbl-batches');
-        tbody.innerHTML = '<tr><td colspan="8" class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></td></tr>';
-        
-        const url = status === 'all' ? 'api/batches.php' : `api/batches.php?status=${status}`;
-        const data = await apiCall(url);
-        
-        if (data.items.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">No batches found</td></tr>';
-          return;
-        }
-        
-        tbody.innerHTML = data.items.map(item => {
-          const discount = getExpiryDiscountSuggestion(item.days_until_expiry, item.status);
-          return `
-          <tr class="table-${getExpiryRowClass(item.status)}">
-            <td>${item.product_name}</td>
-            <td>${item.batch_number}</td>
-            <td>${item.manufacturing_date || 'N/A'}</td>
-            <td>${item.expiry_date}</td>
-            <td>${item.quantity}</td>
-            <td>
-              <span class="badge bg-${getExpiryBadgeColor(item.status)}">
-                ${item.status.toUpperCase()}
-              </span>
-            </td>
-            <td>
-              ${item.days_until_expiry > 0 ? 
-                `${item.days_until_expiry} days` : 
-                `<strong class="text-danger">EXPIRED</strong>`
-              }
-            </td>
-            <td>
-              ${discount ? `<span class="badge bg-warning text-dark"><i class="bi bi-tag"></i> ${discount}% off</span>` : '<span class="text-muted">—</span>'}
-            </td>
-            <td class="no-print">
-              ${currentUser && currentUser.role === 'admin' ? `
-                <button class="btn btn-sm btn-danger" onclick="deleteBatch(${item.batch_id})">
-                  <i class="bi bi-trash"></i>
-                </button>
-              ` : ''}
-            </td>
-          </tr>`;
-        }).join('');
-      } catch (error) {
-        console.error('Failed to load batches:', error);
-        document.getElementById('tbl-batches').innerHTML = 
-          '<tr><td colspan="8" class="text-center text-danger">Failed to load batches</td></tr>';
-      }
-    }
-
-    // Delete all expired batches at once
-    async function deleteAllExpiredBatches() {
-      const message = `
-        <div class="alert alert-danger">
-          <strong>⚠️ DELETE ALL EXPIRED BATCHES</strong>
-        </div>
-        <p>This will permanently delete <strong>all expired batches</strong> from the system.</p>
-        <p><strong>This action will:</strong></p>
-        <ul>
-          <li>Remove all batches past their expiry date</li>
-          <li>Reduce stock quantities accordingly</li>
-          <li>This <strong>CANNOT</strong> be undone</li>
-        </ul>
-      `;
-      
-      showDeleteConfirmation(
-        'Delete All Expired Batches',
-        message,
-        async () => {
-          const result = await apiCall('api/batches.php?expired_all=true', { method: 'DELETE' });
-          loadBatches('all');
-          loadDashboard();
-          showExpiryNotification();
-          alert(`Done! ${result.deleted} expired batch${result.deleted !== 1 ? 'es' : ''} deleted.`);
-        },
-        []
-      );
-    }
-
-    // Delete batch
-    async function deleteBatch(batchId) {
-      if (!confirm('Are you sure you want to delete this batch? This will reduce the stock quantity.')) return;
-      
-      try {
-        await apiCall(`api/batches.php?id=${batchId}`, { method: 'DELETE' });
-        loadBatches('all');
-        loadDashboard(); // Refresh dashboard
-        alert('Batch deleted successfully!');
-      } catch (error) {
-        alert('Failed to delete batch: ' + error.message);
-      }
-    }
-
-    // Dashboard functions
+// Dashboard functions
     async function loadDashboard() {
       try {
         // Load stats - request large page size to get all products for count
@@ -4004,11 +3709,8 @@
         document.getElementById('recent-activity').innerHTML = recentActivityHtml || 
           '<p class="text-muted text-center">No recent activity</p>';
         
-        // Load expiring products
-        await loadExpiringProducts();
-        
-        // Show notification popup for critical items
-        await showExpiryNotification();
+        // Load active repairs for dashboard widget
+        await loadActiveRepairsDashboard();
         
       } catch (error) {
         console.error('Failed to load dashboard:', error);
@@ -4020,8 +3722,8 @@
       try {
         // Fetch both expiring soon and expired separately
         const [expiringData, expiredData] = await Promise.all([
-          apiCall('api/batches.php?status=expiring').catch(()=>({items:[]})),
-          apiCall('api/batches.php?status=expired').catch(()=>({items:[]}))
+          apiCall('api/imei.php /* was batches */?status=expiring').catch(()=>({items:[]})),
+          apiCall('api/imei.php /* was batches */?status=expired').catch(()=>({items:[]}))
         ]);
         
         const expiringSoonItems = expiringData.items || [];
@@ -4100,7 +3802,7 @@
         localStorage.setItem('dismissedExpiryBatches', JSON.stringify(dismissedBatches));
         
         // Update badge count
-        showExpiryNotification();
+        /* removed */
       }
     }
     
@@ -4118,7 +3820,7 @@
         statusDiv.className = 'alert alert-success mb-3';
         
         // Update badge
-        showExpiryNotification();
+        /* removed */
         
         // Hide message after 5 seconds
         setTimeout(() => {
@@ -4188,47 +3890,41 @@
             ? Math.round((item.total_sold / item.initial_quantity) * 100) 
             : 0;
           
-          // Check if product has expiry tracking
-          const hasExpiry = item.has_expiry == 1;
+          // Check variant count
+          const variantCount = (item.variants||[]).length;
+          const inStockVariants = (item.variants||[]).reduce((s,v)=>s+(parseInt(v.in_stock)||0),0);
           
           return `
             <tr>
               <td>${item.id}</td>
               <td><span class="badge bg-secondary">${item.sku}</span></td>
-              <td>
-                <strong>${item.name}</strong>
-                ${hasExpiry ? '<span class="badge bg-warning text-dark ms-2"><i class="bi bi-calendar-check"></i> Expiry Tracked</span>' : ''}
-              </td>
+              <td><strong>${item.name}</strong></td>
               <td>${formatCurrency(item.unit_price)}</td>
-              <td><span class="badge bg-primary fs-6">${item.initial_quantity || 0}</span></td>
+              <td>
+                ${variantCount > 0
+                  ? `<span class="badge bg-info">${variantCount} variant${variantCount>1?'s':''}</span>`
+                  : '<span class="badge bg-secondary">No variants</span>'}
+              </td>
               <td><span class="badge bg-success fs-6">${item.quantity}</span></td>
               <td>
                 <span class="badge bg-info fs-6">
                   ${item.total_sold} ${soldPercentage > 0 ? `(${soldPercentage}%)` : '(0%)'}
                 </span>
               </td>
-              <td><span class="badge bg-dark fs-6">${item.total_received || 0}</span></td>
               <td>
-                <span class="badge bg-${item.quantity === 0 ? 'danger' : item.quantity < 10 ? 'warning' : 'success'}">
-                  ${item.quantity === 0 ? 'Out of Stock' : item.quantity < 10 ? 'Low Stock' : 'In Stock'}
+                <span class="badge bg-${item.quantity === 0 ? 'danger' : item.quantity < 5 ? 'warning' : 'success'}">
+                  ${item.quantity === 0 ? 'Out of Stock' : item.quantity < 5 ? 'Low Stock' : 'In Stock'}
                 </span>
               </td>
               <td class="no-print">
-                <button class="btn btn-sm btn-info" onclick="viewStockHistory(${item.id}, '${item.name.replace(/'/g, "\\'")}')">
-                  <i class="bi bi-clock-history"></i> History
+                <button class="btn btn-sm btn-info me-1" onclick="viewStockHistory(${item.id}, '${item.name.replace(/'/g, "\\'")}')">
+                  <i class="bi bi-clock-history"></i>
                 </button>
-                ${isAdmin ? 
-                  (hasExpiry ? 
-                    `<button class="btn btn-sm btn-warning ms-1" onclick="showBatchModal(${item.id}, '${item.name.replace(/'/g, "\\'")}')" title="Add Batch with Expiry">
-                       <i class="bi bi-calendar-plus"></i> Add Batch
-                     </button>` 
-                    :
-                    `<button class="btn btn-sm btn-primary ms-1" onclick="openAddStockModal(${item.id}, '${item.name.replace(/'/g, "\\'")}', ${item.quantity}, ${item.initial_quantity}, ${item.total_received}, ${item.total_sold}, ${hasExpiry})">
-                       <i class="bi bi-plus-circle"></i> Add
-                     </button>`
-                  )
-                  : 
-                  ''
+                ${isAdmin ?
+                  `<button class="btn btn-sm btn-primary ms-1" onclick="openAddStockModal(${item.id}, '${item.name.replace(/'/g, "\\'")}', ${item.quantity}, ${item.initial_quantity||0}, ${item.total_received||0}, ${item.total_sold||0}, false)">
+                     <i class="bi bi-plus-circle"></i> Add
+                   </button>`
+                  : ''
                 }
               </td>
             </tr>
@@ -4450,27 +4146,13 @@
             <td>${item.name}</td>
             <td>${formatCurrency(item.unit_price)}</td>
             <td>
-              <span class="badge bg-info">${item.units ? item.units.length : 0} unit(s)</span>
-            </td>
-            <td>
-              ${item.has_expiry ? 
-                '<span class="badge bg-success">Yes</span>' : 
-                '<span class="badge bg-secondary">No</span>'
-              }
+              <span class="badge bg-info">${item.variants ? item.variants.length : 0} variant(s)</span>
             </td>
             <td>${formatDate(item.created_at)}</td>
             <td class="no-print">
               <button class="btn btn-sm btn-outline-primary me-1" onclick="editProduct(${item.id})" title="Edit Product">
                 <i class="bi bi-pencil"></i>
               </button>
-              <button class="btn btn-sm btn-info me-1" onclick="manageUnits(${item.id}, '${item.name.replace(/'/g, "\\'")}')" title="Manage Units">
-                <i class="bi bi-list-ul"></i> Units
-              </button>
-              ${item.has_expiry ? `
-                <button class="btn btn-sm btn-success me-1" onclick="showBatchModal(${item.id})" title="Add Batch">
-                  <i class="bi bi-plus-circle"></i> Batch
-                </button>
-              ` : ''}
               <button class="btn btn-sm btn-danger" onclick="deleteProduct(${item.id})" title="Delete Product">
                 <i class="bi bi-trash"></i>
               </button>
@@ -5354,7 +5036,7 @@
               // Load FIFO expiry hints for expiry-tracked products (async, non-blocking)
               currentFilteredProducts.forEach(product => {
                 if (product.has_expiry) {
-                  apiCall(`api/batches.php?product_id=${product.id}`).then(batchData => {
+                  apiCall(`api/imei.php /* was batches */?product_id=${product.id}`).then(batchData => {
                     const batches = (batchData.items || []).filter(b => b.status !== 'expired' && b.quantity > 0);
                     const hint = document.getElementById(`expiry-hint-${product.id}`);
                     if (!hint) return;
@@ -5402,7 +5084,7 @@
                   
                   if (hasExpiry) {
                     try {
-                      const batchData = await apiCall(`api/batches.php?product_id=${productId}`);
+                      const batchData = await apiCall(`api/imei.php /* was batches */?product_id=${productId}`);
                       const batches = batchData.items || [];
                       
                       // Only check if batches exist - if no batches, allow sale
@@ -5436,7 +5118,7 @@
                   // Check for near-expiry and show discount suggestion
                   if (hasExpiry) {
                     try {
-                      const batchData = await apiCall(`api/batches.php?product_id=${productId}`);
+                      const batchData = await apiCall(`api/imei.php /* was batches */?product_id=${productId}`);
                       const batches = (batchData.items || []).filter(b => b.status !== 'expired' && b.quantity > 0);
                       if (batches.length > 0) {
                         const soonestBatch = batches[0]; // already sorted by expiry ASC
@@ -8054,17 +7736,7 @@
     // ============================================================
 
     let varianceData = [];
-
-    async function loadAntiTheft() {
-      const days = document.getElementById('antitheft-period').value;
-      await Promise.all([
-        loadVarianceReport(),
-        loadSuspiciousActivity(days),
-        loadDailyLoss(days),
-        loadNoSaleGaps(),
-        loadDailySalesCheck(days)
-      ]);
-    }
+    // (Anti-theft removed)
 
     async function loadVarianceReport() {
       try {
@@ -8508,88 +8180,7 @@
       }
     }
 
-    // ── Clearance Mode ────────────────────────────────────────────
-    let clearanceProducts = [];
-
-    function openClearanceModeModal() {
-      document.getElementById('clearance-preview').innerHTML = '';
-      document.getElementById('clearance-apply-btn').style.display = 'none';
-      clearanceProducts = [];
-      new bootstrap.Modal(document.getElementById('clearanceModeModal')).show();
-    }
-
-    async function previewClearance() {
-      const days = parseInt(document.getElementById('clearance-days').value);
-      const discount = parseFloat(document.getElementById('clearance-discount').value);
-      if (!discount || discount <= 0 || discount >= 100) {
-        alert('Please enter a valid discount between 1 and 99%.');
-        return;
-      }
-
-      try {
-        const data = await apiCall(`api/batches.php?status=expiring`);
-        const batches = (data.items || []).filter(b => b.days_until_expiry <= days && b.days_until_expiry > 0);
-
-        if (batches.length === 0) {
-          document.getElementById('clearance-preview').innerHTML =
-            `<div class="alert alert-info">No products expiring within ${days} days found.</div>`;
-          document.getElementById('clearance-apply-btn').style.display = 'none';
-          return;
-        }
-
-        // Group by product
-        const products = {};
-        batches.forEach(b => {
-          if (!products[b.product_id]) {
-            products[b.product_id] = { id: b.product_id, name: b.product_name, days: b.days_until_expiry, qty: 0 };
-          }
-          products[b.product_id].qty += b.quantity;
-        });
-        clearanceProducts = Object.values(products);
-
-        document.getElementById('clearance-preview').innerHTML = `
-          <div class="alert alert-warning">
-            <strong>${clearanceProducts.length} product(s)</strong> will have their unit prices reduced by <strong>${discount}%</strong>:
-          </div>
-          <ul class="list-group list-group-flush" style="max-height:200px;overflow-y:auto;">
-            ${clearanceProducts.map(p => `
-              <li class="list-group-item d-flex justify-content-between py-1">
-                <span>${p.name}</span>
-                <span class="text-muted">${p.days} days · ${p.qty} units</span>
-              </li>`).join('')}
-          </ul>`;
-        document.getElementById('clearance-apply-btn').style.display = 'inline-block';
-      } catch (e) {
-        alert('Failed to load expiring products: ' + e.message);
-      }
-    }
-
-    async function applyClearanceDiscount() {
-      const discount = parseFloat(document.getElementById('clearance-discount').value);
-      if (!clearanceProducts.length) return;
-
-      if (!confirm(`Apply ${discount}% discount to ${clearanceProducts.length} product(s)? This will update their selling prices.`)) return;
-
-      let success = 0, failed = 0;
-      for (const p of clearanceProducts) {
-        try {
-          // Get current unit prices and reduce them
-          const units = await apiCall(`api/product-units.php?product_id=${p.id}`);
-          for (const unit of (units.items || [])) {
-            const newPrice = parseFloat((unit.unit_price * (1 - discount / 100)).toFixed(2));
-            await apiCall(`api/product-units.php?id=${unit.id}`, {
-              method: 'PUT',
-              body: JSON.stringify({ unit_price: newPrice })
-            });
-          }
-          success++;
-        } catch (e) { failed++; }
-      }
-
-      bootstrap.Modal.getInstance(document.getElementById('clearanceModeModal'))?.hide();
-      alert(`Clearance discount applied!\n✅ ${success} product(s) updated${failed > 0 ? `\n❌ ${failed} failed` : ''}`);
-      loadBatches('all');
-    }
+    // (Clearance mode removed — not applicable for iPhone shop)
 
     // ============================================================
     // CREDIT & DEBT MANAGEMENT
@@ -8898,6 +8489,732 @@
     }
 
     //]]>
+  
+
+﻿// Apple City POS - New Module JS Functions
+
+    // ============================================================
+    // HELPERS
+    // ============================================================
+    function repairStatusColor(s) {
+      return {received:'secondary',diagnosing:'info',awaiting_parts:'warning',in_repair:'primary',ready:'success',collected:'dark',cancelled:'danger'}[s]||'secondary';
+    }
+    function fmtDateShort(d){ return d ? new Date(d).toLocaleDateString('en-GH',{day:'2-digit',month:'short',year:'numeric'}) : '—'; }
+
+    // ============================================================
+    // DASHBOARD - Active Repairs widget
+    // ============================================================
+    async function loadActiveRepairsDashboard() {
+      try {
+        const [rcv, inp, rdy] = await Promise.all([
+          apiCall('api/repairs.php?status=received').catch(()=>({items:[]})),
+          apiCall('api/repairs.php?status=in_repair').catch(()=>({items:[]})),
+          apiCall('api/repairs.php?status=ready').catch(()=>({items:[]}))
+        ]);
+        const active   = (rcv.items||[]).length + (inp.items||[]).length;
+        const rdyCount = (rdy.items||[]).length;
+        const elA = document.getElementById('active-repairs');
+        const elR = document.getElementById('ready-repairs');
+        if (elA) elA.textContent = active;
+        if (elR) elR.textContent = rdyCount;
+        const badge = document.getElementById('repairs-badge');
+        if (badge) { badge.textContent = active + rdyCount; badge.style.display = (active+rdyCount)>0?'inline':'none'; }
+        const list = document.getElementById('active-repairs-list');
+        if (!list) return;
+        const all = [...(rcv.items||[]),...(inp.items||[]),...(rdy.items||[])].slice(0,5);
+        list.innerHTML = all.length === 0
+          ? '<p class="text-muted small mb-0">No active repairs</p>'
+          : all.map(r=>`<div class="d-flex justify-content-between align-items-center border-bottom py-2">
+              <div><strong>${r.job_number}</strong> — ${r.customer_name}<br>
+              <small class="text-muted">${r.device_model}${r.imei?' · '+r.imei:''}</small></div>
+              <span class="badge bg-${repairStatusColor(r.status)}">${r.status.replace(/_/g,' ')}</span>
+            </div>`).join('');
+      } catch(e){ console.error('loadActiveRepairsDashboard',e); }
+    }
+
+    // ============================================================
+    // IMEI REGISTRY
+    // ============================================================
+    let imeiProductList = [];
+
+    async function loadImeiRegistry() {
+      const q       = (document.getElementById('imei-search')?.value||'').trim();
+      const status  = document.getElementById('imei-status-filter')?.value||'all';
+      const prodId  = document.getElementById('imei-product-filter')?.value||'';
+      let url = 'api/imei.php?';
+      if (q)      url += 'q='+encodeURIComponent(q)+'&';
+      if (status !== 'all') url += 'status='+status+'&';
+      if (prodId) url += 'product_id='+prodId+'&';
+      try {
+        const data = await apiCall(url);
+        const tbody = document.getElementById('tbl-imei');
+        const items = data.items||[];
+        if (items.length===0){
+          tbody.innerHTML='<tr><td colspan="9" class="text-center text-muted py-4">No IMEI units found</td></tr>';
+          return;
+        }
+        tbody.innerHTML = items.map(u=>`<tr>
+          <td><code>${u.imei}</code></td>
+          <td>${u.product_name}</td>
+          <td>${u.storage||'—'}</td>
+          <td>${u.color||'—'}</td>
+          <td>${formatCurrency(u.cost_price)}</td>
+          <td>${formatCurrency(u.selling_price)}</td>
+          <td>${u.supplier_name||'—'}</td>
+          <td><span class="badge bg-${u.status==='in_stock'?'success':'secondary'}">${u.status==='in_stock'?'In Stock':'Sold'}</span></td>
+          <td>
+            ${u.status==='in_stock'?`<button class="btn btn-sm btn-outline-danger" onclick="deleteImeiUnit(${u.id},'${u.imei}')"><i class="bi bi-trash"></i></button>`:''}
+          </td>
+        </tr>`).join('');
+      } catch(e){ console.error('loadImeiRegistry',e); }
+    }
+
+    async function populateImeiProductFilter() {
+      try {
+        const data = await apiCall('api/products.php?pageSize=200');
+        imeiProductList = data.items||[];
+        const sel = document.getElementById('imei-product-filter');
+        if (!sel) return;
+        sel.innerHTML = '<option value="">All Models</option>' +
+          imeiProductList.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+      } catch(e){}
+    }
+
+    function openAddImeiModal() {
+      populateImeiProductFilter();
+      // Build modal dynamically
+      let existing = document.getElementById('addImeiModal');
+      if (existing) existing.remove();
+      const modal = document.createElement('div');
+      modal.className = 'modal fade'; modal.id = 'addImeiModal'; modal.tabIndex = -1;
+      modal.innerHTML = `<div class="modal-dialog"><div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title"><i class="bi bi-upc-scan"></i> Add IMEI Unit</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <div class="mb-3"><label class="form-label fw-semibold">iPhone Model *</label>
+            <select class="form-select" id="imei-modal-product">
+              <option value="">Select model...</option>
+              ${imeiProductList.map(p=>`<option value="${p.id}">${p.name}</option>`).join('')}
+            </select></div>
+          <div class="row g-2 mb-3">
+            <div class="col-6"><label class="form-label fw-semibold">Storage</label>
+              <select class="form-select" id="imei-modal-storage">
+                <option value="">—</option>
+                <option>64GB</option><option>128GB</option><option>256GB</option>
+                <option>512GB</option><option>1TB</option>
+              </select></div>
+            <div class="col-6"><label class="form-label fw-semibold">Color</label>
+              <input type="text" class="form-control" id="imei-modal-color" placeholder="e.g. Black Titanium"></div>
+          </div>
+          <div class="mb-3"><label class="form-label fw-semibold">IMEI (15 digits) *</label>
+            <input type="text" class="form-control font-monospace" id="imei-modal-imei" maxlength="15" placeholder="000000000000000"></div>
+          <div class="row g-2 mb-3">
+            <div class="col-6"><label class="form-label fw-semibold">Cost Price</label>
+              <input type="number" class="form-control" id="imei-modal-cost" step="0.01" min="0" value="0"></div>
+            <div class="col-6"><label class="form-label fw-semibold">Selling Price</label>
+              <input type="number" class="form-control" id="imei-modal-sell" step="0.01" min="0" value="0"></div>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6"><label class="form-label fw-semibold">Supplier</label>
+              <select class="form-select" id="imei-modal-supplier"><option value="">None</option></select></div>
+            <div class="col-6"><label class="form-label fw-semibold">Purchase Date</label>
+              <input type="date" class="form-control" id="imei-modal-date"></div>
+          </div>
+          <div class="mb-3"><label class="form-label fw-semibold">Notes</label>
+            <textarea class="form-control" id="imei-modal-notes" rows="2"></textarea></div>
+          <div id="imei-modal-error" class="alert alert-danger d-none"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-success" onclick="submitAddImei()"><i class="bi bi-plus-circle"></i> Add Unit</button>
+        </div>
+      </div></div>`;
+      document.body.appendChild(modal);
+      // Populate suppliers
+      apiCall('api/suppliers.php').then(d=>{
+        const sel = document.getElementById('imei-modal-supplier');
+        if (sel) sel.innerHTML = '<option value="">None</option>' + (d.items||[]).map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+      }).catch(()=>{});
+      new bootstrap.Modal(modal).show();
+    }
+
+    async function submitAddImei() {
+      const errEl = document.getElementById('imei-modal-error');
+      errEl.classList.add('d-none');
+      const payload = {
+        product_id:   parseInt(document.getElementById('imei-modal-product').value)||0,
+        imei:         document.getElementById('imei-modal-imei').value.trim(),
+        storage:      document.getElementById('imei-modal-storage').value,
+        color:        document.getElementById('imei-modal-color').value.trim(),
+        cost_price:   parseFloat(document.getElementById('imei-modal-cost').value)||0,
+        selling_price:parseFloat(document.getElementById('imei-modal-sell').value)||0,
+        supplier_id:  document.getElementById('imei-modal-supplier').value||null,
+        purchase_date:document.getElementById('imei-modal-date').value||'',
+        notes:        document.getElementById('imei-modal-notes').value.trim()
+      };
+      if (!payload.product_id){ errEl.textContent='Please select a model.'; errEl.classList.remove('d-none'); return; }
+      if (!payload.imei){ errEl.textContent='IMEI is required.'; errEl.classList.remove('d-none'); return; }
+      try {
+        const res = await apiCall('api/imei.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+        if (res.error){ errEl.textContent=res.error; errEl.classList.remove('d-none'); return; }
+        bootstrap.Modal.getInstance(document.getElementById('addImeiModal')).hide();
+        loadImeiRegistry();
+        loadStock();
+      } catch(e){ errEl.textContent='Failed: '+e.message; errEl.classList.remove('d-none'); }
+    }
+
+    async function deleteImeiUnit(id, imei) {
+      if (!confirm('Delete IMEI unit '+imei+'? This cannot be undone.')) return;
+      try {
+        await apiCall('api/imei.php?id='+id,{method:'DELETE'});
+        loadImeiRegistry(); loadStock();
+      } catch(e){ alert('Failed: '+e.message); }
+    }
+
+    // ============================================================
+    // REPAIRS & SERVICE
+    // ============================================================
+    async function loadRepairs() {
+      const q      = (document.getElementById('repair-search')?.value||'').trim();
+      const status = document.getElementById('repair-status-filter')?.value||'';
+      let url = 'api/repairs.php?';
+      if (q)      url += 'q='+encodeURIComponent(q)+'&';
+      if (status) url += 'status='+status+'&';
+      try {
+        const data = await apiCall(url);
+        const items = data.items||[];
+        // Summary counts
+        const counts = {received:0,in_repair:0,diagnosing:0,awaiting_parts:0,ready:0};
+        let revenue30 = 0;
+        const cutoff = new Date(); cutoff.setDate(cutoff.getDate()-30);
+        items.forEach(r=>{
+          if (counts[r.status]!==undefined) counts[r.status]++;
+          if (new Date(r.created_at)>=cutoff && r.payment_status==='paid') revenue30+=parseFloat(r.total_charge||0);
+        });
+        const elRcv = document.getElementById('rep-received');
+        const elInp = document.getElementById('rep-in-progress');
+        const elRdy = document.getElementById('rep-ready');
+        const elRev = document.getElementById('rep-revenue');
+        if (elRcv) elRcv.textContent = counts.received;
+        if (elInp) elInp.textContent = counts.in_repair + counts.diagnosing + counts.awaiting_parts;
+        if (elRdy) elRdy.textContent = counts.ready;
+        if (elRev) elRev.textContent = formatCurrency(revenue30);
+        const tbody = document.getElementById('tbl-repairs');
+        if (!tbody) return;
+        if (items.length===0){
+          tbody.innerHTML='<tr><td colspan="10" class="text-center text-muted py-4">No repair jobs found</td></tr>';
+          return;
+        }
+        tbody.innerHTML = items.map(r=>`<tr>
+          <td><strong>${r.job_number}</strong></td>
+          <td>${r.customer_name}<br><small class="text-muted">${r.customer_phone||''}</small></td>
+          <td>${r.device_model}</td>
+          <td><code class="small">${r.imei||'—'}</code></td>
+          <td><small>${r.issue_description}</small></td>
+          <td>${formatCurrency(r.total_charge)}</td>
+          <td><span class="badge bg-${r.payment_status==='paid'?'success':'danger'}">${r.payment_status}</span></td>
+          <td><span class="badge bg-${repairStatusColor(r.status)}">${r.status.replace(/_/g,' ')}</span></td>
+          <td><small>${fmtDateShort(r.created_at)}</small></td>
+          <td>
+            <button class="btn btn-sm btn-outline-primary me-1" onclick="openRepairDetail(${r.id})" title="View/Edit"><i class="bi bi-eye"></i></button>
+            <button class="btn btn-sm btn-outline-success" onclick="quickUpdateRepairStatus(${r.id},'${r.status}')" title="Update Status"><i class="bi bi-arrow-right-circle"></i></button>
+          </td>
+        </tr>`).join('');
+      } catch(e){ console.error('loadRepairs',e); }
+    }
+
+    function openNewRepairModal() {
+      let existing = document.getElementById('newRepairModal');
+      if (existing) existing.remove();
+      const modal = document.createElement('div');
+      modal.className='modal fade'; modal.id='newRepairModal'; modal.tabIndex=-1;
+      modal.innerHTML=`<div class="modal-dialog modal-lg"><div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title"><i class="bi bi-tools"></i> New Repair Job Card</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6"><label class="form-label fw-semibold">Customer Name *</label>
+              <input type="text" class="form-control" id="rep-customer-name"></div>
+            <div class="col-md-6"><label class="form-label fw-semibold">Customer Phone</label>
+              <input type="text" class="form-control" id="rep-customer-phone"></div>
+            <div class="col-md-6"><label class="form-label fw-semibold">Device Model *</label>
+              <input type="text" class="form-control" id="rep-device-model" placeholder="e.g. iPhone 15 Pro Max"></div>
+            <div class="col-md-6"><label class="form-label fw-semibold">IMEI</label>
+              <input type="text" class="form-control font-monospace" id="rep-imei" maxlength="15"></div>
+            <div class="col-12"><label class="form-label fw-semibold">Issue Description *</label>
+              <textarea class="form-control" id="rep-issue" rows="2" placeholder="Describe the fault..."></textarea></div>
+            <div class="col-md-4"><label class="form-label fw-semibold">Labour Cost (GH₵)</label>
+              <input type="number" class="form-control" id="rep-labour" step="0.01" min="0" value="0" oninput="updateRepairTotal()"></div>
+            <div class="col-md-4"><label class="form-label fw-semibold">Parts Cost (GH₵)</label>
+              <input type="number" class="form-control" id="rep-parts-cost" step="0.01" min="0" value="0" oninput="updateRepairTotal()"></div>
+            <div class="col-md-4"><label class="form-label fw-semibold">Total Charge (GH₵)</label>
+              <input type="number" class="form-control fw-bold" id="rep-total" step="0.01" min="0" value="0"></div>
+            <div class="col-md-6"><label class="form-label fw-semibold">Technician</label>
+              <input type="text" class="form-control" id="rep-technician"></div>
+            <div class="col-12"><label class="form-label fw-semibold">Notes</label>
+              <textarea class="form-control" id="rep-notes" rows="2"></textarea></div>
+          </div>
+          <div id="rep-modal-error" class="alert alert-danger d-none mt-3"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-success" onclick="submitNewRepair()"><i class="bi bi-plus-circle"></i> Create Job Card</button>
+        </div>
+      </div></div>`;
+      document.body.appendChild(modal);
+      new bootstrap.Modal(modal).show();
+    }
+
+    function updateRepairTotal() {
+      const l = parseFloat(document.getElementById('rep-labour')?.value)||0;
+      const p = parseFloat(document.getElementById('rep-parts-cost')?.value)||0;
+      const t = document.getElementById('rep-total');
+      if (t) t.value = (l+p).toFixed(2);
+    }
+
+    async function submitNewRepair() {
+      const errEl = document.getElementById('rep-modal-error');
+      errEl.classList.add('d-none');
+      const payload = {
+        customer_name:  document.getElementById('rep-customer-name').value.trim(),
+        customer_phone: document.getElementById('rep-customer-phone').value.trim(),
+        device_model:   document.getElementById('rep-device-model').value.trim(),
+        imei:           document.getElementById('rep-imei').value.trim(),
+        issue_description: document.getElementById('rep-issue').value.trim(),
+        labor_cost:     parseFloat(document.getElementById('rep-labour').value)||0,
+        parts_cost:     parseFloat(document.getElementById('rep-parts-cost').value)||0,
+        total_charge:   parseFloat(document.getElementById('rep-total').value)||0,
+        technician:     document.getElementById('rep-technician').value.trim(),
+        notes:          document.getElementById('rep-notes').value.trim()
+      };
+      if (!payload.customer_name||!payload.device_model||!payload.issue_description){
+        errEl.textContent='Customer name, device model and issue are required.';
+        errEl.classList.remove('d-none'); return;
+      }
+      try {
+        const res = await apiCall('api/repairs.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+        if (res.error){ errEl.textContent=res.error; errEl.classList.remove('d-none'); return; }
+        bootstrap.Modal.getInstance(document.getElementById('newRepairModal')).hide();
+        loadRepairs();
+        alert('Job card created: '+res.job_number);
+      } catch(e){ errEl.textContent='Failed: '+e.message; errEl.classList.remove('d-none'); }
+    }
+
+    async function openRepairDetail(id) {
+      try {
+        const data = await apiCall('api/repairs.php?id='+id);
+        const r = data.item;
+        if (!r) return;
+        let existing = document.getElementById('repairDetailModal');
+        if (existing) existing.remove();
+        const statusOptions = ['received','diagnosing','awaiting_parts','in_repair','ready','collected','cancelled']
+          .map(s=>`<option value="${s}" ${r.status===s?'selected':''}>${s.replace(/_/g,' ')}</option>`).join('');
+        const payOptions = ['unpaid','paid','partial']
+          .map(s=>`<option value="${s}" ${r.payment_status===s?'selected':''}>${s}</option>`).join('');
+        const modal = document.createElement('div');
+        modal.className='modal fade'; modal.id='repairDetailModal'; modal.tabIndex=-1;
+        modal.innerHTML=`<div class="modal-dialog modal-lg"><div class="modal-content">
+          <div class="modal-header bg-dark text-white">
+            <h5 class="modal-title"><i class="bi bi-tools"></i> ${r.job_number} — ${r.customer_name}</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+          <div class="modal-body">
+            <div class="row g-3 mb-3">
+              <div class="col-md-6"><strong>Device:</strong> ${r.device_model}<br>
+                <strong>IMEI:</strong> <code>${r.imei||'—'}</code></div>
+              <div class="col-md-6"><strong>Customer:</strong> ${r.customer_name}<br>
+                <strong>Phone:</strong> ${r.customer_phone||'—'}</div>
+              <div class="col-12"><strong>Issue:</strong> ${r.issue_description}</div>
+              ${r.diagnosis?`<div class="col-12"><strong>Diagnosis:</strong> ${r.diagnosis}</div>`:''}
+            </div>
+            <div class="row g-3 mb-3">
+              <div class="col-md-4"><label class="form-label fw-semibold">Status</label>
+                <select class="form-select" id="rd-status">${statusOptions}</select></div>
+              <div class="col-md-4"><label class="form-label fw-semibold">Payment</label>
+                <select class="form-select" id="rd-payment">${payOptions}</select></div>
+              <div class="col-md-4"><label class="form-label fw-semibold">Total Charge</label>
+                <input type="number" class="form-control" id="rd-charge" value="${r.total_charge}" step="0.01"></div>
+              <div class="col-12"><label class="form-label fw-semibold">Diagnosis / Notes</label>
+                <textarea class="form-control" id="rd-diagnosis" rows="2">${r.diagnosis||''}</textarea></div>
+            </div>
+            ${(r.parts||[]).length>0?`<h6>Parts Used</h6><ul>${r.parts.map(p=>`<li>${p.part_name} x${p.quantity} — ${formatCurrency(p.total_cost)}</li>`).join('')}</ul>`:''}
+            <div class="text-muted small">Received: ${fmtDateShort(r.received_at)} | Technician: ${r.technician||'—'}</div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-primary" onclick="saveRepairDetail(${r.id})"><i class="bi bi-save"></i> Save Changes</button>
+          </div>
+        </div></div>`;
+        document.body.appendChild(modal);
+        new bootstrap.Modal(modal).show();
+      } catch(e){ alert('Failed to load repair: '+e.message); }
+    }
+
+    async function saveRepairDetail(id) {
+      const payload = {
+        status:         document.getElementById('rd-status').value,
+        payment_status: document.getElementById('rd-payment').value,
+        total_charge:   parseFloat(document.getElementById('rd-charge').value)||0,
+        diagnosis:      document.getElementById('rd-diagnosis').value.trim()
+      };
+      try {
+        await apiCall('api/repairs.php?id='+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+        bootstrap.Modal.getInstance(document.getElementById('repairDetailModal')).hide();
+        loadRepairs();
+      } catch(e){ alert('Failed: '+e.message); }
+    }
+
+    async function quickUpdateRepairStatus(id, currentStatus) {
+      const flow = {received:'diagnosing',diagnosing:'in_repair',awaiting_parts:'in_repair',in_repair:'ready',ready:'collected'};
+      const next = flow[currentStatus];
+      if (!next){ alert('No next status for: '+currentStatus); return; }
+      if (!confirm('Move job to: '+next.replace(/_/g,' ')+'?')) return;
+      try {
+        await apiCall('api/repairs.php',{method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({action:'update_status',id,status:next})});
+        loadRepairs();
+      } catch(e){ alert('Failed: '+e.message); }
+    }
+
+    // ============================================================
+    // TRADE-INS
+    // ============================================================
+    async function loadTradeIns() {
+      const q      = (document.getElementById('tradein-search')?.value||'').trim();
+      const status = document.getElementById('tradein-status-filter')?.value||'';
+      let url = 'api/trade-ins.php?';
+      if (q)      url += 'q='+encodeURIComponent(q)+'&';
+      if (status) url += 'status='+status+'&';
+      try {
+        const data = await apiCall(url);
+        const tbody = document.getElementById('tbl-trade-ins');
+        const items = data.items||[];
+        if (!tbody) return;
+        if (items.length===0){
+          tbody.innerHTML='<tr><td colspan="9" class="text-center text-muted py-4">No trade-ins found</td></tr>';
+          return;
+        }
+        const condColor = {excellent:'success',good:'primary',fair:'warning',poor:'danger'};
+        tbody.innerHTML = items.map(t=>`<tr>
+          <td>${t.customer_name}</td>
+          <td>${t.customer_phone||'—'}</td>
+          <td>${t.device_model}</td>
+          <td><code class="small">${t.imei||'—'}</code></td>
+          <td><span class="badge bg-${condColor[t.condition]||'secondary'}">${t.condition}</span></td>
+          <td class="fw-bold">${formatCurrency(t.agreed_value)}</td>
+          <td><span class="badge bg-${t.status==='completed'?'success':t.status==='cancelled'?'danger':'warning'}">${t.status}</span></td>
+          <td><small>${fmtDateShort(t.created_at)}</small></td>
+          <td>
+            <button class="btn btn-sm btn-outline-primary me-1" onclick="openTradeInDetail(${t.id})" title="Edit"><i class="bi bi-pencil"></i></button>
+            ${t.status==='pending'?`<button class="btn btn-sm btn-outline-success" onclick="completeTradeIn(${t.id})" title="Mark Complete"><i class="bi bi-check-circle"></i></button>`:''}
+          </td>
+        </tr>`).join('');
+      } catch(e){ console.error('loadTradeIns',e); }
+    }
+
+    function openNewTradeInModal() {
+      let existing = document.getElementById('newTradeInModal');
+      if (existing) existing.remove();
+      const modal = document.createElement('div');
+      modal.className='modal fade'; modal.id='newTradeInModal'; modal.tabIndex=-1;
+      modal.innerHTML=`<div class="modal-dialog"><div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title"><i class="bi bi-arrow-left-right"></i> New Trade-in</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6"><label class="form-label fw-semibold">Customer Name *</label>
+              <input type="text" class="form-control" id="ti-customer-name"></div>
+            <div class="col-md-6"><label class="form-label fw-semibold">Customer Phone</label>
+              <input type="text" class="form-control" id="ti-customer-phone"></div>
+            <div class="col-md-6"><label class="form-label fw-semibold">Device Model *</label>
+              <input type="text" class="form-control" id="ti-device-model" placeholder="e.g. iPhone 13 Pro"></div>
+            <div class="col-md-6"><label class="form-label fw-semibold">IMEI</label>
+              <input type="text" class="form-control font-monospace" id="ti-imei" maxlength="15"></div>
+            <div class="col-md-6"><label class="form-label fw-semibold">Condition</label>
+              <select class="form-select" id="ti-condition">
+                <option value="excellent">Excellent</option>
+                <option value="good" selected>Good</option>
+                <option value="fair">Fair</option>
+                <option value="poor">Poor</option>
+              </select></div>
+            <div class="col-md-6"><label class="form-label fw-semibold">Agreed Value (GH₵)</label>
+              <input type="number" class="form-control" id="ti-agreed-value" step="0.01" min="0" value="0"></div>
+            <div class="col-12"><label class="form-label fw-semibold">Notes</label>
+              <textarea class="form-control" id="ti-notes" rows="2"></textarea></div>
+          </div>
+          <div id="ti-modal-error" class="alert alert-danger d-none mt-3"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-success" onclick="submitNewTradeIn()"><i class="bi bi-plus-circle"></i> Record Trade-in</button>
+        </div>
+      </div></div>`;
+      document.body.appendChild(modal);
+      new bootstrap.Modal(modal).show();
+    }
+
+    async function submitNewTradeIn() {
+      const errEl = document.getElementById('ti-modal-error');
+      errEl.classList.add('d-none');
+      const payload = {
+        customer_name:  document.getElementById('ti-customer-name').value.trim(),
+        customer_phone: document.getElementById('ti-customer-phone').value.trim(),
+        device_model:   document.getElementById('ti-device-model').value.trim(),
+        imei:           document.getElementById('ti-imei').value.trim(),
+        condition:      document.getElementById('ti-condition').value,
+        agreed_value:   parseFloat(document.getElementById('ti-agreed-value').value)||0,
+        notes:          document.getElementById('ti-notes').value.trim()
+      };
+      if (!payload.customer_name||!payload.device_model){
+        errEl.textContent='Customer name and device model are required.';
+        errEl.classList.remove('d-none'); return;
+      }
+      try {
+        const res = await apiCall('api/trade-ins.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+        if (res.error){ errEl.textContent=res.error; errEl.classList.remove('d-none'); return; }
+        bootstrap.Modal.getInstance(document.getElementById('newTradeInModal')).hide();
+        loadTradeIns();
+      } catch(e){ errEl.textContent='Failed: '+e.message; errEl.classList.remove('d-none'); }
+    }
+
+    async function openTradeInDetail(id) {
+      try {
+        const data = await apiCall('api/trade-ins.php?id='+id);
+        const t = data.item;
+        if (!t) return;
+        let existing = document.getElementById('tradeInDetailModal');
+        if (existing) existing.remove();
+        const modal = document.createElement('div');
+        modal.className='modal fade'; modal.id='tradeInDetailModal'; modal.tabIndex=-1;
+        modal.innerHTML=`<div class="modal-dialog"><div class="modal-content">
+          <div class="modal-header"><h5 class="modal-title">Trade-in — ${t.customer_name}</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+          <div class="modal-body">
+            <div class="row g-3">
+              <div class="col-md-6"><label class="form-label fw-semibold">Device</label>
+                <input type="text" class="form-control" id="tid-device" value="${t.device_model}"></div>
+              <div class="col-md-6"><label class="form-label fw-semibold">IMEI</label>
+                <input type="text" class="form-control font-monospace" id="tid-imei" value="${t.imei||''}"></div>
+              <div class="col-md-6"><label class="form-label fw-semibold">Condition</label>
+                <select class="form-select" id="tid-condition">
+                  ${['excellent','good','fair','poor'].map(c=>`<option value="${c}" ${t.condition===c?'selected':''}>${c}</option>`).join('')}
+                </select></div>
+              <div class="col-md-6"><label class="form-label fw-semibold">Agreed Value (GH₵)</label>
+                <input type="number" class="form-control" id="tid-value" value="${t.agreed_value}" step="0.01"></div>
+              <div class="col-md-6"><label class="form-label fw-semibold">Status</label>
+                <select class="form-select" id="tid-status">
+                  ${['pending','completed','cancelled'].map(s=>`<option value="${s}" ${t.status===s?'selected':''}>${s}</option>`).join('')}
+                </select></div>
+              <div class="col-12"><label class="form-label fw-semibold">Notes</label>
+                <textarea class="form-control" id="tid-notes" rows="2">${t.notes||''}</textarea></div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-primary" onclick="saveTradeInDetail(${t.id})"><i class="bi bi-save"></i> Save</button>
+          </div>
+        </div></div>`;
+        document.body.appendChild(modal);
+        new bootstrap.Modal(modal).show();
+      } catch(e){ alert('Failed: '+e.message); }
+    }
+
+    async function saveTradeInDetail(id) {
+      const payload = {
+        device_model:  document.getElementById('tid-device').value.trim(),
+        imei:          document.getElementById('tid-imei').value.trim(),
+        condition:     document.getElementById('tid-condition').value,
+        agreed_value:  parseFloat(document.getElementById('tid-value').value)||0,
+        status:        document.getElementById('tid-status').value,
+        notes:         document.getElementById('tid-notes').value.trim()
+      };
+      try {
+        await apiCall('api/trade-ins.php?id='+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+        bootstrap.Modal.getInstance(document.getElementById('tradeInDetailModal')).hide();
+        loadTradeIns();
+      } catch(e){ alert('Failed: '+e.message); }
+    }
+
+    async function completeTradeIn(id) {
+      if (!confirm('Mark this trade-in as completed?')) return;
+      try {
+        await apiCall('api/trade-ins.php?id='+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'completed'})});
+        loadTradeIns();
+      } catch(e){ alert('Failed: '+e.message); }
+    }
+
+    // ============================================================
+    // WARRANTIES
+    // ============================================================
+    async function loadWarranties() {
+      const q      = (document.getElementById('warranty-search')?.value||'').trim();
+      const status = document.getElementById('warranty-status-filter')?.value||'';
+      let url = 'api/warranties.php?';
+      if (q)      url += 'q='+encodeURIComponent(q)+'&';
+      if (status) url += 'status='+status+'&';
+      try {
+        const data = await apiCall(url);
+        const tbody = document.getElementById('tbl-warranties');
+        const items = data.items||[];
+        if (!tbody) return;
+        if (items.length===0){
+          tbody.innerHTML='<tr><td colspan="8" class="text-center text-muted py-4">No warranties found</td></tr>';
+          return;
+        }
+        tbody.innerHTML = items.map(w=>{
+          const days = parseInt(w.days_remaining)||0;
+          const expired = days < 0;
+          const urgent  = !expired && days <= 30;
+          const rowCls  = expired?'table-danger':urgent?'table-warning':'';
+          const badge   = expired
+            ? '<span class="badge bg-danger">Expired</span>'
+            : urgent
+              ? `<span class="badge bg-warning text-dark">${days}d left</span>`
+              : `<span class="badge bg-success">${days}d left</span>`;
+          return `<tr class="${rowCls}">
+            <td><code class="small">${w.imei}</code></td>
+            <td>${w.product_name}</td>
+            <td>${w.customer_name||'—'}</td>
+            <td>${w.customer_phone||'—'}</td>
+            <td>${fmtDateShort(w.start_date)}</td>
+            <td>${fmtDateShort(w.end_date)}</td>
+            <td>${badge}</td>
+            <td><span class="badge bg-${expired?'danger':'success'}">${expired?'Expired':'Active'}</span></td>
+          </tr>`;
+        }).join('');
+      } catch(e){ console.error('loadWarranties',e); }
+    }
+
+    // Called automatically after a receipt is created to register warranties
+    async function registerWarrantiesForReceipt(receiptId, items, customerName, customerPhone) {
+      try {
+        const settings = await apiCall('api/company-settings.php').catch(()=>({settings:{}}));
+        const months = parseInt(settings.settings?.warranty_months||settings.warranty_months||12);
+        for (const item of items) {
+          if (item.imei) {
+            await apiCall('api/warranties.php',{
+              method:'POST',
+              headers:{'Content-Type':'application/json'},
+              body:JSON.stringify({
+                receipt_id:    receiptId,
+                imei:          item.imei,
+                product_name:  item.product_name||item.name,
+                customer_name: customerName||'',
+                customer_phone:customerPhone||'',
+                warranty_months: months,
+                start_date:    new Date().toISOString().split('T')[0]
+              })
+            });
+          }
+        }
+      } catch(e){ console.warn('Warranty registration failed:',e); }
+    }
+
+    // ============================================================
+    // SUPPLIERS
+    // ============================================================
+    async function loadSuppliers() {
+      try {
+        const data = await apiCall('api/suppliers.php');
+        const tbody = document.getElementById('tbl-suppliers');
+        const items = data.items||[];
+        if (!tbody) return;
+        if (items.length===0){
+          tbody.innerHTML='<tr><td colspan="6" class="text-center text-muted py-4">No suppliers yet. Add your first supplier.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = items.map(s=>`<tr>
+          <td><strong>${s.name}</strong></td>
+          <td>${s.phone||'—'}</td>
+          <td>${s.email||'—'}</td>
+          <td>${s.address||'—'}</td>
+          <td><span class="badge bg-info">${s.total_units_supplied||0} units</span></td>
+          <td>
+            <button class="btn btn-sm btn-outline-primary me-1" onclick="openEditSupplierModal(${s.id})" title="Edit"><i class="bi bi-pencil"></i></button>
+            <button class="btn btn-sm btn-outline-danger" onclick="deleteSupplier(${s.id},'${s.name.replace(/'/g,"\\'")}')"><i class="bi bi-trash"></i></button>
+          </td>
+        </tr>`).join('');
+      } catch(e){ console.error('loadSuppliers',e); }
+    }
+
+    function openAddSupplierModal() { openSupplierModal(null); }
+
+    async function openEditSupplierModal(id) {
+      try {
+        const data = await apiCall('api/suppliers.php?id='+id);
+        openSupplierModal(data.item);
+      } catch(e){ alert('Failed: '+e.message); }
+    }
+
+    function openSupplierModal(supplier) {
+      let existing = document.getElementById('supplierModal');
+      if (existing) existing.remove();
+      const isEdit = !!supplier;
+      const modal = document.createElement('div');
+      modal.className='modal fade'; modal.id='supplierModal'; modal.tabIndex=-1;
+      modal.innerHTML=`<div class="modal-dialog"><div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title"><i class="bi bi-truck"></i> ${isEdit?'Edit':'Add'} Supplier</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-12"><label class="form-label fw-semibold">Name *</label>
+              <input type="text" class="form-control" id="sup-name" value="${supplier?.name||''}"></div>
+            <div class="col-md-6"><label class="form-label fw-semibold">Phone</label>
+              <input type="text" class="form-control" id="sup-phone" value="${supplier?.phone||''}"></div>
+            <div class="col-md-6"><label class="form-label fw-semibold">Email</label>
+              <input type="email" class="form-control" id="sup-email" value="${supplier?.email||''}"></div>
+            <div class="col-12"><label class="form-label fw-semibold">Address</label>
+              <input type="text" class="form-control" id="sup-address" value="${supplier?.address||''}"></div>
+            <div class="col-12"><label class="form-label fw-semibold">Notes</label>
+              <textarea class="form-control" id="sup-notes" rows="2">${supplier?.notes||''}</textarea></div>
+          </div>
+          <div id="sup-modal-error" class="alert alert-danger d-none mt-3"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-success" onclick="submitSupplier(${supplier?.id||'null'})">
+            <i class="bi bi-save"></i> ${isEdit?'Save Changes':'Add Supplier'}
+          </button>
+        </div>
+      </div></div>`;
+      document.body.appendChild(modal);
+      new bootstrap.Modal(modal).show();
+    }
+
+    async function submitSupplier(id) {
+      const errEl = document.getElementById('sup-modal-error');
+      errEl.classList.add('d-none');
+      const payload = {
+        name:    document.getElementById('sup-name').value.trim(),
+        phone:   document.getElementById('sup-phone').value.trim(),
+        email:   document.getElementById('sup-email').value.trim(),
+        address: document.getElementById('sup-address').value.trim(),
+        notes:   document.getElementById('sup-notes').value.trim()
+      };
+      if (!payload.name){ errEl.textContent='Name is required.'; errEl.classList.remove('d-none'); return; }
+      try {
+        const url  = id ? 'api/suppliers.php?id='+id : 'api/suppliers.php';
+        const meth = id ? 'PUT' : 'POST';
+        const res  = await apiCall(url,{method:meth,headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+        if (res.error){ errEl.textContent=res.error; errEl.classList.remove('d-none'); return; }
+        bootstrap.Modal.getInstance(document.getElementById('supplierModal')).hide();
+        loadSuppliers();
+      } catch(e){ errEl.textContent='Failed: '+e.message; errEl.classList.remove('d-none'); }
+    }
+
+    async function deleteSupplier(id, name) {
+      if (!confirm('Delete supplier "'+name+'"?')) return;
+      try {
+        const res = await apiCall('api/suppliers.php?id='+id,{method:'DELETE'});
+        if (res.error){ alert(res.error); return; }
+        loadSuppliers();
+      } catch(e){ alert('Failed: '+e.message); }
+    }
+
+    // ============================================================
+    // INVENTORY PREDICTIONS (kept from original, cleaned up)
+    
+
+
   </script>
   <!-- End of JavaScript -->
 </body>

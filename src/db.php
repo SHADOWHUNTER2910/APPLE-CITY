@@ -11,42 +11,78 @@ if (!file_exists($cfgPath)) {
 require $cfgPath; // defines $DB_CONFIG
 
 function ensure_sqlite_initialized(PDO $pdo, string $dbFile): void {
-    // Create tables if they don't exist (SQLite DDL)
-    // Note: SQLite supports FOREIGN KEYs but they need PRAGMA foreign_keys = ON
     $pdo->exec('PRAGMA foreign_keys = ON');
 
-    // Products
+    // ── Products (iPhone models) ──────────────────────────────────────
     $pdo->exec('CREATE TABLE IF NOT EXISTS products (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         sku TEXT NOT NULL UNIQUE,
         name TEXT NOT NULL,
         unit_price REAL NOT NULL DEFAULT 0.0,
-        has_expiry INTEGER DEFAULT 0,
-        shelf_life_days INTEGER DEFAULT NULL,
+        cost_price REAL NOT NULL DEFAULT 0.0,
+        default_unit_id INTEGER DEFAULT NULL,
         created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     )');
 
-    // Stock
+    // ── Product Variants (model + storage + color combinations) ───────
+    $pdo->exec('CREATE TABLE IF NOT EXISTS product_variants (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        product_id INTEGER NOT NULL,
+        storage TEXT NOT NULL DEFAULT "",
+        color TEXT NOT NULL DEFAULT "",
+        selling_price REAL NOT NULL DEFAULT 0.0,
+        cost_price REAL NOT NULL DEFAULT 0.0,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(product_id) REFERENCES products(id) ON UPDATE CASCADE ON DELETE CASCADE,
+        UNIQUE(product_id, storage, color)
+    )');
+
+    // ── IMEI Units (one row per physical device) ───────────────────────
+    $pdo->exec('CREATE TABLE IF NOT EXISTS imei_units (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        product_id INTEGER NOT NULL,
+        variant_id INTEGER DEFAULT NULL,
+        imei TEXT NOT NULL UNIQUE,
+        color TEXT DEFAULT NULL,
+        storage TEXT DEFAULT NULL,
+        status TEXT NOT NULL DEFAULT "in_stock",
+        cost_price REAL NOT NULL DEFAULT 0.0,
+        selling_price REAL NOT NULL DEFAULT 0.0,
+        supplier_id INTEGER DEFAULT NULL,
+        purchase_date TEXT DEFAULT NULL,
+        sold_receipt_id INTEGER DEFAULT NULL,
+        sold_at TEXT DEFAULT NULL,
+        notes TEXT DEFAULT NULL,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(product_id) REFERENCES products(id) ON UPDATE CASCADE ON DELETE RESTRICT,
+        FOREIGN KEY(variant_id) REFERENCES product_variants(id) ON UPDATE CASCADE ON DELETE SET NULL
+    )');
+
+    // ── Stock (aggregate counts per product, kept for dashboard speed) ─
     $pdo->exec('CREATE TABLE IF NOT EXISTS stock (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         product_id INTEGER NOT NULL UNIQUE,
         quantity INTEGER NOT NULL DEFAULT 0,
         initial_quantity INTEGER NOT NULL DEFAULT 0,
-        manufacturing_date TEXT DEFAULT NULL,
-        expiry_date TEXT DEFAULT NULL,
-        batch_number TEXT DEFAULT NULL,
         updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY(product_id) REFERENCES products(id) ON UPDATE CASCADE ON DELETE RESTRICT
     )');
-    
-    // Add initial_quantity column if it doesn't exist
-    try {
-        $pdo->exec('ALTER TABLE stock ADD COLUMN initial_quantity INTEGER DEFAULT 0');
-    } catch (Exception $e) {
-        // Column already exists, ignore
-    }
 
-    // Receipts - Create with all columns
+    // ── Suppliers ─────────────────────────────────────────────────────
+    $pdo->exec('CREATE TABLE IF NOT EXISTS suppliers (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        phone TEXT DEFAULT NULL,
+        email TEXT DEFAULT NULL,
+        address TEXT DEFAULT NULL,
+        notes TEXT DEFAULT NULL,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )');
+
+    // Add supplier_id to imei_units if missing
+    try { $pdo->exec('ALTER TABLE imei_units ADD COLUMN supplier_id INTEGER DEFAULT NULL'); } catch (Exception $e) {}
+
+    // ── Receipts ──────────────────────────────────────────────────────
     $pdo->exec('CREATE TABLE IF NOT EXISTS receipts (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         invoice_number TEXT NOT NULL UNIQUE,
@@ -57,214 +93,50 @@ function ensure_sqlite_initialized(PDO $pdo, string $dbFile): void {
         company_name TEXT,
         company_location TEXT,
         subtotal REAL NOT NULL DEFAULT 0.0,
+        discount REAL NOT NULL DEFAULT 0.0,
         total REAL NOT NULL DEFAULT 0.0,
-        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        total_cost REAL NOT NULL DEFAULT 0.0,
+        total_profit REAL NOT NULL DEFAULT 0.0,
+        profit_margin REAL NOT NULL DEFAULT 0.0,
+        payment_method TEXT NOT NULL DEFAULT "cash",
+        payment_reference TEXT DEFAULT NULL,
+        cash_received REAL DEFAULT 0.0,
+        change_given REAL DEFAULT 0.0,
+        created_by INTEGER DEFAULT NULL,
+        created_by_username TEXT DEFAULT NULL,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(created_by) REFERENCES users(id) ON UPDATE CASCADE ON DELETE SET NULL
     )');
 
-    // Add missing columns to existing receipts table if they don't exist
-    try {
-        $pdo->exec('ALTER TABLE receipts ADD COLUMN customer_phone TEXT');
-    } catch (Exception $e) {
-        // Column already exists, ignore
-    }
-    try {
-        $pdo->exec('ALTER TABLE receipts ADD COLUMN customer_address TEXT');
-    } catch (Exception $e) {
-        // Column already exists, ignore
-    }
-    try {
-        $pdo->exec('ALTER TABLE receipts ADD COLUMN cash_received REAL DEFAULT 0.0');
-    } catch (Exception $e) {
-        // Column already exists, ignore
-    }
-    try {
-        $pdo->exec('ALTER TABLE receipts ADD COLUMN change_given REAL DEFAULT 0.0');
-    } catch (Exception $e) {
-        // Column already exists, ignore
-    }
-
-    // Receipt items - Create with all columns
+    // ── Receipt Items ─────────────────────────────────────────────────
     $pdo->exec('CREATE TABLE IF NOT EXISTS receipt_items (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         receipt_id INTEGER NOT NULL,
         product_id INTEGER,
         product_name TEXT,
-        quantity INTEGER NOT NULL,
+        imei_unit_id INTEGER DEFAULT NULL,
+        imei TEXT DEFAULT NULL,
+        variant_label TEXT DEFAULT NULL,
+        quantity INTEGER NOT NULL DEFAULT 1,
         unit_price REAL NOT NULL,
+        cost_price REAL NOT NULL DEFAULT 0.0,
         total_price REAL NOT NULL,
-        batch_id INTEGER DEFAULT NULL,
-        expiry_date TEXT DEFAULT NULL,
+        profit REAL NOT NULL DEFAULT 0.0,
         FOREIGN KEY(receipt_id) REFERENCES receipts(id) ON UPDATE CASCADE ON DELETE CASCADE,
         FOREIGN KEY(product_id) REFERENCES products(id) ON UPDATE CASCADE ON DELETE SET NULL
     )');
 
-    // Add missing columns to existing receipt_items table if they don't exist
-    try {
-        $pdo->exec('ALTER TABLE receipt_items ADD COLUMN product_name TEXT');
-    } catch (Exception $e) {
-        // Column already exists, ignore
-    }
-
-    // Users
+    // ── Users ─────────────────────────────────────────────────────────
     $pdo->exec('CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT NOT NULL UNIQUE,
         password_hash TEXT NOT NULL,
-        role TEXT NOT NULL DEFAULT \'user\',
-        status TEXT NOT NULL DEFAULT \'active\',
+        role TEXT NOT NULL DEFAULT "user",
+        status TEXT NOT NULL DEFAULT "active",
         created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     )');
 
-    // Add status column to existing users tables that were created without it
-    try {
-        $pdo->exec('ALTER TABLE users ADD COLUMN status TEXT NOT NULL DEFAULT \'active\'');
-    } catch (Exception $e) {
-        // Column already exists, ignore
-    }
-    
-    // Stock batches for expiry tracking
-    $pdo->exec('CREATE TABLE IF NOT EXISTS stock_batches (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        product_id INTEGER NOT NULL,
-        batch_number TEXT NOT NULL,
-        manufacturing_date TEXT DEFAULT NULL,
-        expiry_date TEXT NOT NULL,
-        quantity INTEGER NOT NULL DEFAULT 0,
-        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY(product_id) REFERENCES products(id) ON UPDATE CASCADE ON DELETE CASCADE
-    )');
-    
-    // Create indexes for better performance
-    try {
-        $pdo->exec('CREATE INDEX IF NOT EXISTS idx_stock_batches_expiry ON stock_batches(expiry_date)');
-        $pdo->exec('CREATE INDEX IF NOT EXISTS idx_stock_batches_product ON stock_batches(product_id)');
-        
-        // Add critical indexes for production performance
-        $pdo->exec('CREATE INDEX IF NOT EXISTS idx_products_name ON products(name)');
-        $pdo->exec('CREATE INDEX IF NOT EXISTS idx_products_sku ON products(sku)');
-        $pdo->exec('CREATE INDEX IF NOT EXISTS idx_products_has_expiry ON products(has_expiry)');
-        $pdo->exec('CREATE INDEX IF NOT EXISTS idx_stock_product_id ON stock(product_id)');
-        $pdo->exec('CREATE INDEX IF NOT EXISTS idx_stock_quantity ON stock(quantity)');
-        $pdo->exec('CREATE INDEX IF NOT EXISTS idx_receipts_created_at ON receipts(created_at)');
-        $pdo->exec('CREATE INDEX IF NOT EXISTS idx_receipts_invoice ON receipts(invoice_number)');
-        $pdo->exec('CREATE INDEX IF NOT EXISTS idx_receipt_items_receipt ON receipt_items(receipt_id)');
-        $pdo->exec('CREATE INDEX IF NOT EXISTS idx_receipt_items_product ON receipt_items(product_id)');
-    } catch (Exception $e) {
-        // Indexes might already exist
-    }
-    
-    // Product units for multi-unit support
-    $pdo->exec('CREATE TABLE IF NOT EXISTS product_units (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        product_id INTEGER NOT NULL,
-        unit_name TEXT NOT NULL,
-        unit_abbreviation TEXT NOT NULL,
-        conversion_factor REAL NOT NULL DEFAULT 1.0,
-        unit_price REAL NOT NULL DEFAULT 0.0,
-        is_base_unit INTEGER NOT NULL DEFAULT 0,
-        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY(product_id) REFERENCES products(id) ON UPDATE CASCADE ON DELETE CASCADE,
-        UNIQUE(product_id, unit_name)
-    )');
-    
-    // Create indexes for product_units
-    try {
-        $pdo->exec('CREATE INDEX IF NOT EXISTS idx_product_units_product ON product_units(product_id)');
-        $pdo->exec('CREATE INDEX IF NOT EXISTS idx_product_units_base ON product_units(product_id, is_base_unit)');
-    } catch (Exception $e) {
-        // Indexes might already exist
-    }
-    
-    // Add columns to receipt_items for unit tracking
-    try {
-        $pdo->exec('ALTER TABLE receipt_items ADD COLUMN unit_id INTEGER DEFAULT NULL');
-    } catch (Exception $e) {
-        // Column already exists
-    }
-    try {
-        $pdo->exec('ALTER TABLE receipt_items ADD COLUMN unit_name TEXT DEFAULT NULL');
-    } catch (Exception $e) {
-        // Column already exists
-    }
-    try {
-        $pdo->exec('ALTER TABLE receipt_items ADD COLUMN unit_abbreviation TEXT DEFAULT NULL');
-    } catch (Exception $e) {
-        // Column already exists
-    }
-    try {
-        $pdo->exec('ALTER TABLE receipt_items ADD COLUMN quantity_in_base_unit REAL DEFAULT NULL');
-    } catch (Exception $e) {
-        // Column already exists
-    }
-    
-    // Add default_unit_id to products
-    try {
-        $pdo->exec('ALTER TABLE products ADD COLUMN default_unit_id INTEGER DEFAULT NULL');
-    } catch (Exception $e) {
-        // Column already exists
-    }
-    
-    // Add profit tracking columns to product_units (cost varies per unit)
-    try {
-        $pdo->exec('ALTER TABLE product_units ADD COLUMN cost_price REAL DEFAULT 0.00');
-    } catch (Exception $e) {
-        // Column already exists
-    }
-    try {
-        $pdo->exec('ALTER TABLE receipt_items ADD COLUMN cost_price REAL DEFAULT 0.00');
-    } catch (Exception $e) {
-        // Column already exists
-    }
-    try {
-        $pdo->exec('ALTER TABLE receipt_items ADD COLUMN profit REAL DEFAULT 0.00');
-    } catch (Exception $e) {
-        // Column already exists
-    }
-    try {
-        $pdo->exec('ALTER TABLE receipts ADD COLUMN total_cost REAL DEFAULT 0.00');
-    } catch (Exception $e) {
-        // Column already exists
-    }
-    try {
-        $pdo->exec('ALTER TABLE receipts ADD COLUMN total_profit REAL DEFAULT 0.00');
-    } catch (Exception $e) {
-        // Column already exists
-    }
-    try {
-        $pdo->exec('ALTER TABLE receipts ADD COLUMN profit_margin REAL DEFAULT 0.00');
-    } catch (Exception $e) {
-        // Column already exists
-    }
-    // Discount column
-    try {
-        $pdo->exec('ALTER TABLE receipts ADD COLUMN discount REAL DEFAULT 0.00');
-    } catch (Exception $e) {
-        // Column already exists
-    }
-    // Payment method columns
-    try {
-        $pdo->exec('ALTER TABLE receipts ADD COLUMN payment_method TEXT DEFAULT "cash"');
-    } catch (Exception $e) {
-        // Column already exists
-    }
-    try {
-        $pdo->exec('ALTER TABLE receipts ADD COLUMN payment_reference TEXT DEFAULT NULL');
-    } catch (Exception $e) {
-        // Column already exists
-    }
-    
-    // Create indexes for profit tracking
-    try {
-        $pdo->exec('CREATE INDEX IF NOT EXISTS idx_product_units_cost_price ON product_units(cost_price)');
-        $pdo->exec('CREATE INDEX IF NOT EXISTS idx_receipt_items_profit ON receipt_items(profit)');
-        $pdo->exec('CREATE INDEX IF NOT EXISTS idx_receipts_profit ON receipts(total_profit)');
-    } catch (Exception $e) {
-        // Indexes might already exist
-    }
-    
-    // Stock movements table for tracking additions and deductions
+    // ── Stock Movements (audit trail) ─────────────────────────────────
     $pdo->exec('CREATE TABLE IF NOT EXISTS stock_movements (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         product_id INTEGER NOT NULL,
@@ -280,147 +152,240 @@ function ensure_sqlite_initialized(PDO $pdo, string $dbFile): void {
         FOREIGN KEY(product_id) REFERENCES products(id) ON UPDATE CASCADE ON DELETE CASCADE,
         FOREIGN KEY(created_by) REFERENCES users(id) ON UPDATE CASCADE ON DELETE SET NULL
     )');
-    
-    // Create indexes for stock_movements
-    try {
-        $pdo->exec('CREATE INDEX IF NOT EXISTS idx_stock_movements_product ON stock_movements(product_id)');
-        $pdo->exec('CREATE INDEX IF NOT EXISTS idx_stock_movements_type ON stock_movements(movement_type)');
-        $pdo->exec('CREATE INDEX IF NOT EXISTS idx_stock_movements_date ON stock_movements(created_at)');
-    } catch (Exception $e) {
-        // Indexes might already exist
-    }
-    
-    // Company settings table
+
+    // ── Repairs / Service Jobs ────────────────────────────────────────
+    $pdo->exec('CREATE TABLE IF NOT EXISTS repairs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        job_number TEXT NOT NULL UNIQUE,
+        customer_name TEXT NOT NULL,
+        customer_phone TEXT DEFAULT NULL,
+        device_model TEXT NOT NULL,
+        imei TEXT DEFAULT NULL,
+        issue_description TEXT NOT NULL,
+        diagnosis TEXT DEFAULT NULL,
+        status TEXT NOT NULL DEFAULT "received",
+        parts_cost REAL NOT NULL DEFAULT 0.0,
+        labor_cost REAL NOT NULL DEFAULT 0.0,
+        total_charge REAL NOT NULL DEFAULT 0.0,
+        payment_status TEXT NOT NULL DEFAULT "unpaid",
+        payment_method TEXT DEFAULT NULL,
+        received_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        completed_at TEXT DEFAULT NULL,
+        collected_at TEXT DEFAULT NULL,
+        technician TEXT DEFAULT NULL,
+        notes TEXT DEFAULT NULL,
+        created_by INTEGER DEFAULT NULL,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(created_by) REFERENCES users(id) ON UPDATE CASCADE ON DELETE SET NULL
+    )');
+
+    // ── Repair Parts Used ─────────────────────────────────────────────
+    $pdo->exec('CREATE TABLE IF NOT EXISTS repair_parts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        repair_id INTEGER NOT NULL,
+        part_name TEXT NOT NULL,
+        quantity INTEGER NOT NULL DEFAULT 1,
+        unit_cost REAL NOT NULL DEFAULT 0.0,
+        total_cost REAL NOT NULL DEFAULT 0.0,
+        FOREIGN KEY(repair_id) REFERENCES repairs(id) ON UPDATE CASCADE ON DELETE CASCADE
+    )');
+
+    // ── Trade-ins ─────────────────────────────────────────────────────
+    $pdo->exec('CREATE TABLE IF NOT EXISTS trade_ins (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        customer_name TEXT NOT NULL,
+        customer_phone TEXT DEFAULT NULL,
+        device_model TEXT NOT NULL,
+        imei TEXT DEFAULT NULL,
+        condition TEXT NOT NULL DEFAULT "good",
+        offered_value REAL NOT NULL DEFAULT 0.0,
+        agreed_value REAL NOT NULL DEFAULT 0.0,
+        linked_receipt_id INTEGER DEFAULT NULL,
+        status TEXT NOT NULL DEFAULT "pending",
+        notes TEXT DEFAULT NULL,
+        created_by INTEGER DEFAULT NULL,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(linked_receipt_id) REFERENCES receipts(id) ON UPDATE CASCADE ON DELETE SET NULL,
+        FOREIGN KEY(created_by) REFERENCES users(id) ON UPDATE CASCADE ON DELETE SET NULL
+    )');
+
+    // ── Warranties ────────────────────────────────────────────────────
+    $pdo->exec('CREATE TABLE IF NOT EXISTS warranties (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        receipt_id INTEGER NOT NULL,
+        receipt_item_id INTEGER DEFAULT NULL,
+        imei TEXT NOT NULL,
+        product_name TEXT NOT NULL,
+        customer_name TEXT DEFAULT NULL,
+        customer_phone TEXT DEFAULT NULL,
+        warranty_months INTEGER NOT NULL DEFAULT 12,
+        start_date TEXT NOT NULL,
+        end_date TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT "active",
+        notes TEXT DEFAULT NULL,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(receipt_id) REFERENCES receipts(id) ON UPDATE CASCADE ON DELETE CASCADE
+    )');
+
+    // ── Customers ─────────────────────────────────────────────────────
+    $pdo->exec('CREATE TABLE IF NOT EXISTS customers (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        phone TEXT DEFAULT NULL,
+        email TEXT DEFAULT NULL,
+        address TEXT DEFAULT NULL,
+        credit_limit REAL NOT NULL DEFAULT 0.0,
+        total_purchases REAL NOT NULL DEFAULT 0.0,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )');
+
+    // ── Credit Sales ──────────────────────────────────────────────────
+    $pdo->exec('CREATE TABLE IF NOT EXISTS credit_sales (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        customer_id INTEGER NOT NULL,
+        receipt_id INTEGER DEFAULT NULL,
+        amount_owed REAL NOT NULL DEFAULT 0.0,
+        amount_paid REAL NOT NULL DEFAULT 0.0,
+        balance REAL NOT NULL DEFAULT 0.0,
+        status TEXT NOT NULL DEFAULT "outstanding",
+        due_date TEXT DEFAULT NULL,
+        notes TEXT DEFAULT NULL,
+        created_by INTEGER DEFAULT NULL,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(customer_id) REFERENCES customers(id) ON UPDATE CASCADE ON DELETE RESTRICT,
+        FOREIGN KEY(receipt_id) REFERENCES receipts(id) ON UPDATE CASCADE ON DELETE SET NULL,
+        FOREIGN KEY(created_by) REFERENCES users(id) ON UPDATE CASCADE ON DELETE SET NULL
+    )');
+
+    // ── Credit Payments ───────────────────────────────────────────────
+    $pdo->exec('CREATE TABLE IF NOT EXISTS credit_payments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        credit_sale_id INTEGER NOT NULL,
+        amount REAL NOT NULL,
+        payment_method TEXT NOT NULL DEFAULT "cash",
+        payment_reference TEXT DEFAULT NULL,
+        notes TEXT DEFAULT NULL,
+        created_by INTEGER DEFAULT NULL,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(credit_sale_id) REFERENCES credit_sales(id) ON UPDATE CASCADE ON DELETE CASCADE,
+        FOREIGN KEY(created_by) REFERENCES users(id) ON UPDATE CASCADE ON DELETE SET NULL
+    )');
+
+    // ── Company Settings ──────────────────────────────────────────────
     $pdo->exec('CREATE TABLE IF NOT EXISTS company_settings (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         setting_key TEXT UNIQUE NOT NULL,
         setting_value TEXT,
         updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     )');
-    
-    // Insert default company settings if they don't exist
-    $defaultSettings = [
-        'company_name' => 'Your Company Name',
-        'company_subtitle' => 'Business Description',
-        'company_location' => 'Location: Your Business Address',
-        'company_phone' => 'TEL: Your Phone Number',
-        'company_email' => '',
-        'company_website' => '',
-        'company_logo' => 'assets/logo.png'
+
+    // Default company settings for Apple City
+    $defaults = [
+        'company_name'     => 'Apple City',
+        'company_subtitle' => 'Authorised iPhone Dealer',
+        'company_location' => 'Location: Your Address',
+        'company_phone'    => 'TEL: Your Phone Number',
+        'company_email'    => '',
+        'company_website'  => '',
+        'company_logo'     => 'assets/logo.png',
+        'warranty_months'  => '12',
+        'currency_symbol'  => 'GH₵',
     ];
-    
-    foreach ($defaultSettings as $key => $value) {
+    foreach ($defaults as $key => $value) {
         try {
-            $stmt = $pdo->prepare('INSERT OR IGNORE INTO company_settings (setting_key, setting_value) VALUES (?, ?)');
-            $stmt->execute([$key, $value]);
-        } catch (Exception $e) {
-            // Setting already exists
-        }
+            $pdo->prepare('INSERT OR IGNORE INTO company_settings (setting_key, setting_value) VALUES (?, ?)')->execute([$key, $value]);
+        } catch (Exception $e) {}
+    }
+
+    // ── Indexes ───────────────────────────────────────────────────────
+    $indexes = [
+        'CREATE INDEX IF NOT EXISTS idx_products_name ON products(name)',
+        'CREATE INDEX IF NOT EXISTS idx_products_sku ON products(sku)',
+        'CREATE INDEX IF NOT EXISTS idx_stock_product_id ON stock(product_id)',
+        'CREATE INDEX IF NOT EXISTS idx_receipts_created_at ON receipts(created_at)',
+        'CREATE INDEX IF NOT EXISTS idx_receipts_invoice ON receipts(invoice_number)',
+        'CREATE INDEX IF NOT EXISTS idx_receipt_items_receipt ON receipt_items(receipt_id)',
+        'CREATE INDEX IF NOT EXISTS idx_receipt_items_product ON receipt_items(product_id)',
+        'CREATE INDEX IF NOT EXISTS idx_imei_units_imei ON imei_units(imei)',
+        'CREATE INDEX IF NOT EXISTS idx_imei_units_product ON imei_units(product_id)',
+        'CREATE INDEX IF NOT EXISTS idx_imei_units_status ON imei_units(status)',
+        'CREATE INDEX IF NOT EXISTS idx_repairs_status ON repairs(status)',
+        'CREATE INDEX IF NOT EXISTS idx_repairs_job_number ON repairs(job_number)',
+        'CREATE INDEX IF NOT EXISTS idx_warranties_imei ON warranties(imei)',
+        'CREATE INDEX IF NOT EXISTS idx_warranties_end_date ON warranties(end_date)',
+        'CREATE INDEX IF NOT EXISTS idx_stock_movements_product ON stock_movements(product_id)',
+        'CREATE INDEX IF NOT EXISTS idx_stock_movements_date ON stock_movements(created_at)',
+        'CREATE INDEX IF NOT EXISTS idx_product_variants_product ON product_variants(product_id)',
+    ];
+    foreach ($indexes as $sql) {
+        try { $pdo->exec($sql); } catch (Exception $e) {}
     }
 }
 
 function seed_admin_if_missing(PDO $pdo): void {
-    // Create a default admin if none exists
     $stmt = $pdo->query("SELECT COUNT(*) FROM users WHERE role='admin'");
-    $count = (int)$stmt->fetchColumn();
-    if ($count === 0) {
-        $username = 'admin';
-        $passwordHash = password_hash('Admin@123', PASSWORD_DEFAULT);
-        $role = 'admin';
-        $ins = $pdo->prepare('INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)');
-        $ins->execute([$username, $passwordHash, $role]);
+    if ((int)$stmt->fetchColumn() === 0) {
+        $pdo->prepare('INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)')
+            ->execute(['admin', password_hash('Admin@123', PASSWORD_DEFAULT), 'admin']);
     }
 }
 
 function ensure_deleted_product_placeholder(PDO $pdo): void {
-    // Create a special "deleted product" placeholder with ID 0 if it doesn't exist
-    // This placeholder is used to maintain referential integrity when products are force-deleted
-    // It should never appear in normal product listings (filtered out by APIs)
     $stmt = $pdo->prepare("SELECT COUNT(*) FROM products WHERE id = 0");
     $stmt->execute();
-    $count = (int)$stmt->fetchColumn();
-    
-    if ($count === 0) {
+    if ((int)$stmt->fetchColumn() === 0) {
         try {
-            // Insert with explicit ID 0 for deleted products placeholder
             $pdo->exec("INSERT INTO products (id, sku, name, unit_price) VALUES (0, 'DELETED', '[DELETED PRODUCT]', 0.00)");
-            // Also create stock entry for the deleted product placeholder
             $pdo->exec("INSERT INTO stock (product_id, quantity) VALUES (0, 0)");
-        } catch (Exception $e) {
-            // If ID 0 insertion fails, use a high negative number
-            try {
-                $pdo->exec("INSERT INTO products (sku, name, unit_price) VALUES ('DELETED-PLACEHOLDER', '[DELETED PRODUCT]', 0.00)");
-                $lastId = $pdo->lastInsertId();
-                $pdo->exec("INSERT INTO stock (product_id, quantity) VALUES ($lastId, 0)");
-            } catch (Exception $e2) {
-                // Placeholder creation failed, continue without it
-                error_log("Could not create deleted product placeholder: " . $e2->getMessage());
-            }
-        }
+        } catch (Exception $e) {}
     }
 }
 
 function get_pdo(): PDO {
     static $pdo = null;
-    if ($pdo instanceof PDO) {
-        return $pdo;
-    }
+    if ($pdo instanceof PDO) return $pdo;
 
     global $DB_CONFIG;
-    $driver = $DB_CONFIG['driver'] ?? 'mysql';
+    $driver = $DB_CONFIG['driver'] ?? 'sqlite';
 
     if ($driver === 'sqlite') {
         $dbFile = $DB_CONFIG['sqlite_path'] ?? (__DIR__ . '/../data/stocktracker.sqlite');
         $dir = dirname($dbFile);
-        if (!is_dir($dir)) {
-            mkdir($dir, 0777, true);
-        }
-        $dsn = 'sqlite:' . $dbFile;
+        if (!is_dir($dir)) mkdir($dir, 0777, true);
+
         $options = [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            PDO::ATTR_EMULATE_PREPARES => false,
+            PDO::ATTR_EMULATE_PREPARES   => false,
         ];
         try {
-            $pdo = new PDO($dsn, null, null, $options);
+            $pdo = new PDO('sqlite:' . $dbFile, null, null, $options);
             ensure_sqlite_initialized($pdo, $dbFile);
             seed_admin_if_missing($pdo);
             ensure_deleted_product_placeholder($pdo);
         } catch (Throwable $e) {
             http_response_code(500);
-            echo 'SQLite connection failed.';
+            echo 'SQLite connection failed: ' . $e->getMessage();
             exit;
         }
         return $pdo;
     }
 
-    // Fallback to MySQL (legacy mode)
-    $host = $DB_CONFIG['host'] ?? '127.0.0.1';
-    $db   = $DB_CONFIG['name'] ?? 'stocktracker';
-    $user = $DB_CONFIG['user'] ?? 'root';
-    $pass = $DB_CONFIG['pass'] ?? '';
-    $charset = $DB_CONFIG['charset'] ?? 'utf8mb4';
-
-    $dsn = "mysql:host={$host};dbname={$db};charset={$charset}";
+    // MySQL fallback
+    $dsn = "mysql:host={$DB_CONFIG['host']};dbname={$DB_CONFIG['name']};charset={$DB_CONFIG['charset']}";
     $options = [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::ATTR_EMULATE_PREPARES => false,
+        PDO::ATTR_EMULATE_PREPARES   => false,
     ];
-
     try {
-        $pdo = new PDO($dsn, $user, $pass, $options);
+        $pdo = new PDO($dsn, $DB_CONFIG['user'], $DB_CONFIG['pass'], $options);
     } catch (Throwable $e) {
         http_response_code(500);
         echo 'Database connection failed.';
         exit;
     }
-
     return $pdo;
 }
 
-
-// Alias for consistency with other API files
-function getDbConnection(): PDO {
-    return get_pdo();
-}
+function getDbConnection(): PDO { return get_pdo(); }
