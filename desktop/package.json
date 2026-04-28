@@ -1,106 +1,106 @@
 {
-  "name": "shelfsense-pos",
-  "version": "1.0.0",
-  "description": "ShelfSense POS - Smart retail management system that helps businesses track stock, monitor sales, and prevent losses from expired products.",
-  "main": "main.js",
-  "private": true,
-  "author": "ShelfSense",
-  "scripts": {
-    "start": "electron .",
-    "dist": "electron-builder",
-    "build-win": "electron-builder --win",
-    "build-portable": "electron-builder --win portable",
-    "build-installer": "electron-builder --win nsis",
-    "build-all": "electron-builder --win nsis --win portable"
-  },
-  "build": {
-    "appId": "com.shelfsense.pos",
-    "productName": "ShelfSense POS",
-    "publish": {
-      "provider": "github",
-      "owner": "SHADOWHUNTER2910",
-      "repo": "SHELFSENSE",
-      "private": false
+    "name": "applecity-pos",
+    "version": "1.0.0",
+    "description": "Apple City POS - iPhone sales, repairs and service management system.",
+    "main": "main.js",
+    "private": true,
+    "author": "Apple City",
+    "scripts": {
+        "start": "electron .",
+        "dist": "electron-builder",
+        "build-win": "electron-builder --win",
+        "build-portable": "electron-builder --win portable",
+        "build-installer": "electron-builder --win nsis",
+        "build-all": "electron-builder --win nsis --win portable"
     },
-    "directories": {
-      "output": "dist/internal"
-    },
-    "extraResources": [
-      {
-        "from": "php",
-        "to": "php",
-        "filter": [
-          "**/*"
-        ]
-      },
-      {
-        "from": "..",
-        "to": "app",
-        "filter": [
-          "api/**/*",
-          "index.html",
-          "owner.html",
-          "src/**/*",
-          "config.php",
-          "assets/**/*",
-          "data/**/*"
-        ]
-      }
-    ],
-    "win": {
-      "target": [
-        {
-          "target": "nsis",
-          "arch": [
-            "x64"
-          ]
+    "build": {
+        "appId": "com.applecity.pos",
+        "productName": "Apple City POS",
+        "publish": {
+            "provider": "github",
+            "owner": "SHADOWHUNTER2910",
+            "repo": "APPLE-CITY",
+            "private": false
         },
-        {
-          "target": "portable",
-          "arch": [
-            "x64"
-          ]
-        }
-      ],
-      "icon": "shelfsense.ico",
-      "publisherName": "ShelfSense",
-      "requestedExecutionLevel": "asInvoker"
+        "directories": {
+            "output": "dist/internal"
+        },
+        "extraResources": [
+            {
+                "from": "php",
+                "to": "php",
+                "filter": [
+                    "**/*"
+                ]
+            },
+            {
+                "from": "..",
+                "to": "app",
+                "filter": [
+                    "api/**/*",
+                    "index.html",
+                    "owner.html",
+                    "src/**/*",
+                    "config.php",
+                    "assets/**/*",
+                    "data/**/*"
+                ]
+            }
+        ],
+        "win": {
+            "target": [
+                {
+                    "target": "nsis",
+                    "arch": [
+                        "x64"
+                    ]
+                },
+                {
+                    "target": "portable",
+                    "arch": [
+                        "x64"
+                    ]
+                }
+            ],
+            "icon": "shelfsense.ico",
+            "publisherName": "Apple City",
+            "requestedExecutionLevel": "asInvoker"
+        },
+        "nsis": {
+            "oneClick": false,
+            "allowToChangeInstallationDirectory": true,
+            "createDesktopShortcut": true,
+            "createStartMenuShortcut": true,
+            "shortcutName": "Apple City POS",
+            "installerIcon": "shelfsense.ico",
+            "uninstallerIcon": "shelfsense.ico",
+            "installerHeaderIcon": "shelfsense.ico",
+            "artifactName": "AppleCity-Setup.${ext}",
+            "deleteAppDataOnUninstall": false
+        },
+        "portable": {
+            "artifactName": "Apple City POS-Portable-${version}.${ext}"
+        },
+        "files": [
+            "main.js",
+            "preload.js",
+            "package.json",
+            "shelfsense.ico",
+            "node_modules/**/*"
+        ],
+        "fileAssociations": [
+            {
+                "ext": "sqlite",
+                "name": "Stock Manager Database",
+                "role": "Editor"
+            }
+        ]
     },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
-      "shortcutName": "ShelfSense POS",
-      "installerIcon": "shelfsense.ico",
-      "uninstallerIcon": "shelfsense.ico",
-      "installerHeaderIcon": "shelfsense.ico",
-      "artifactName": "setup-core.${ext}",
-      "deleteAppDataOnUninstall": false
+    "dependencies": {
+        "electron-updater": "^6.8.3"
     },
-    "portable": {
-      "artifactName": "${productName}-Portable-${version}.${ext}"
-    },
-    "files": [
-      "main.js",
-      "preload.js",
-      "package.json",
-      "shelfsense.ico",
-      "node_modules/**/*"
-    ],
-    "fileAssociations": [
-      {
-        "ext": "sqlite",
-        "name": "Stock Manager Database",
-        "role": "Editor"
-      }
-    ]
-  },
-  "dependencies": {
-    "electron-updater": "^6.8.3"
-  },
-  "devDependencies": {
-    "electron": "^28.2.0",
-    "electron-builder": "^24.9.1"
-  }
+    "devDependencies": {
+        "electron": "^28.2.0",
+        "electron-builder": "^24.9.1"
+    }
 }

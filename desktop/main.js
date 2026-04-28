@@ -19,7 +19,7 @@ if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true });
 
 function getLogFilePath() {
   const date = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-  return path.join(logDir, `shelfsense-${date}.log`);
+  return path.join(logDir, `applecity-${date}.log`);
 }
 
 function writeLog(entry) {
@@ -41,7 +41,7 @@ ipcMain.handle('write-log', async (event, entry) => {
 ipcMain.handle('read-logs', async (event, date) => {
   try {
     const logFile = date 
-      ? path.join(logDir, `shelfsense-${date}.log`)
+      ? path.join(logDir, `applecity-${date}.log`)
       : getLogFilePath();
     if (!fs.existsSync(logFile)) return [];
     const content = fs.readFileSync(logFile, 'utf8');
@@ -56,8 +56,8 @@ ipcMain.handle('get-log-dates', async () => {
   try {
     if (!fs.existsSync(logDir)) return [];
     const files = fs.readdirSync(logDir)
-      .filter(f => f.startsWith('shelfsense-') && f.endsWith('.log'))
-      .map(f => f.replace('shelfsense-', '').replace('.log', ''))
+      .filter(f => f.startsWith('applecity-') && f.endsWith('.log'))
+      .map(f => f.replace('applecity-', '').replace('.log', ''))
       .sort()
       .reverse(); // Most recent first
     return files;
@@ -67,7 +67,7 @@ ipcMain.handle('get-log-dates', async () => {
 });
 
 // Log app start
-writeLog({ level: 'INFO', category: 'APP', message: 'ShelfSense application started' });
+writeLog({ level: 'INFO', category: 'APP', message: 'Apple City application started' });
 // ─────────────────────────────────────────────────────────────────
 
 // ─── Auto Updater ────────────────────────────────────────────────
@@ -424,7 +424,7 @@ function createWindow() {
     width: 1200,
     height: 800,
     show: false,
-    title: "ShelfSense POS",
+    title: "Apple City POS",
     icon: path.join(__dirname, '..', 'assets', 'logo.png'),
     webPreferences: { 
       nodeIntegration: false, 
@@ -458,7 +458,7 @@ function createWindow() {
           el.removeAttribute('inert');
         }
       });
-      console.log('ShelfSense: Input stability fix active');
+      console.log('Apple City: Input stability fix active');
     `).catch(err => console.error('Input fix script error:', err));
   });
   
@@ -616,19 +616,19 @@ app.whenReady().then(() => {
       label: 'Help',
       submenu: [
         {
-          label: 'About ShelfSense POS',
+          label: 'About Apple City POS',
           click: () => {
             const { dialog } = require('electron');
             dialog.showMessageBox(mainWindow, {
               type: 'info',
-              title: 'About ShelfSense POS',
-              message: 'ShelfSense POS',
+              title: 'About Apple City POS',
+              message: 'Apple City POS',
               detail: 
                 'Version: 1.0.0\n\n' +
-                'Smart POS & Inventory System for Modern Retail\n\n' +
-                'ShelfSense POS is a smart retail management system that helps businesses track stock, monitor sales, and prevent losses from expired products — all in one powerful offline desktop solution.\n\n' +
-                'Track Stock. Prevent Loss. Grow Profit.\n\n' +
-                '© 2026 ShelfSense. All rights reserved.',
+                'iPhone Sales, Repairs & Service Management\n\n' +
+                'Apple City POS is a smart retail management system that helps businesses track stock, monitor sales, and prevent losses from expired products — all in one powerful offline desktop solution.\n\n' +
+                'Authorised iPhone Dealer\n\n' +
+                '© 2026 Apple City. All rights reserved.',
               buttons: ['OK']
             });
           }
@@ -664,7 +664,7 @@ app.on('window-all-closed', () => {
       powerSaveBlocker.stop(powerSaveBlockerId);
       console.log('Power save blocker stopped');
     }
-    writeLog({ level: 'INFO', category: 'APP', message: 'ShelfSense application closed' });
+    writeLog({ level: 'INFO', category: 'APP', message: 'Apple City application closed' });
     stopPhpServer();
     isServerStarting = false;
     windowCreated = false;
