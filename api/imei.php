@@ -198,7 +198,7 @@ try {
 
         $pdo->beginTransaction();
         try {
-            $stmt = $pdo->prepare('SELECT product_id, status FROM imei_units WHERE id = ?');
+            $stmt = $pdo->prepare('SELECT product_id, status, variant_id FROM imei_units WHERE id = ?');
             $stmt->execute([$id]);
             $unit = $stmt->fetch();
             if (!$unit) { $pdo->rollBack(); http_response_code(404); echo json_encode(['error' => 'Not found']); exit; }
@@ -208,6 +208,15 @@ try {
             }
             $pdo->prepare('DELETE FROM imei_units WHERE id = ?')->execute([$id]);
             $pdo->prepare('UPDATE stock SET quantity = MAX(0, quantity - 1) WHERE product_id = ?')->execute([$unit['product_id']]);
+
+            // Clean up variant if no more IMEI units reference it
+            if ($unit['variant_id']) {
+                $chkVariant = $pdo->prepare('SELECT COUNT(*) FROM imei_units WHERE variant_id = ?');
+                $chkVariant->execute([$unit['variant_id']]);
+                if ((int)$chkVariant->fetchColumn() === 0) {
+                    $pdo->prepare('DELETE FROM product_variants WHERE id = ?')->execute([$unit['variant_id']]);
+                }
+            }
             $pdo->commit();
             echo json_encode(['deleted' => 1]);
         } catch (Throwable $e) {

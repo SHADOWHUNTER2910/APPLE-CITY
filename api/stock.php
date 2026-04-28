@@ -79,7 +79,9 @@ try {
                      WHERE product_id = p.id AND movement_type = 'deduction'), 0
                 ) as total_sold,
                 COALESCE(
-                    (SELECT COUNT(*) FROM product_variants WHERE product_id = p.id), 0
+                    (SELECT COUNT(*) FROM product_variants pv
+                     WHERE pv.product_id = p.id
+                     AND EXISTS (SELECT 1 FROM imei_units iu WHERE iu.variant_id = pv.id)), 0
                 ) as variant_count,
                 COALESCE(
                     (SELECT COUNT(*) FROM imei_units WHERE product_id = p.id AND status = 'in_stock'), 0
