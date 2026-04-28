@@ -1284,291 +1284,184 @@
           <div id="section-receipts" class="content-section hidden">
             <div class="d-flex justify-content-between align-items-center mb-4">
               <h2><i class="bi bi-receipt"></i> Create Receipt</h2>
-              <div class="d-flex gap-2">
-                <button class="btn btn-outline-secondary btn-sm" onclick="toggleShortcutsBar()" title="Keyboard Shortcuts">
-                  <i class="bi bi-keyboard"></i> Shortcuts
-                </button>
-                <button class="btn btn-outline-primary" onclick="refreshWithFeedback(this, loadReceiptProducts)">
-                  <i class="bi bi-arrow-clockwise"></i> Refresh Products
-                </button>
-              </div>
-            </div>
-
-            <!-- Keyboard Shortcuts Bar -->
-            <div id="shortcuts-bar" class="alert alert-dark py-2 mb-3" style="display:none; font-size:12px;">
-              <div class="d-flex flex-wrap gap-3 align-items-center">
-                <strong><i class="bi bi-keyboard"></i> Shortcuts:</strong>
-                <span><kbd>F1</kbd> Search product</span>
-                <span><kbd>Enter</kbd> Add item</span>
-                <span><kbd>F2</kbd> Cash received</span>
-                <span><kbd>F9</kbd> Submit receipt</span>
-                <span><kbd>F10</kbd> Clear receipt</span>
-                <span><kbd>1</kbd> Cash &nbsp;<kbd>2</kbd> MoMo &nbsp;<kbd>3</kbd> Card &nbsp;<kbd>4</kbd> Credit</span>
-                <span><kbd>+</kbd> / <kbd>-</kbd> Qty up/down</span>
-              </div>
-            </div>
-
-            <!-- Quick-Add Frequent Items -->
-            <div id="quick-add-panel" class="card mb-3" style="display:none;">
-              <div class="card-header py-2 d-flex justify-content-between align-items-center">
-                <h6 class="mb-0"><i class="bi bi-lightning-fill text-warning"></i> Quick Add — Top Products</h6>
-                <button class="btn btn-sm btn-outline-secondary" onclick="toggleQuickAdd()">Hide</button>
-              </div>
-              <div class="card-body py-2">
-                <div id="quick-add-buttons" class="d-flex flex-wrap gap-2"></div>
-              </div>
-            </div>
-            <div class="mb-2">
-              <button class="btn btn-sm btn-outline-warning" onclick="toggleQuickAdd()" id="quick-add-toggle-btn">
-                <i class="bi bi-lightning-fill"></i> Quick Add
+              <button class="btn btn-outline-secondary btn-sm" onclick="clearReceipt()">
+                <i class="bi bi-x-circle"></i> Clear
               </button>
             </div>
 
             <div class="row">
               <div class="col-md-8">
-                <!-- Receipt Form -->
                 <div class="card">
-                  <div class="card-header">
-                    <h5 class="mb-0">
-                      <i class="bi bi-file-earmark-plus"></i>
-                      New Receipt
-                    </h5>
-                  </div>
                   <div class="card-body">
                     <form id="form-receipt">
+
+                      <!-- Invoice & Date -->
+                      <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                          <label class="form-label fw-semibold">Invoice No.</label>
+                          <input type="text" class="form-control" name="invoice_number" readonly style="background-color:#f8f9fa;" autocomplete="off">
+                        </div>
+                        <div class="col-md-6">
+                          <label class="form-label fw-semibold">Date</label>
+                          <input type="date" class="form-control" name="receipt_date" readonly style="background-color:#f8f9fa;" autocomplete="off">
+                        </div>
+                      </div>
+
+                      <!-- Customer Info -->
                       <div class="row g-3 mb-4">
                         <div class="col-md-6">
-                          <label for="receipt-invoice-number" class="form-label">Receipt/Invoice No.</label>
-                          <input id="receipt-invoice-number" type="text" class="form-control" name="invoice_number" readonly style="background-color: #f8f9fa;" autocomplete="off">
-                        </div>
-                        <div class="col-md-6">
-                          <label for="receipt-date" class="form-label">Date</label>
-                          <input id="receipt-date" type="date" class="form-control" name="receipt_date" readonly style="background-color: #f8f9fa;" autocomplete="off">
-                        </div>
-                        <div class="col-md-8">
-                          <label for="customer-name" class="form-label">Customer's Name <span class="text-danger">*</span></label>
+                          <label class="form-label fw-semibold">Customer Name <span class="text-danger">*</span></label>
                           <input id="customer-name" type="text" class="form-control" name="customer_name" placeholder="Enter customer name" autocomplete="name" required>
                         </div>
-                        <div class="col-md-4">
-                          <label for="customer-phone" class="form-label">Phone <span class="text-danger">*</span></label>
+                        <div class="col-md-6">
+                          <label class="form-label fw-semibold">Phone <span class="text-danger">*</span></label>
                           <input id="customer-phone" type="tel" class="form-control" name="customer_phone" placeholder="Customer phone" autocomplete="tel" required>
                         </div>
                         <div class="col-12">
-                          <label for="customer-address" class="form-label">Address <span class="text-danger">*</span></label>
-                          <textarea id="customer-address" class="form-control" name="customer_address" rows="2" placeholder="Customer address" autocomplete="street-address" required></textarea>
+                          <label class="form-label fw-semibold">Address</label>
+                          <input id="customer-address" type="text" class="form-control" name="customer_address" placeholder="Customer address (optional)" autocomplete="street-address">
                         </div>
                       </div>
 
-                      <!-- Company Info (Static) -->
-                      <div class="card mb-4" style="background-color: #f8f9fa;">
-                        <div class="card-body">
-                          <h6 class="card-title mb-3">
-                            <i class="bi bi-building"></i> Company Information
-                          </h6>
-                          <div class="row">
-                            <div class="col-12">
-                              <strong>Company:</strong> ${COMPANY_INFO.name}<br>
-                              <strong>Services:</strong> ${COMPANY_INFO.subtitle}<br>
-                              <strong>Location:</strong> ${COMPANY_INFO.location}<br>
-                              <strong>Phone:</strong> ${COMPANY_INFO.phone}
-                            </div>
-                          </div>
-                          <small class="text-muted">
-                            <i class="bi bi-info-circle"></i> 
-                            Company information is automatically included in receipts
-                          </small>
-                        </div>
-                      </div>
-
-                      <!-- Add Item Section -->
-                      <div class="card mb-3">
-                        <div class="card-header">
-                          <h6 class="mb-0">Add Items</h6>
+                      <!-- Add iPhone -->
+                      <div class="card mb-3 border-primary">
+                        <div class="card-header bg-primary text-white py-2">
+                          <h6 class="mb-0"><i class="bi bi-phone"></i> Add iPhone to Receipt</h6>
                         </div>
                         <div class="card-body">
-                          <div class="row g-3">
-                            <div class="col-md-3">
-                              <label for="receipt-product-search" class="form-label">Product</label>
+                          <div class="row g-3 align-items-end">
+                            <div class="col-md-5">
+                              <label class="form-label fw-semibold">Search by Model or IMEI</label>
                               <div class="position-relative">
-                                <input 
-                                  id="receipt-product-search" 
-                                  type="text" 
-                                  class="form-control" 
-                                  placeholder="Type to search products..."
-                                  autocomplete="off"
-                                >
-                                <div id="receipt-product-suggestions" class="position-absolute w-100 bg-white border border-top-0 rounded-bottom shadow-sm" style="z-index: 1000; max-height: 200px; overflow-y: auto; display: none;"></div>
+                                <input id="receipt-product-search" type="text" class="form-control"
+                                  placeholder="Type model name or IMEI..." autocomplete="off">
+                                <div id="receipt-product-suggestions" class="position-absolute w-100 bg-white border rounded-bottom shadow-sm"
+                                  style="z-index:1000;max-height:220px;overflow-y:auto;display:none;"></div>
                               </div>
                               <input type="hidden" id="selected-receipt-product-id" value="">
                             </div>
-                            <div class="col-md-2">
-                              <label for="select-unit" class="form-label">Unit</label>
-                              <select id="select-unit" class="form-select" disabled>
-                                <option value="">Select unit</option>
-                              </select>
-                            </div>
-                            <div class="col-md-2">
-                              <label for="input-quantity" class="form-label">Quantity</label>
-                              <input id="input-quantity" type="number" class="form-control" min="1" autocomplete="off"
-                                onkeydown="if(event.key==='Enter'){event.preventDefault();addReceiptItem();}">
+                            <div class="col-md-4">
+                              <label class="form-label fw-semibold">Selling Price (GH₵)</label>
+                              <input id="input-unit-price" type="number" step="0.01" class="form-control" placeholder="0.00" autocomplete="off">
                             </div>
                             <div class="col-md-3">
-                              <label for="input-unit-price" class="form-label">Unit Price</label>
-                              <input id="input-unit-price" type="number" step="0.01" class="form-control" readonly autocomplete="off">
-                            </div>
-                            <div class="col-md-2">
-                              <label class="form-label">&nbsp;</label>
                               <button type="button" class="btn btn-success w-100" onclick="addReceiptItem()">
-                                <i class="bi bi-plus"></i> Add
+                                <i class="bi bi-plus-circle"></i> Add to Receipt
                               </button>
                             </div>
+                          </div>
+                          <div id="selected-imei-info" class="mt-2 d-none">
+                            <span class="badge bg-info fs-6"><i class="bi bi-upc-scan"></i> <span id="selected-imei-display"></span></span>
+                            <span class="badge bg-secondary ms-1" id="selected-variant-display"></span>
                           </div>
                         </div>
                       </div>
 
-                      <!-- Receipt Items -->
+                      <!-- Receipt Items Table -->
                       <div class="table-responsive mb-3">
-                        <table class="table table-sm">
-                          <thead class="table-light">
+                        <table class="table table-sm table-hover">
+                          <thead class="table-dark">
                             <tr>
-                              <th>Product</th>
-                              <th>Unit</th>
-                              <th>Qty</th>
-                              <th>Unit Price</th>
-                              <th>Total</th>
-                              <th>Action</th>
+                              <th>Model</th>
+                              <th>IMEI</th>
+                              <th>Storage / Color</th>
+                              <th>Price</th>
+                              <th></th>
                             </tr>
                           </thead>
                           <tbody id="receipt-items">
-                            <!-- Receipt items will be added here -->
                           </tbody>
                         </table>
                       </div>
 
-                      <div class="row">
-                        <div class="col-md-8 offset-md-2">
-                          <!-- Discount -->
-                          <div class="mb-3">
-                            <label class="form-label" style="font-size: 16px; font-weight: 600; color: #2c3e50;">
-                              Discount <span style="font-size: 13px; color: #6c757d; font-weight: normal;">(optional)</span>
-                            </label>
-                            <div class="input-group">
-                              <input type="number" id="discount-value" class="form-control"
-                                style="font-size: 18px; font-weight: bold; text-align: center;"
-                                step="0.01" min="0" placeholder="0.00" oninput="calculateChange()">
-                              <select id="discount-type" class="form-select" style="max-width: 110px; font-weight: bold;" onchange="calculateChange()">
-                                <option value="fixed">GH₵ Fixed</option>
-                                <option value="percent">% Percent</option>
-                              </select>
-                            </div>
+                      <!-- Discount -->
+                      <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                          <label class="form-label fw-semibold">Discount <small class="text-muted fw-normal">(optional)</small></label>
+                          <div class="input-group">
+                            <input type="number" id="discount-value" class="form-control" step="0.01" min="0" placeholder="0.00" oninput="calculateChange()">
+                            <select id="discount-type" class="form-select" style="max-width:110px;" onchange="calculateChange()">
+                              <option value="fixed">GH₵</option>
+                              <option value="percent">%</option>
+                            </select>
                           </div>
+                        </div>
+                      </div>
 
-                          <!-- Payment Method -->
-                          <div class="mb-3">
-                            <label class="form-label" style="font-size: 16px; font-weight: 600; color: #2c3e50;">
-                              Payment Method <span style="color: #dc3545;">*</span>
-                            </label>
-                            <div class="d-flex gap-2 flex-wrap mb-2">
-                              <button type="button" class="btn btn-outline-success payment-method-btn active" data-method="cash" onclick="selectPaymentMethod('cash')">
-                                <i class="bi bi-cash-coin"></i> Cash
-                              </button>
-                              <button type="button" class="btn btn-outline-primary payment-method-btn" data-method="mobile_money" onclick="selectPaymentMethod('mobile_money')">
-                                <i class="bi bi-phone"></i> Mobile Money
-                              </button>
-                              <button type="button" class="btn btn-outline-info payment-method-btn" data-method="card" onclick="selectPaymentMethod('card')">
-                                <i class="bi bi-credit-card"></i> Card
-                              </button>
-                              <button type="button" class="btn btn-outline-warning payment-method-btn" data-method="credit" onclick="selectPaymentMethod('credit')">
-                                <i class="bi bi-clock-history"></i> Credit
-                              </button>
-                            </div>
-                            <input type="hidden" id="payment-method" value="cash">
-                            
-                            <!-- Mobile Money Reference -->
-                            <div id="mobile-money-ref" class="d-none">
-                              <input type="text" id="mobile-money-number" class="form-control mt-2"
-                                placeholder="Mobile Money number or reference (optional)" autocomplete="off">
-                            </div>
-                            
-                            <!-- Card Reference -->
-                            <div id="card-ref" class="d-none">
-                              <input type="text" id="card-reference" class="form-control mt-2"
-                                placeholder="Card last 4 digits or reference (optional)" autocomplete="off">
-                            </div>
-                            
-                            <!-- Credit Note -->
-                            <div id="credit-note-div" class="d-none">
-                              <div class="alert alert-warning mt-2 mb-0 py-2">
-                                <i class="bi bi-exclamation-triangle"></i>
-                                Credit sale - customer owes the full amount. No cash received required.
-                              </div>
-                            </div>
+                      <!-- Payment Method -->
+                      <div class="mb-3">
+                        <label class="form-label fw-semibold">Payment Method <span class="text-danger">*</span></label>
+                        <div class="d-flex gap-2 flex-wrap mb-2">
+                          <button type="button" class="btn btn-outline-success payment-method-btn active" data-method="cash" onclick="selectPaymentMethod('cash')">
+                            <i class="bi bi-cash-coin"></i> Cash
+                          </button>
+                          <button type="button" class="btn btn-outline-primary payment-method-btn" data-method="mobile_money" onclick="selectPaymentMethod('mobile_money')">
+                            <i class="bi bi-phone"></i> Mobile Money
+                          </button>
+                          <button type="button" class="btn btn-outline-info payment-method-btn" data-method="card" onclick="selectPaymentMethod('card')">
+                            <i class="bi bi-credit-card"></i> Card
+                          </button>
+                          <button type="button" class="btn btn-outline-warning payment-method-btn" data-method="credit" onclick="selectPaymentMethod('credit')">
+                            <i class="bi bi-clock-history"></i> Credit
+                          </button>
+                        </div>
+                        <input type="hidden" id="payment-method" value="cash">
+                        <div id="mobile-money-ref" class="d-none">
+                          <input type="text" id="mobile-money-number" class="form-control mt-2" placeholder="Mobile Money number or reference (optional)" autocomplete="off">
+                        </div>
+                        <div id="card-ref" class="d-none">
+                          <input type="text" id="card-reference" class="form-control mt-2" placeholder="Card last 4 digits or reference (optional)" autocomplete="off">
+                        </div>
+                        <div id="credit-note-div" class="d-none">
+                          <div class="alert alert-warning mt-2 mb-0 py-2">
+                            <i class="bi bi-exclamation-triangle"></i> Credit sale — customer owes the full amount.
                           </div>
+                        </div>
+                      </div>
 
-                          <!-- Cash Received (hidden for non-cash) -->
-                          <div class="mb-3" id="cash-received-section">
-                            <label class="form-label" style="font-size: 18px; font-weight: 600; color: #2c3e50;">
-                              Amount Received <span style="color: #dc3545;">*</span>
-                              <span style="font-size: 14px; color: #6c757d; font-weight: normal; margin-left: 10px;">Ctrl+M</span>
-                            </label>
-                            <div class="input-group input-group-lg">
-                              <span class="input-group-text" style="font-size: 24px; font-weight: bold; background-color: #f8f9fa; border-right: none;">GH₵</span>
-                              <input type="number" id="cash-received" class="form-control"
-                                style="font-size: 32px; font-weight: bold; border-left: none; text-align: center; padding: 20px;"
-                                step="0.01" min="0" placeholder="0.00"
-                                oninput="calculateChange()" accesskey="m">
+                      <!-- Amount Received -->
+                      <div class="mb-3" id="cash-received-section">
+                        <label class="form-label fw-semibold" style="font-size:16px;">Amount Received <span class="text-danger">*</span></label>
+                        <div class="input-group input-group-lg">
+                          <span class="input-group-text fw-bold" style="font-size:20px;background:#f8f9fa;">GH₵</span>
+                          <input type="number" id="cash-received" class="form-control"
+                            style="font-size:28px;font-weight:bold;text-align:center;"
+                            step="0.01" min="0" placeholder="0.00" oninput="calculateChange()">
+                        </div>
+                      </div>
+
+                      <!-- Totals -->
+                      <div class="card mb-3" style="background:#f8f9fa;border:none;">
+                        <div class="card-body py-3">
+                          <div class="row">
+                            <div class="col-6">
+                              <div id="change-label" class="fw-semibold text-muted mb-1">Change to Give:</div>
+                              <div id="receipt-change" style="font-size:32px;font-weight:bold;color:#28a745;">GH₵0.00</div>
                             </div>
-                            <small class="text-muted">Enter the amount received from the customer</small>
-                          </div>
-                          <!-- Change and Total Display -->
-                          <div class="card" style="background-color: #f8f9fa; border: none;">
-                            <div class="card-body">
-                              <div class="row">
-                                <div class="col-6">
-                                  <div style="text-align: left;">
-                                    <div style="font-size: 18px; font-weight: 600; color: #2c3e50; margin-bottom: 5px;" id="change-label">Change to Give:</div>
-                                    <div id="receipt-change" style="font-size: 36px; font-weight: bold; color: #28a745;">GH₵0.00</div>
-                                  </div>
-                                </div>
-                                <div class="col-6">
-                                  <div style="text-align: right;">
-                                    <div style="font-size: 14px; color: #6c757d; margin-bottom: 5px;">
-                                      Subtotal: <span id="receipt-subtotal" style="font-weight:bold;">GH₵0.00</span>
-                                    </div>
-                                    <div style="font-size: 14px; color: #dc3545; margin-bottom: 5px;">
-                                      Discount: <span id="receipt-discount-display" style="font-weight:bold;">GH₵0.00</span>
-                                    </div>
-                                    <div style="font-size: 14px; color: #6c757d; margin-bottom: 5px;">Total Amount Due:</div>
-                                    <div id="receipt-total" style="font-size: 28px; font-weight: bold; color: #2c3e50;">GH₵0.00</div>
-                                  </div>
-                                </div>
-                              </div>
+                            <div class="col-6 text-end">
+                              <div class="text-muted small">Subtotal: <strong id="receipt-subtotal">GH₵0.00</strong></div>
+                              <div class="text-danger small">Discount: <strong id="receipt-discount-display">GH₵0.00</strong></div>
+                              <div class="text-muted small mb-1">Total Due:</div>
+                              <div id="receipt-total" style="font-size:24px;font-weight:bold;color:#2c3e50;">GH₵0.00</div>
                             </div>
                           </div>
                         </div>
                       </div>
 
-                      <div class="mt-3">
-                        <button type="submit" class="btn btn-primary">
-                          <i class="bi bi-receipt"></i> Create Receipt
-                        </button>
-                        <button type="button" class="btn btn-secondary" onclick="clearReceipt()">
-                          <i class="bi bi-x-circle"></i> Clear
-                        </button>
-                      </div>
+                      <button type="submit" class="btn btn-primary btn-lg w-100">
+                        <i class="bi bi-receipt"></i> Create Receipt
+                      </button>
                     </form>
                   </div>
                 </div>
               </div>
 
+              <!-- Receipt Preview -->
               <div class="col-md-4">
-                <!-- Receipt Preview -->
-                <div class="card">
-                  <div class="card-header">
-                    <h6 class="mb-0">Receipt Preview</h6>
-                  </div>
+                <div class="card sticky-top" style="top:1rem;">
+                  <div class="card-header"><h6 class="mb-0"><i class="bi bi-eye"></i> Receipt Preview</h6></div>
                   <div class="card-body" id="receipt-preview">
-                    <p class="text-muted text-center">Add items to see preview</p>
+                    <p class="text-muted text-center small">Add items to see preview</p>
                   </div>
                 </div>
               </div>
@@ -1576,6 +1469,7 @@
           </div>
 
           <!-- Receipt History Section -->
+
           <div id="section-receipt-history" class="content-section hidden">
             <div class="d-flex justify-content-between align-items-center mb-4">
               <h2><i class="bi bi-clock-history"></i> Receipt History</h2>
@@ -4870,20 +4764,271 @@
     // Receipt functions
     async function loadReceiptProducts() {
       try {
-        // Don't load all products - we'll use server-side search instead
-        products = []; // Clear products array
-        
-        // Auto-generate invoice number
+        products = [];
         document.querySelector('input[name="invoice_number"]').value = generateInvoiceNumber();
-        
-        // Initialize product search autocomplete with server-side search
+        const today = new Date().toISOString().split('T')[0];
+        const dateInput = document.querySelector('input[name="receipt_date"]');
+        if (dateInput) dateInput.value = today;
         initializeProductSearch();
-        
-      } catch (error) {
-        console.error('Error loading products:', error);
-        alert('Failed to initialize receipt form');
-      }
+      } catch (error) { console.error('Error loading products:', error); }
     }
+
+
+    function addReceiptItem() {
+      const productSearchInput = document.getElementById('receipt-product-search');
+      const selectedProductId  = document.getElementById('selected-receipt-product-id');
+      const priceInput         = document.getElementById('input-unit-price');
+
+      const productId   = parseInt(selectedProductId.value);
+      const unitPrice   = parseFloat(priceInput.value) || 0;
+      const productName = productSearchInput.value.trim();
+
+      if (!productId || !productName) { alert('Please search and select an iPhone model first.'); productSearchInput.focus(); return; }
+      if (unitPrice <= 0) { alert('Please enter a selling price.'); priceInput.focus(); return; }
+
+      const imei         = selectedProductId.dataset.imei || '';
+      const imeiUnitId   = parseInt(selectedProductId.dataset.imeiUnitId) || null;
+      const variantLabel = selectedProductId.dataset.variantLabel || '';
+
+      if (imei && receiptItems.find(i => i.imei === imei)) { alert('This IMEI is already on the receipt.'); return; }
+
+      receiptItems.push({ product_id: productId, product_name: productName, imei, imei_unit_id: imeiUnitId, variant_label: variantLabel, quantity: 1, unit_price: unitPrice, total_price: unitPrice });
+
+      updateReceiptDisplay();
+
+      productSearchInput.value = '';
+      selectedProductId.value = '';
+      selectedProductId.dataset.imei = '';
+      selectedProductId.dataset.imeiUnitId = '';
+      selectedProductId.dataset.variantLabel = '';
+      priceInput.value = '';
+      document.getElementById('receipt-product-suggestions').style.display = 'none';
+      const imeiInfo = document.getElementById('selected-imei-info');
+      if (imeiInfo) imeiInfo.classList.add('d-none');
+    }
+
+    function removeReceiptItem(index) {
+      receiptItems.splice(index, 1);
+      updateReceiptDisplay();
+    }
+
+    function updateReceiptDisplay() {
+      const tbody = document.getElementById('receipt-items');
+      tbody.innerHTML = receiptItems.map((item, index) => `
+        <tr>
+          <td><strong>${item.product_name}</strong></td>
+          <td>${item.imei ? `<code class="small">${item.imei}</code>` : '<span class="text-muted">—</span>'}</td>
+          <td><small class="text-muted">${item.variant_label || '—'}</small></td>
+          <td>${formatCurrency(item.unit_price)}</td>
+          <td><button class="btn btn-sm btn-outline-danger" onclick="removeReceiptItem(${index})"><i class="bi bi-trash"></i></button></td>
+        </tr>
+      `).join('');
+      calculateChange();
+      updateReceiptPreview();
+    }
+
+    function updateReceiptPreview() {
+      const previewDiv = document.getElementById('receipt-preview');
+      const customerName = document.querySelector('input[name="customer_name"]').value.trim();
+      const subtotal = receiptItems.reduce((sum, item) => sum + item.total_price, 0);
+      const discount = getDiscountAmount(subtotal);
+      const total = Math.max(0, subtotal - discount);
+      const cashReceived = parseFloat(document.getElementById('cash-received').value) || 0;
+      const change = Math.max(0, cashReceived - total);
+
+      if (receiptItems.length === 0) {
+        previewDiv.innerHTML = '<p class="text-muted text-center small">Add items to see preview</p>';
+        return;
+      }
+
+      previewDiv.innerHTML = `
+        <div style="font-family:'Courier New',monospace;font-size:11px;line-height:1.4;">
+          <div style="text-align:center;margin-bottom:8px;border-bottom:1px dashed #ddd;padding-bottom:8px;">
+            <strong style="font-size:12px;">${COMPANY_INFO.name}</strong><br>
+            <small style="font-size:9px;">${COMPANY_INFO.location}</small><br>
+            <small style="font-size:9px;">${COMPANY_INFO.phone}</small>
+          </div>
+          ${customerName ? `<div style="margin-bottom:8px;font-size:10px;border-bottom:1px dashed #ddd;padding-bottom:8px;"><strong>Customer:</strong> ${customerName}</div>` : ''}
+          <div style="margin-bottom:8px;">
+            ${receiptItems.map(item => `
+              <div style="margin-bottom:6px;font-size:10px;">
+                <div style="font-weight:600;">${item.product_name}</div>
+                ${item.variant_label ? `<div style="color:#666;font-size:9px;">${item.variant_label}</div>` : ''}
+                ${item.imei ? `<div style="color:#666;font-size:9px;">IMEI: ${item.imei}</div>` : ''}
+                <div style="display:flex;justify-content:space-between;">
+                  <span>1 unit</span><strong>${formatCurrency(item.unit_price)}</strong>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+          <div style="border-top:1px dashed #ddd;padding-top:8px;font-size:11px;">
+            ${discount > 0 ? `<div style="display:flex;justify-content:space-between;margin-bottom:2px;"><span>Subtotal:</span><span>${formatCurrency(subtotal)}</span></div><div style="display:flex;justify-content:space-between;margin-bottom:2px;color:#dc3545;"><span>Discount:</span><span>-${formatCurrency(discount)}</span></div>` : ''}
+            <div style="display:flex;justify-content:space-between;font-weight:bold;font-size:13px;margin-bottom:4px;"><span>TOTAL:</span><span>${formatCurrency(total)}</span></div>
+            ${cashReceived > 0 ? `<div style="display:flex;justify-content:space-between;font-size:10px;"><span>Cash:</span><span>${formatCurrency(cashReceived)}</span></div><div style="display:flex;justify-content:space-between;font-size:10px;color:${change>=0?'#28a745':'#dc3545'};"><span>Change:</span><span>${formatCurrency(change)}</span></div>` : ''}
+          </div>
+        </div>
+      `;
+    }
+
+    function selectPaymentMethod(method) {
+      document.getElementById('payment-method').value = method;
+      document.querySelectorAll('.payment-method-btn').forEach(btn => {
+        btn.classList.remove('active','btn-success','btn-primary','btn-info','btn-warning');
+        btn.classList.add('btn-outline-' + (btn.dataset.method==='cash'?'success':btn.dataset.method==='mobile_money'?'primary':btn.dataset.method==='card'?'info':'warning'));
+      });
+      const activeBtn = document.querySelector(`.payment-method-btn[data-method="${method}"]`);
+      if (activeBtn) {
+        activeBtn.classList.remove('btn-outline-success','btn-outline-primary','btn-outline-info','btn-outline-warning');
+        activeBtn.classList.add('active','btn-'+(method==='cash'?'success':method==='mobile_money'?'primary':method==='card'?'info':'warning'));
+      }
+      document.getElementById('mobile-money-ref').classList.toggle('d-none', method!=='mobile_money');
+      document.getElementById('card-ref').classList.toggle('d-none', method!=='card');
+      document.getElementById('credit-note-div').classList.toggle('d-none', method!=='credit');
+      const cashSection = document.getElementById('cash-received-section');
+      const changeLabel = document.getElementById('change-label');
+      if (method==='credit') {
+        cashSection.classList.add('d-none');
+        if (changeLabel) changeLabel.textContent='Balance Owed:';
+        document.getElementById('cash-received').value='0';
+      } else if (method==='mobile_money'||method==='card') {
+        cashSection.classList.add('d-none');
+        if (changeLabel) changeLabel.textContent='Amount Paid:';
+        document.getElementById('cash-received').value='0';
+      } else {
+        cashSection.classList.remove('d-none');
+        if (changeLabel) changeLabel.textContent='Change to Give:';
+        document.getElementById('cash-received').value='';
+      }
+      calculateChange();
+    }
+
+    function getDiscountAmount(subtotal) {
+      const discountValue = parseFloat(document.getElementById('discount-value')?.value) || 0;
+      const discountType  = document.getElementById('discount-type')?.value || 'fixed';
+      if (discountType==='percent') return Math.min(subtotal, (subtotal*discountValue)/100);
+      return Math.min(subtotal, discountValue);
+    }
+
+    function calculateChange() {
+      const subtotal = receiptItems.reduce((sum, item) => sum + item.total_price, 0);
+      const discount = getDiscountAmount(subtotal);
+      const total    = Math.max(0, subtotal - discount);
+      const paymentMethod = document.getElementById('payment-method')?.value || 'cash';
+      const cashReceived  = paymentMethod==='credit' ? 0 : (parseFloat(document.getElementById('cash-received').value)||0);
+      const change = cashReceived - total;
+
+      const subtotalEl  = document.getElementById('receipt-subtotal');
+      const discountEl  = document.getElementById('receipt-discount-display');
+      if (subtotalEl) subtotalEl.textContent = formatCurrency(subtotal);
+      if (discountEl) discountEl.textContent = discount>0 ? `-${formatCurrency(discount)}` : formatCurrency(0);
+      document.getElementById('receipt-total').textContent = formatCurrency(total);
+
+      const changeEl = document.getElementById('receipt-change');
+      if (paymentMethod==='credit') { changeEl.textContent=formatCurrency(total); changeEl.style.color='#dc3545'; }
+      else if (paymentMethod==='mobile_money'||paymentMethod==='card') { changeEl.textContent=formatCurrency(total); changeEl.style.color='#0d6efd'; }
+      else { changeEl.textContent=formatCurrency(Math.max(0,change)); changeEl.style.color=cashReceived>=total&&cashReceived>0?'#28a745':cashReceived>0?'#dc3545':'#6c757d'; }
+
+      updateReceiptPreview();
+    }
+
+    function clearReceipt() {
+      receiptItems = [];
+      document.getElementById('form-receipt').reset();
+      document.getElementById('cash-received').value='';
+      document.getElementById('discount-value').value='';
+      document.getElementById('discount-type').value='fixed';
+      selectPaymentMethod('cash');
+      updateReceiptDisplay();
+      document.getElementById('receipt-preview').innerHTML='<p class="text-muted text-center small">Add items to see preview</p>';
+    }
+
+    // Handle Enter key in confirmation input and ensure input is focusable
+    // ========================================
+    // UNIVERSAL INPUT STABILITY FIX FOR ELECTRON
+    // Prevents input freezing across ALL sections and modals
+    // ========================================
+    
+    // Core function: re-activate all inputs in a given container
+    function reactivateInputs(container) {
+      container = container || document;
+      container.querySelectorAll(
+        'input:not([disabled]):not([type="hidden"]), textarea:not([disabled]), select:not([disabled])'
+      ).forEach(function(el) {
+        el.style.pointerEvents = 'auto';
+        el.style.userSelect = 'auto';
+        el.removeAttribute('inert');
+      });
+    }
+
+    // Intercept every mousedown on the page — if user clicks an input, force-activate it
+    document.addEventListener('mousedown', function(e) {
+      const el = e.target;
+      if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT')) {
+        if (!el.disabled && el.type !== 'hidden') {
+          el.style.pointerEvents = 'auto';
+          el.removeAttribute('inert');
+          setTimeout(function() { el.focus(); }, 0);
+        }
+      }
+    }, true);
+
+    document.addEventListener('DOMContentLoaded', function() {
+
+      // 1. Universal fix for ALL modals — focus first input when shown
+      document.querySelectorAll('.modal').forEach(function(modal) {
+        modal.addEventListener('shown.bs.modal', function() {
+          reactivateInputs(modal);
+          setTimeout(function() {
+            const firstField = modal.querySelector(
+              'input:not([readonly]):not([type="hidden"]):not([type="file"]):not([disabled]), textarea:not([readonly]):not([disabled])'
+            );
+            if (firstField) {
+              firstField.focus();
+            }
+          }, 150);
+        });
+      });
+
+      // 2. Delete confirmation modal — Enter key + click focus
+      const deleteInput = document.getElementById('delete-confirmation-input');
+      if (deleteInput) {
+        deleteInput.addEventListener('keypress', function(e) {
+          if (e.key === 'Enter') executeDelete();
+        });
+        deleteInput.addEventListener('mousedown', function() {
+          this.disabled = false;
+          this.style.pointerEvents = 'auto';
+          setTimeout(() => this.focus(), 0);
+        });
+      }
+
+      // 3. Window focus — re-activate everything visible
+      window.addEventListener('focus', function() {
+        // Re-activate all inputs in the currently visible section
+        const visibleSection = document.querySelector('.content-section:not(.hidden)');
+        if (visibleSection) reactivateInputs(visibleSection);
+
+        // Re-activate inputs in any open modal
+        const openModal = document.querySelector('.modal.show');
+        if (openModal) {
+          reactivateInputs(openModal);
+          const activeEl = document.activeElement;
+          if (!activeEl || activeEl.tagName === 'BODY') {
+            const firstInput = openModal.querySelector(
+              'input:not([readonly]):not([type="hidden"]):not([disabled]), textarea:not([readonly]):not([disabled])'
+            );
+            if (firstInput) setTimeout(() => firstInput.focus(), 50);
+          }
+        }
+      });
+
+      // 4. Continuous safety net — re-activate all inputs every 5 seconds
+      setInterval(function() {
+        reactivateInputs(document);
+      }, 5000);
+
+    });
+
 
     function initializeProductSearch() {
       let selectedIndex = -1;
@@ -4975,16 +5120,43 @@
             
             if (currentFilteredProducts.length > 0) {
               suggestionsDiv.innerHTML = currentFilteredProducts.map(product => {
+                const expiryBadge = product.has_expiry ? '<span class="badge bg-warning text-dark ms-1" style="font-size:10px;"><i class="bi bi-clock"></i> Expiry Tracked</span>' : '';
                 return `<div class="suggestion-item p-2 border-bottom" style="cursor: pointer;" 
                       data-id="${product.id}" 
                       data-name="${product.name}" 
-                      data-price="${product.unit_price}">
-                  <strong>${product.name}</strong> <small class="text-muted">(${product.sku})</small><br>
+                      data-price="${product.unit_price}"
+                      data-has-expiry="${product.has_expiry}">
+                  <strong>${product.name}</strong> <small class="text-muted">(${product.sku})</small>${expiryBadge}<br>
                   <small class="text-muted">GH₵${product.unit_price}</small>
                   <span id="expiry-hint-${product.id}" class="ms-2"></span>
                 </div>`;
               }).join('');
               suggestionsDiv.style.display = 'block';
+
+              // Load FIFO expiry hints for expiry-tracked products (async, non-blocking)
+              currentFilteredProducts.forEach(product => {
+                if (product.has_expiry) {
+                  apiCall(`api/imei.php /* was batches */?product_id=${product.id}`).then(batchData => {
+                    const batches = (batchData.items || []).filter(b => b.status !== 'expired' && b.quantity > 0);
+                    const hint = document.getElementById(`expiry-hint-${product.id}`);
+                    if (!hint) return;
+                    if (batches.length === 0) {
+                      hint.innerHTML = '<span class="badge bg-danger" style="font-size:10px;">No valid stock</span>';
+                      return;
+                    }
+                    const soonest = batches[0]; // FIFO — oldest expiry first
+                    const days = soonest.days_until_expiry;
+                    const discount = getExpiryDiscountSuggestion(days, soonest.status);
+                    let color = 'success', icon = 'check-circle';
+                    if (days <= 7)  { color = 'danger';  icon = 'exclamation-triangle'; }
+                    else if (days <= 30) { color = 'warning text-dark'; icon = 'clock'; }
+                    hint.innerHTML = `<span class="badge bg-${color}" style="font-size:10px;">
+                      <i class="bi bi-${icon}"></i> Sell first: ${days}d left · ${soonest.quantity} units
+                      ${discount ? ` · ${discount}% off suggested` : ''}
+                    </span>`;
+                  }).catch(() => {});
+                }
+              });
 
               // Add click and hover handlers to suggestions
               suggestionsDiv.querySelectorAll('.suggestion-item').forEach((item, index) => {
@@ -5005,16 +5177,61 @@
                   const productId = this.dataset.id;
                   const productName = this.dataset.name;
                   const productPrice = this.dataset.price;
-
+                  const hasExpiry = this.dataset.hasExpiry === '1';
+                  
                   const searchInput = document.getElementById('receipt-product-search');
                   const selectedProductId = document.getElementById('selected-receipt-product-id');
-
+                  
+                  if (hasExpiry) {
+                    try {
+                      const batchData = await apiCall(`api/imei.php /* was batches */?product_id=${productId}`);
+                      const batches = batchData.items || [];
+                      
+                      // Only check if batches exist - if no batches, allow sale
+                      if (batches.length > 0) {
+                        const expiredBatches = batches.filter(b => b.status === 'expired');
+                        const goodBatches = batches.filter(b => b.status !== 'expired' && b.quantity > 0);
+                        const totalGoodStock = goodBatches.reduce((sum, b) => sum + b.quantity, 0);
+                        
+                        // All batches expired - block completely
+                        if (goodBatches.length === 0) {
+                          alert(`⛔ CANNOT SELL - ALL STOCK EXPIRED\n\n"${productName}" has no valid stock.\nAll ${expiredBatches.length} batch(es) have expired.\n\nPlease remove expired stock from Expiry Management.`);
+                          return;
+                        }
+                        
+                        // Some batches expired - warn but allow
+                        if (expiredBatches.length > 0) {
+                          const proceed = confirm(`⚠️ EXPIRY WARNING\n\n"${productName}" has ${expiredBatches.length} expired batch(es).\n\nValid stock available: ${totalGoodStock} units\n\nDo you want to proceed with selling from valid stock?`);
+                          if (!proceed) return;
+                        }
+                      }
+                    } catch (e) {
+                      console.error('Expiry check failed:', e);
+                    }
+                  }
+                  
                   searchInput.value = productName;
                   selectedProductId.value = productId;
                   suggestionsDiv.style.display = 'none';
                   selectedIndex = -1;
+                  
+                  // Check for near-expiry and show discount suggestion
+                  if (hasExpiry) {
+                    try {
+                      const batchData = await apiCall(`api/imei.php /* was batches */?product_id=${productId}`);
+                      const batches = (batchData.items || []).filter(b => b.status !== 'expired' && b.quantity > 0);
+                      if (batches.length > 0) {
+                        const soonestBatch = batches[0]; // already sorted by expiry ASC
+                        const days = soonestBatch.days_until_expiry;
+                        const suggestedDiscount = getExpiryDiscountSuggestion(days, soonestBatch.status);
+                        if (suggestedDiscount) {
+                          showExpiryDiscountAlert(productName, days, suggestedDiscount);
+                        }
+                      }
+                    } catch(e) { /* silent */ }
+                  }
 
-                  // Update price
+                  // Update price and load units
                   document.getElementById('input-unit-price').value = productPrice;
                   loadReceiptProductUnits(productId);
                 });
@@ -5045,8 +5262,7 @@
       });
     }
 
-    // Load units for receipt product selection
-    async function loadReceiptProductUnits(productId) {
+    function loadReceiptProductUnits(productId) {
       const unitSelect = document.getElementById('select-unit');
       const priceInput = document.getElementById('input-unit-price');
       
@@ -5095,400 +5311,8 @@
       }
     }
 
-    function addReceiptItem() {
-      const productSearchInput = document.getElementById('receipt-product-search');
-      const selectedProductId = document.getElementById('selected-receipt-product-id');
-      const unitSelect = document.getElementById('select-unit');
-      const quantityInput = document.getElementById('input-quantity');
-      const priceInput = document.getElementById('input-unit-price');
-      
-      const productId = parseInt(selectedProductId.value);
-      const unitId = parseInt(unitSelect.value);
-      const quantity = parseInt(quantityInput.value);
-      const unitPrice = parseFloat(priceInput.value);
-      
-      if (!productId || !unitId || !quantity || quantity <= 0) {
-        alert('Please select a product, unit, and enter a valid quantity');
-        return;
-      }
-      
-      // Validate customer information before adding items
-      const customerName = document.querySelector('input[name="customer_name"]').value.trim();
-      const customerPhone = document.querySelector('input[name="customer_phone"]').value.trim();
-      const customerAddress = document.querySelector('textarea[name="customer_address"]').value.trim();
-      
-      if (!customerName) {
-        alert('Please enter customer name before adding items');
-        document.querySelector('input[name="customer_name"]').focus();
-        return;
-      }
-      
-      if (!customerPhone) {
-        alert('Please enter customer phone number before adding items');
-        document.querySelector('input[name="customer_phone"]').focus();
-        return;
-      }
-      
-      if (!customerAddress) {
-        alert('Please enter customer address before adding items');
-        document.querySelector('textarea[name="customer_address"]').focus();
-        return;
-      }
-      
-      // Get product name from search input (already selected)
-      const productName = productSearchInput.value.trim();
-      
-      if (!productName) {
-        alert('Please select a product');
-        return;
-      }
-      
-      const selectedUnitOption = unitSelect.options[unitSelect.selectedIndex];
-      const unitName = selectedUnitOption.text.split(' (')[0]; // Extract unit name
-      const unitAbbr = selectedUnitOption.text.match(/\(([^)]+)\)/)?.[1] || '';
-      
-      const existingItem = receiptItems.find(item => item.product_id === productId && item.unit_id === unitId);
-      
-      if (existingItem) {
-        existingItem.quantity += quantity;
-        existingItem.total_price = existingItem.quantity * existingItem.unit_price;
-      } else {
-        receiptItems.push({
-          product_id: productId,
-          product_name: productName,
-          unit_id: unitId,
-          unit_name: unitName,
-          unit_abbreviation: unitAbbr,
-          quantity: quantity,
-          unit_price: unitPrice,
-          total_price: quantity * unitPrice
-        });
-      }
-      
-      updateReceiptDisplay();
-      
-      // Clear inputs
-      productSearchInput.value = '';
-      selectedProductId.value = '';
-      unitSelect.value = '';
-      unitSelect.disabled = true;
-      quantityInput.value = '';
-      priceInput.value = '';
-      document.getElementById('receipt-product-suggestions').style.display = 'none';
-    }
+    function loadReceiptHistory(filters = {}
 
-    function removeReceiptItem(index) {
-      receiptItems.splice(index, 1);
-      updateReceiptDisplay();
-    }
-
-    function updateReceiptDisplay() {
-      const tbody = document.getElementById('receipt-items');
-      
-      tbody.innerHTML = receiptItems.map((item, index) => `
-        <tr>
-          <td>${item.product_name}</td>
-          <td><span class="badge bg-secondary">${item.unit_name || 'Unit'}</span></td>
-          <td>${item.quantity}</td>
-          <td>${formatCurrency(item.unit_price)}</td>
-          <td>${formatCurrency(item.total_price)}</td>
-          <td>
-            <button class="btn btn-sm btn-danger" onclick="removeReceiptItem(${index})">
-              <i class="bi bi-trash"></i>
-            </button>
-          </td>
-        </tr>
-      `).join('');
-      
-      // calculateChange handles subtotal, discount and total display
-      calculateChange();
-      
-      // Update receipt preview
-      updateReceiptPreview();
-    }
-    
-    function updateReceiptPreview() {
-      const previewDiv = document.getElementById('receipt-preview');
-      const customerName = document.querySelector('input[name="customer_name"]').value.trim();
-      const customerPhone = document.querySelector('input[name="customer_phone"]').value.trim();
-      const subtotal = receiptItems.reduce((sum, item) => sum + item.total_price, 0);
-      const discount = getDiscountAmount(subtotal);
-      const total = Math.max(0, subtotal - discount);
-      const cashReceived = parseFloat(document.getElementById('cash-received').value) || 0;
-      const change = Math.max(0, cashReceived - total);
-      
-      if (receiptItems.length === 0) {
-        previewDiv.innerHTML = '<p class="text-muted text-center">Add items to see preview</p>';
-        return;
-      }
-      
-      previewDiv.innerHTML = `
-        <div style="font-family: 'Courier New', monospace; font-size: 11px; line-height: 1.4;">
-          <!-- Company Info -->
-          <div style="text-align: center; margin-bottom: 8px; border-bottom: 1px dashed #ddd; padding-bottom: 8px;">
-            <strong style="font-size: 12px;">${COMPANY_INFO.name}</strong><br>
-            <small style="font-size: 9px;">${COMPANY_INFO.location}</small><br>
-            <small style="font-size: 9px;">${COMPANY_INFO.phone}</small>
-          </div>
-          
-          <!-- Customer Info -->
-          ${customerName ? `
-            <div style="margin-bottom: 8px; font-size: 10px; border-bottom: 1px dashed #ddd; padding-bottom: 8px;">
-              <strong>Customer:</strong> ${customerName}<br>
-              ${customerPhone ? `<small>Phone: ${customerPhone}</small>` : ''}
-            </div>
-          ` : ''}
-          
-          <!-- Items -->
-          <div style="margin-bottom: 8px;">
-            ${receiptItems.map(item => `
-              <div style="margin-bottom: 6px; font-size: 10px;">
-                <div style="font-weight: 600;">${item.product_name}</div>
-                <div style="display: flex; justify-content: space-between;">
-                  <span>${item.quantity} ${item.unit_abbreviation || item.unit_name || 'unit'}${item.quantity > 1 ? 's' : ''} x ${formatCurrency(item.unit_price)}</span>
-                  <strong>${formatCurrency(item.total_price)}</strong>
-                </div>
-              </div>
-            `).join('')}
-          </div>
-          
-          <!-- Totals -->
-          <div style="border-top: 1px dashed #ddd; padding-top: 8px; font-size: 11px;">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
-              <span>Subtotal:</span>
-              <span>${formatCurrency(subtotal)}</span>
-            </div>
-            ${discount > 0 ? `
-            <div style="display: flex; justify-content: space-between; margin-bottom: 2px; color: #dc3545;">
-              <span>Discount:</span>
-              <span>-${formatCurrency(discount)}</span>
-            </div>
-            ` : ''}
-            <div style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 4px; font-size: 13px;">
-              <span>TOTAL:</span>
-              <span>${formatCurrency(total)}</span>
-            </div>
-            ${cashReceived > 0 ? `
-              <div style="display: flex; justify-content: space-between; font-size: 10px;">
-                <span>Cash Received:</span>
-                <span>${formatCurrency(cashReceived)}</span>
-              </div>
-              <div style="display: flex; justify-content: space-between; font-size: 10px; color: ${change >= 0 ? '#28a745' : '#dc3545'};">
-                <span>Change:</span>
-                <span>${formatCurrency(change)}</span>
-              </div>
-            ` : ''}
-            <div style="display: flex; justify-content: space-between; font-size: 10px; margin-top: 2px;">
-              <span>Payment:</span>
-              <span style="text-transform: uppercase; font-weight: bold;">${(document.getElementById('payment-method')?.value || 'cash').replace('_', ' ')}</span>
-            </div>
-          </div>
-          
-          <div style="text-align: center; margin-top: 12px; padding-top: 8px; border-top: 1px dashed #ddd;">
-            <small style="font-size: 9px; color: #6c757d;">Preview Only</small>
-          </div>
-        </div>
-      `;
-    }
-
-    function selectPaymentMethod(method) {
-      document.getElementById('payment-method').value = method;
-      
-      // Update button styles
-      document.querySelectorAll('.payment-method-btn').forEach(btn => {
-        btn.classList.remove('active', 'btn-success', 'btn-primary', 'btn-info', 'btn-warning');
-        btn.classList.add('btn-outline-' + (
-          btn.dataset.method === 'cash' ? 'success' :
-          btn.dataset.method === 'mobile_money' ? 'primary' :
-          btn.dataset.method === 'card' ? 'info' : 'warning'
-        ));
-      });
-      
-      const activeBtn = document.querySelector(`.payment-method-btn[data-method="${method}"]`);
-      if (activeBtn) {
-        activeBtn.classList.remove('btn-outline-success', 'btn-outline-primary', 'btn-outline-info', 'btn-outline-warning');
-        activeBtn.classList.add('active', 'btn-' + (
-          method === 'cash' ? 'success' :
-          method === 'mobile_money' ? 'primary' :
-          method === 'card' ? 'info' : 'warning'
-        ));
-      }
-      
-      // Show/hide relevant sections
-      document.getElementById('mobile-money-ref').classList.toggle('d-none', method !== 'mobile_money');
-      document.getElementById('card-ref').classList.toggle('d-none', method !== 'card');
-      document.getElementById('credit-note-div').classList.toggle('d-none', method !== 'credit');
-      
-      // For credit/card/mobile money - hide cash received, show N/A for change
-      const cashSection = document.getElementById('cash-received-section');
-      const changeLabel = document.getElementById('change-label');
-      if (method === 'credit') {
-        cashSection.classList.add('d-none');
-        if (changeLabel) changeLabel.textContent = 'Balance Owed:';
-        document.getElementById('cash-received').value = '0';
-      } else if (method === 'mobile_money' || method === 'card') {
-        cashSection.classList.add('d-none');
-        if (changeLabel) changeLabel.textContent = 'Amount Paid:';
-        document.getElementById('cash-received').value = '0';
-      } else {
-        // Cash
-        cashSection.classList.remove('d-none');
-        if (changeLabel) changeLabel.textContent = 'Change to Give:';
-        document.getElementById('cash-received').value = '';
-      }
-      
-      calculateChange();
-    }
-
-    // Helper to get current discount amount
-    function getDiscountAmount(subtotal) {
-      const discountValue = parseFloat(document.getElementById('discount-value')?.value) || 0;
-      const discountType = document.getElementById('discount-type')?.value || 'fixed';
-      if (discountType === 'percent') {
-        return Math.min(subtotal, (subtotal * discountValue) / 100);
-      }
-      return Math.min(subtotal, discountValue);
-    }
-
-    function calculateChange() {
-      const subtotal = receiptItems.reduce((sum, item) => sum + item.total_price, 0);
-      const discount = getDiscountAmount(subtotal);
-      const total = Math.max(0, subtotal - discount);
-      const paymentMethod = document.getElementById('payment-method')?.value || 'cash';
-      const cashReceived = paymentMethod === 'credit' ? 0 : (parseFloat(document.getElementById('cash-received').value) || 0);
-      const change = cashReceived - total;
-      
-      // Update subtotal and discount display
-      const subtotalEl = document.getElementById('receipt-subtotal');
-      const discountEl = document.getElementById('receipt-discount-display');
-      if (subtotalEl) subtotalEl.textContent = formatCurrency(subtotal);
-      if (discountEl) discountEl.textContent = discount > 0 ? `-${formatCurrency(discount)}` : formatCurrency(0);
-      
-      document.getElementById('receipt-total').textContent = formatCurrency(total);
-      
-      const changeEl = document.getElementById('receipt-change');
-      if (paymentMethod === 'credit') {
-        changeEl.textContent = formatCurrency(total);
-        changeEl.style.color = '#dc3545';
-      } else if (paymentMethod === 'mobile_money' || paymentMethod === 'card') {
-        changeEl.textContent = formatCurrency(total);
-        changeEl.style.color = '#0d6efd';
-      } else {
-        changeEl.textContent = formatCurrency(Math.max(0, change));
-        if (cashReceived >= total && cashReceived > 0) {
-          changeEl.style.color = '#28a745';
-        } else if (cashReceived > 0) {
-          changeEl.style.color = '#dc3545';
-        } else {
-          changeEl.style.color = '#6c757d';
-        }
-      }
-      
-      updateReceiptPreview();
-    }
-
-    function clearReceipt() {
-      receiptItems = [];
-      document.getElementById('form-receipt').reset();
-      document.getElementById('cash-received').value = '';
-      document.getElementById('discount-value').value = '';
-      document.getElementById('discount-type').value = 'fixed';
-      selectPaymentMethod('cash'); // Reset to cash
-      updateReceiptDisplay();
-      document.getElementById('receipt-preview').innerHTML = '<p class="text-muted text-center">Add items to see preview</p>';
-    }
-
-    async function loadReceiptHistory(filters = {}) {
-      try {
-        // Build query string with filters
-        const params = new URLSearchParams();
-        if (filters.search) params.append('q', filters.search);
-        if (filters.filterType) params.append('filter_type', filters.filterType);
-        if (filters.startDate) params.append('start_date', filters.startDate);
-        if (filters.endDate) params.append('end_date', filters.endDate);
-        
-        const queryString = params.toString();
-        const url = queryString ? `api/receipts.php?${queryString}` : 'api/receipts.php';
-        
-        const data = await apiCall(url);
-        const tbody = document.getElementById('tbl-receipt-history');
-        const isAdmin = currentUser && currentUser.role === 'admin';
-        
-        // Update section title based on user role
-        const sectionTitle = document.querySelector('#section-receipt-history h2');
-        if (isAdmin) {
-          sectionTitle.innerHTML = '<i class="bi bi-clock-history"></i> Receipt History (All Users)';
-        } else {
-          sectionTitle.innerHTML = '<i class="bi bi-clock-history"></i> My Receipt History';
-        }
-        
-        if (data.items.length === 0) {
-          const colspan = isAdmin ? '8' : '7';
-          tbody.innerHTML = `<tr><td colspan="${colspan}" class="text-center text-muted">No receipts found</td></tr>`;
-          return;
-        }
-        
-        tbody.innerHTML = data.items.map(receipt => {
-          // Truncate products list if too long
-          const products = receipt.products || 'N/A';
-          const productsDisplay = products.length > 50 
-            ? products.substring(0, 50) + '...' 
-            : products;
-          
-          // Calculate profit margin for badge color
-          const profitMargin = receipt.total > 0 ? ((receipt.total_profit || 0) / receipt.total) * 100 : 0;
-          const profitBadgeClass = profitMargin >= 20 ? 'bg-success' : profitMargin >= 10 ? 'bg-warning' : 'bg-danger';
-          
-          return `
-          <tr>
-            <td>${receipt.invoice_number}</td>
-            <td>
-              <small class="text-muted" title="${products}">
-                ${productsDisplay}
-              </small>
-            </td>
-            <td>${receipt.customer_name || 'N/A'}</td>
-            <td>${formatCurrency(receipt.total)}</td>
-            ${isAdmin ? `
-              <td>
-                <span class="badge ${profitBadgeClass}">
-                  ${formatCurrency(receipt.total_profit || 0)}
-                </span>
-                <br>
-                <small class="text-muted">${profitMargin.toFixed(1)}%</small>
-              </td>
-            ` : ''}
-            <td>${formatDate(receipt.created_at)}</td>
-            <td>
-              <span class="badge bg-info">
-                ${receipt.created_by_username || 'Unknown'}
-              </span>
-            </td>
-            <td class="no-print">
-              <button class="btn btn-sm btn-info me-1" onclick="viewReceipt(${receipt.id})" title="View Receipt">
-                <i class="bi bi-eye"></i>
-              </button>
-              <button class="btn btn-sm btn-primary me-1" onclick="viewAndPrintReceipt(${receipt.id})" title="Print Receipt">
-                <i class="bi bi-printer"></i>
-              </button>
-              ${isAdmin ? `
-                <button class="btn btn-sm btn-danger" onclick="deleteReceipt(${receipt.id}, '${receipt.invoice_number}')" title="Delete Receipt">
-                  <i class="bi bi-trash"></i>
-                </button>
-              ` : ''}
-            </td>
-          </tr>
-        `;
-        }).join('');
-      } catch (error) {
-        console.error('Failed to load receipt history:', error);
-        const tbody = document.getElementById('tbl-receipt-history');
-        const colspan = (currentUser && currentUser.role === 'admin') ? '8' : '7';
-        tbody.innerHTML = `<tr><td colspan="${colspan}" class="text-center text-danger">Failed to load receipts</td></tr>`;
-      }
-    }
-
-    // Apply receipt filters
     function applyReceiptFilters() {
       const filters = {
         search: document.getElementById('filter-search').value.trim(),
@@ -5499,7 +5323,6 @@
       loadReceiptHistory(filters);
     }
 
-    // Clear receipt filters
     function clearReceiptFilters() {
       document.getElementById('filter-search').value = '';
       document.getElementById('filter-type').value = 'all';
@@ -5508,20 +5331,7 @@
       loadReceiptHistory();
     }
 
-    // Add Enter key support for search
-    document.addEventListener('DOMContentLoaded', function() {
-      const searchInput = document.getElementById('filter-search');
-      if (searchInput) {
-        searchInput.addEventListener('keypress', function(e) {
-          if (e.key === 'Enter') {
-            applyReceiptFilters();
-          }
-        });
-      }
-    });
-
-    // View receipt details
-    async function viewReceipt(receiptId) {
+    function viewReceipt(receiptId) {
       try {
         const receipt = await apiCall(`api/receipts.php?id=${receiptId}`);
         displayReceiptModal(receipt);
@@ -5530,8 +5340,7 @@
       }
     }
 
-    // View and immediately print receipt
-    async function viewAndPrintReceipt(receiptId) {
+    function viewAndPrintReceipt(receiptId) {
       try {
         const receipt = await apiCall(`api/receipts.php?id=${receiptId}`);
         displayReceiptModal(receipt);
@@ -5542,7 +5351,6 @@
       }
     }
 
-    // Display receipt in modal
     function displayReceiptModal(receipt) {
       const modalContent = document.getElementById('receipt-print-content');
       
@@ -5661,8 +5469,7 @@
 
     }
 
-    // Print receipt
-    async function printReceipt() {
+    function printReceipt() {
       // Get the receipt content
       const printContent = document.getElementById('receipt-print-content');
       
@@ -5820,152 +5627,8 @@
       };
     }
 
-    // Global variables for delete confirmation
-    let pendingDeleteAction = null;
-    let pendingDeleteParams = null;
 
-    // Show delete confirmation modal
-    function showDeleteConfirmation(title, message, deleteAction, params) {
-      document.getElementById('delete-modal-title').textContent = title;
-      document.getElementById('delete-modal-message').innerHTML = message;
-      
-      const input = document.getElementById('delete-confirmation-input');
-      input.value = '';
-      input.disabled = false; // Ensure input is enabled
-      
-      pendingDeleteAction = deleteAction;
-      pendingDeleteParams = params;
-      
-      const modalElement = document.getElementById('deleteConfirmModal');
-      const modal = new bootstrap.Modal(modalElement);
-      
-      modal.show();
-      
-      // Multiple focus attempts to ensure it works
-      setTimeout(() => {
-        input.focus();
-        input.click();
-      }, 200);
-      
-      setTimeout(() => {
-        input.focus();
-      }, 500);
-    }
-
-    // Execute the pending delete action
-    async function executeDelete() {
-      const confirmation = document.getElementById('delete-confirmation-input').value;
-      
-      if (confirmation !== 'DELETE') {
-        alert('You must type "DELETE" exactly to confirm deletion.');
-        return;
-      }
-      
-      if (pendingDeleteAction && pendingDeleteParams) {
-        try {
-          // Close modal first
-          bootstrap.Modal.getInstance(document.getElementById('deleteConfirmModal')).hide();
-          
-          // Execute the delete action
-          await pendingDeleteAction(...pendingDeleteParams);
-          
-          // Clear pending action
-          pendingDeleteAction = null;
-          pendingDeleteParams = null;
-        } catch (error) {
-          alert('Delete operation failed: ' + error.message);
-        }
-      }
-    }
-
-    // Handle Enter key in confirmation input and ensure input is focusable
-    // ========================================
-    // UNIVERSAL INPUT STABILITY FIX FOR ELECTRON
-    // Prevents input freezing across ALL sections and modals
-    // ========================================
-    
-    // Core function: re-activate all inputs in a given container
-    function reactivateInputs(container) {
-      container = container || document;
-      container.querySelectorAll(
-        'input:not([disabled]):not([type="hidden"]), textarea:not([disabled]), select:not([disabled])'
-      ).forEach(function(el) {
-        el.style.pointerEvents = 'auto';
-        el.style.userSelect = 'auto';
-        el.removeAttribute('inert');
-      });
-    }
-
-    // Intercept every mousedown on the page — if user clicks an input, force-activate it
-    document.addEventListener('mousedown', function(e) {
-      const el = e.target;
-      if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT')) {
-        if (!el.disabled && el.type !== 'hidden') {
-          el.style.pointerEvents = 'auto';
-          el.removeAttribute('inert');
-          setTimeout(function() { el.focus(); }, 0);
-        }
-      }
-    }, true);
-
-    document.addEventListener('DOMContentLoaded', function() {
-
-      // 1. Universal fix for ALL modals — focus first input when shown
-      document.querySelectorAll('.modal').forEach(function(modal) {
-        modal.addEventListener('shown.bs.modal', function() {
-          reactivateInputs(modal);
-          setTimeout(function() {
-            const firstField = modal.querySelector(
-              'input:not([readonly]):not([type="hidden"]):not([type="file"]):not([disabled]), textarea:not([readonly]):not([disabled])'
-            );
-            if (firstField) {
-              firstField.focus();
-            }
-          }, 150);
-        });
-      });
-
-      // 2. Delete confirmation modal — Enter key + click focus
-      const deleteInput = document.getElementById('delete-confirmation-input');
-      if (deleteInput) {
-        deleteInput.addEventListener('keypress', function(e) {
-          if (e.key === 'Enter') executeDelete();
-        });
-        deleteInput.addEventListener('mousedown', function() {
-          this.disabled = false;
-          this.style.pointerEvents = 'auto';
-          setTimeout(() => this.focus(), 0);
-        });
-      }
-
-      // 3. Window focus — re-activate everything visible
-      window.addEventListener('focus', function() {
-        // Re-activate all inputs in the currently visible section
-        const visibleSection = document.querySelector('.content-section:not(.hidden)');
-        if (visibleSection) reactivateInputs(visibleSection);
-
-        // Re-activate inputs in any open modal
-        const openModal = document.querySelector('.modal.show');
-        if (openModal) {
-          reactivateInputs(openModal);
-          const activeEl = document.activeElement;
-          if (!activeEl || activeEl.tagName === 'BODY') {
-            const firstInput = openModal.querySelector(
-              'input:not([readonly]):not([type="hidden"]):not([disabled]), textarea:not([readonly]):not([disabled])'
-            );
-            if (firstInput) setTimeout(() => firstInput.focus(), 50);
-          }
-        }
-      });
-
-      // 4. Continuous safety net — re-activate all inputs every 5 seconds
-      setInterval(function() {
-        reactivateInputs(document);
-      }, 5000);
-
-    });
-
-    // Delete receipt (Admin only) - Updated for desktop compatibility
+        // Delete receipt (Admin only) - Updated for desktop compatibility
     async function deleteReceipt(receiptId, invoiceNumber) {
       const message = `
         <div class="alert alert-danger">
