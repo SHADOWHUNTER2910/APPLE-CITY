@@ -8588,7 +8588,21 @@
               <input type="text" class="form-control" id="imei-modal-color" placeholder="e.g. Black Titanium"></div>
           </div>
           <div class="mb-3"><label class="form-label fw-semibold">IMEI (15 digits) *</label>
-            <input type="text" class="form-control font-monospace" id="imei-modal-imei" maxlength="15" placeholder="000000000000000"></div>
+            <div class="mb-1">
+              <div class="btn-group btn-group-sm" role="group">
+                <button type="button" class="btn btn-outline-secondary active" id="imei-single-btn" onclick="toggleImeiMode('single')">Single</button>
+                <button type="button" class="btn btn-outline-secondary" id="imei-bulk-btn" onclick="toggleImeiMode('bulk')">Bulk (paste multiple)</button>
+              </div>
+            </div>
+            <div id="imei-single-mode">
+              <input type="text" class="form-control font-monospace" id="imei-modal-imei" maxlength="15" placeholder="000000000000000">
+            </div>
+            <div id="imei-bulk-mode" class="d-none">
+              <textarea class="form-control font-monospace" id="imei-modal-bulk" rows="6"
+                placeholder="Paste one IMEI per line:&#10;354678901234567&#10;354678901234568&#10;354678901234569"></textarea>
+              <small class="text-muted"><span id="imei-bulk-count">0</span> IMEIs detected</small>
+            </div>
+          </div>
 
           <!-- Prices: auto-filled from product, collapsible override -->
           <div class="alert alert-info py-2 mb-2" id="imei-price-info" style="font-size:13px;">
@@ -8623,7 +8637,24 @@
       new bootstrap.Modal(modal).show();
     }
 
-    function imeiModalProductChanged() {
+    function toggleImeiMode(mode) {
+      const single = document.getElementById('imei-single-mode');
+      const bulk   = document.getElementById('imei-bulk-mode');
+      const sBtn   = document.getElementById('imei-single-btn');
+      const bBtn   = document.getElementById('imei-bulk-btn');
+      if (mode === 'bulk') {
+        single.classList.add('d-none'); bulk.classList.remove('d-none');
+        sBtn.classList.remove('active'); bBtn.classList.add('active');
+        // Live count
+        document.getElementById('imei-modal-bulk').addEventListener('input', function() {
+          const lines = this.value.split('\n').map(l=>l.trim()).filter(l=>l.length===15&&/^\d+$/.test(l));
+          document.getElementById('imei-bulk-count').textContent = lines.length;
+        });
+      } else {
+        bulk.classList.add('d-none'); single.classList.remove('d-none');
+        bBtn.classList.remove('active'); sBtn.classList.add('active');
+      }
+    }
       const hidden = document.getElementById('imei-modal-product');
       const cost = hidden?.dataset?.cost || 0;
       const sell = hidden?.dataset?.sell || 0;
@@ -8680,33 +8711,67 @@
 
       const hidden = document.getElementById('imei-modal-product');
       const overrideVisible = !document.getElementById('imei-price-override').classList.contains('d-none');
+      const isBulk = !document.getElementById('imei-bulk-mode').classList.contains('d-none');
 
-      const costPrice  = overrideVisible
-        ? parseFloat(document.getElementById('imei-modal-cost').value)||0
-        : parseFloat(hidden?.dataset?.cost||0);
-      const sellPrice  = overrideVisible
-        ? parseFloat(document.getElementById('imei-modal-sell').value)||0
-        : parseFloat(hidden?.dataset?.sell||0);
+      const costPrice = overrideVisible ? parseFloat(document.getElementById('imei-modal-cost').value)||0 : parseFloat(hidden?.dataset?.cost||0);
+      const sellPrice = overrideVisible ? parseFloat(document.getElementById('imei-modal-sell').value)||0 : parseFloat(hidden?.dataset?.sell||0);
+      const productId = parseInt(hidden.value)||0;
+      const storage   = document.getElementById('imei-modal-storage').value;
+      const color     = document.getElementById('imei-modal-color').value.trim();
+      const supplierId = document.getElementById('imei-modal-supplier').value||null;
+      const notes     = document.getElementById('imei-modal-notes').value.trim();
 
-      const payload = {
-        product_id:   parseInt(hidden.value)||0,
-        imei:         document.getElementById('imei-modal-imei').value.trim(),
-        storage:      document.getElementById('imei-modal-storage').value,
-        color:        document.getElementById('imei-modal-color').value.trim(),
-        cost_price:   costPrice,
-        selling_price:sellPrice,
-        supplier_id:  document.getElementById('imei-modal-supplier').value||null,
-        notes:        document.getElementById('imei-modal-notes').value.trim()
-      };
-      if (!payload.product_id){ errEl.textContent='Please select a model.'; errEl.classList.remove('d-none'); return; }
-      if (!payload.imei){ errEl.textContent='IMEI is required.'; errEl.classList.remove('d-none'); return; }
-      try {
-        const res = await apiCall('api/imei.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-        if (res.error){ errEl.textContent=res.error; errEl.classList.remove('d-none'); return; }
+      if (!productId){ errEl.textContent='Please select a model.'; errEl.classList.remove('d-none'); return; }
+
+      // Build list of IMEIs to add
+      let imeis = [];
+      if (isBulk) {
+        const raw = document.getElementById('imei-modal-bulk').value;
+        imeis = raw.split('\n').map(l=>l.trim()).filter(l=>l !== '');
+        if (imeis.length === 0){ errEl.textContent='Please enter at least one IMEI.'; errEl.classList.remove('d-none'); return; }
+        // Validate all
+        const invalid = imeis.filter(i => !/^\d{15}$/.test(i));
+        if (invalid.length > 0){ errEl.textContent=`Invalid IMEIs (must be 15 digits): ${invalid.slice(0,3).join(', ')}${invalid.length>3?' ...':''}`;  errEl.classList.remove('d-none'); return; }
+      } else {
+        const single = document.getElementById('imei-modal-imei').value.trim();
+        if (!single){ errEl.textContent='IMEI is required.'; errEl.classList.remove('d-none'); return; }
+        imeis = [single];
+      }
+
+      // Submit button feedback
+      const submitBtn = document.querySelector('#addImeiModal .btn-success');
+      const origText  = submitBtn.innerHTML;
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> Adding ${imeis.length} unit${imeis.length>1?'s':''}...`;
+
+      let added = 0, failed = [], duplicate = [];
+      for (const imei of imeis) {
+        const payload = { product_id: productId, imei, storage, color, cost_price: costPrice, selling_price: sellPrice, supplier_id: supplierId, notes };
+        try {
+          const res = await apiCall('api/imei.php', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+          if (res.error) {
+            if (res.error.includes('already exists')) duplicate.push(imei);
+            else failed.push(imei + ': ' + res.error);
+          } else { added++; }
+        } catch(e) { failed.push(imei + ': ' + e.message); }
+      }
+
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = origText;
+
+      // Show result
+      let msg = `✅ ${added} unit${added!==1?'s':''} added successfully.`;
+      if (duplicate.length) msg += `\n⚠️ ${duplicate.length} duplicate IMEI${duplicate.length>1?'s':''} skipped.`;
+      if (failed.length)    msg += `\n❌ ${failed.length} failed.`;
+
+      if (added > 0) {
         bootstrap.Modal.getInstance(document.getElementById('addImeiModal')).hide();
-        loadImeiRegistry();
-        loadStock();
-      } catch(e){ errEl.textContent='Failed: '+e.message; errEl.classList.remove('d-none'); }
+        loadImeiRegistry(); loadStock();
+        alert(msg);
+      } else {
+        errEl.textContent = msg;
+        errEl.classList.remove('d-none');
+      }
     }
 
     async function deleteImeiUnit(id, imei) {
