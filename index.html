@@ -8554,8 +8554,13 @@
       } catch(e){}
     }
 
-    function openAddImeiModal() {
-      populateImeiProductFilter();
+    async function openAddImeiModal() {
+      // Always fetch fresh product list before building modal
+      try {
+        const data = await apiCall('api/products.php?pageSize=200');
+        imeiProductList = data.items || [];
+      } catch(e) { imeiProductList = []; }
+
       let existing = document.getElementById('addImeiModal');
       if (existing) existing.remove();
       const modal = document.createElement('div');
