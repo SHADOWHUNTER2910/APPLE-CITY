@@ -629,6 +629,10 @@
                 <i class="bi bi-arrow-clockwise"></i> Refresh
               </button>
             </div>
+            <div class="alert alert-info py-2 mb-3">
+              <i class="bi bi-info-circle"></i>
+              Stock counts are driven by IMEI units. To add stock, go to <strong><a href="#" onclick="showSection('imei');return false;"><i class="bi bi-upc-scan"></i> IMEI Registry</a></strong> and add each phone individually.
+            </div>
 
             <div class="card">
               <div class="card-header">
@@ -3915,8 +3919,8 @@
                   <i class="bi bi-clock-history"></i>
                 </button>
                 ${isAdmin ?
-                  `<button class="btn btn-sm btn-primary ms-1" onclick="openAddStockModal(${item.id}, '${item.name.replace(/'/g, "\\'")}', ${item.quantity}, ${item.initial_quantity||0}, ${item.total_received||0}, ${item.total_sold||0}, false)">
-                     <i class="bi bi-plus-circle"></i> Add
+                  `<button class="btn btn-sm btn-success ms-1" onclick="showSection('imei')" title="Add IMEI units in IMEI Registry">
+                     <i class="bi bi-upc-scan"></i> Add IMEI
                    </button>`
                   : ''
                 }
