@@ -45,9 +45,10 @@ try {
         $totalCost = 0.0;
 
         foreach ($items as $idx => $it) {
-            $pid   = (int)($it['product_id'] ?? 0);
-            $qty   = (int)($it['quantity'] ?? 0);
-            $price = (float)($it['unit_price'] ?? 0);
+            $pid        = (int)($it['product_id'] ?? 0);
+            $qty        = (int)($it['quantity'] ?? 0);
+            $price      = (float)($it['unit_price'] ?? 0);
+            $imeiUnitId = isset($it['imei_unit_id']) && $it['imei_unit_id'] ? (int)$it['imei_unit_id'] : null;
 
             if ($pid <= 0 || $qty <= 0) {
                 http_response_code(400);
@@ -57,21 +58,43 @@ try {
 
             $subtotal += $qty * $price;
 
-            // Get cost price from products table
-            $costStmt = $pdo->prepare('SELECT cost_price FROM products WHERE id = ?');
-            $costStmt->execute([$pid]);
-            $costPrice = (float)($costStmt->fetchColumn() ?? 0);
-            $totalCost += $qty * $costPrice;
+            // Get cost price — prefer IMEI unit cost, fall back to product cost
+            if ($imeiUnitId) {
+                $costStmt = $pdo->prepare('SELECT cost_price FROM imei_units WHERE id = ? AND status = "in_stock"');
+                $costStmt->execute([$imeiUnitId]);
+                $imeiCost = $costStmt->fetchColumn();
+                if ($imeiCost !== false && (float)$imeiCost > 0) {
+                    $costPrice = (float)$imeiCost;
+                } else {
+                    $costStmt2 = $pdo->prepare('SELECT cost_price FROM products WHERE id = ?');
+                    $costStmt2->execute([$pid]);
+                    $costPrice = (float)($costStmt2->fetchColumn() ?? 0);
+                }
+                // Validate the specific IMEI unit is still in stock
+                $imeiCheck = $pdo->prepare('SELECT id FROM imei_units WHERE id = ? AND status = "in_stock"');
+                $imeiCheck->execute([$imeiUnitId]);
+                if (!$imeiCheck->fetch()) {
+                    http_response_code(409);
+                    echo json_encode(['error' => 'IMEI unit is no longer available', 'imei_unit_id' => $imeiUnitId]);
+                    exit;
+                }
+            } else {
+                $costStmt = $pdo->prepare('SELECT cost_price FROM products WHERE id = ?');
+                $costStmt->execute([$pid]);
+                $costPrice = (float)($costStmt->fetchColumn() ?? 0);
 
-            // Check available stock
-            $st = $pdo->prepare('SELECT quantity FROM stock WHERE product_id = ?');
-            $st->execute([$pid]);
-            $available = (int)($st->fetchColumn() ?? 0);
-            if ($available < $qty) {
-                http_response_code(409);
-                echo json_encode(['error' => 'Insufficient stock', 'product_id' => $pid, 'available' => $available, 'requested' => $qty]);
-                exit;
+                // Check available aggregate stock
+                $st = $pdo->prepare('SELECT quantity FROM stock WHERE product_id = ?');
+                $st->execute([$pid]);
+                $available = (int)($st->fetchColumn() ?? 0);
+                if ($available < $qty) {
+                    http_response_code(409);
+                    echo json_encode(['error' => 'Insufficient stock', 'product_id' => $pid, 'available' => $available, 'requested' => $qty]);
+                    exit;
+                }
             }
+
+            $totalCost += $qty * $costPrice;
         }
 
         $total       = max(0.0, $subtotal - $discount - $trade_in_value);
@@ -109,8 +132,9 @@ try {
 
             $insI    = $pdo->prepare('
                 INSERT INTO receipt_items
-                    (receipt_id, product_id, product_name, quantity, unit_price, total_price, cost_price, profit)
-                VALUES (?,?,?,?,?,?,?,?)
+                    (receipt_id, product_id, product_name, imei_unit_id, imei, variant_label,
+                     quantity, unit_price, total_price, cost_price, profit)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?)
             ');
             $updS    = $pdo->prepare('UPDATE stock SET quantity = quantity - ? WHERE product_id = ?');
             $getQty  = $pdo->prepare('SELECT quantity FROM stock WHERE product_id = ?');
@@ -121,16 +145,30 @@ try {
                 VALUES (?,?,?,?,?,?,?,?,?)
             ');
             $getName = $pdo->prepare('SELECT name, cost_price FROM products WHERE id = ?');
+            $markImeiSold = $pdo->prepare('UPDATE imei_units SET status = "sold", sold_receipt_id = ?, sold_at = CURRENT_TIMESTAMP WHERE id = ?');
 
             foreach ($items as $it) {
-                $pid   = (int)$it['product_id'];
-                $qty   = (int)$it['quantity'];
-                $price = (float)$it['unit_price'];
+                $pid          = (int)$it['product_id'];
+                $qty          = (int)$it['quantity'];
+                $price        = (float)$it['unit_price'];
+                $imeiUnitId   = isset($it['imei_unit_id']) && $it['imei_unit_id'] ? (int)$it['imei_unit_id'] : null;
+                $imei         = trim((string)($it['imei'] ?? ''));
+                $variantLabel = trim((string)($it['variant_label'] ?? ''));
 
                 $getName->execute([$pid]);
                 $prod      = $getName->fetch();
                 $prodName  = $prod['name'] ?? 'Unknown';
+
+                // Use IMEI unit cost price if available, else fall back to product cost price
                 $costPrice = (float)($prod['cost_price'] ?? 0);
+                if ($imeiUnitId) {
+                    $cpStmt = $pdo->prepare('SELECT cost_price FROM imei_units WHERE id = ?');
+                    $cpStmt->execute([$imeiUnitId]);
+                    $imeiCost = $cpStmt->fetchColumn();
+                    if ($imeiCost !== false && (float)$imeiCost > 0) {
+                        $costPrice = (float)$imeiCost;
+                    }
+                }
 
                 $itemTotal = $price * $qty;
                 $itemCost  = $costPrice * $qty;
@@ -142,9 +180,16 @@ try {
                 $qtyBefore = (int)($getQty->fetchColumn() ?? 0);
                 $qtyAfter  = $qtyBefore - $qty;
 
-                $insI->execute([$rid, $pid, $prodName, $qty, $price, $itemTotal, $costPrice, $itemProfit]);
+                $insI->execute([$rid, $pid, $prodName, $imeiUnitId ?: null, $imei ?: null, $variantLabel ?: null,
+                                $qty, $price, $itemTotal, $costPrice, $itemProfit]);
                 $updS->execute([$qty, $pid]);
-                $recMov->execute([$pid, 'deduction', $qty, $qtyBefore, $qtyAfter, 'receipt', $rid, "Sold via receipt #{$invoice_number}", $_SESSION['user_id']]);
+                $recMov->execute([$pid, 'deduction', $qty, $qtyBefore, $qtyAfter, 'receipt', $rid,
+                                  "Sold via receipt #{$invoice_number}" . ($imei ? " | IMEI: {$imei}" : ''), $_SESSION['user_id']]);
+
+                // Mark the specific IMEI unit as sold
+                if ($imeiUnitId) {
+                    $markImeiSold->execute([$rid, $imeiUnitId]);
+                }
             }
 
             $pdo->commit();
@@ -171,7 +216,10 @@ try {
             $itemsStmt = $pdo->prepare('
                 SELECT ri.*,
                        COALESCE(ri.product_name, p.name, "Deleted Product") as product_name,
-                       COALESCE(p.sku, "N/A") as sku
+                       COALESCE(p.sku, "N/A") as sku,
+                       ri.imei,
+                       ri.variant_label,
+                       ri.imei_unit_id
                 FROM receipt_items ri
                 LEFT JOIN products p ON ri.product_id = p.id
                 WHERE ri.receipt_id = ?

@@ -331,7 +331,7 @@
     <div class="login-card">
       <div class="login-header">
         <div class="mb-3">
-          <img src="assets/logo.png" alt="ShelfSense POS" class="company-logo" 
+          <img src="assets/logo.png" alt="Apple City POS" class="company-logo" 
                style="max-height: 120px; width: auto;"
                onerror="this.style.display='none'; document.getElementById('fallback-icon').style.display='block';">
           <div id="fallback-icon" style="display: none;">
@@ -1329,8 +1329,9 @@
                           <h6 class="mb-0"><i class="bi bi-phone"></i> Add iPhone to Receipt</h6>
                         </div>
                         <div class="card-body">
-                          <div class="row g-3 align-items-end">
-                            <div class="col-md-5">
+                          <!-- Step 1: Search model or IMEI -->
+                          <div class="row g-3 mb-2">
+                            <div class="col-12">
                               <label class="form-label fw-semibold">Search by Model or IMEI</label>
                               <div class="position-relative">
                                 <input id="receipt-product-search" type="text" class="form-control"
@@ -1340,16 +1341,45 @@
                               </div>
                               <input type="hidden" id="selected-receipt-product-id" value="">
                             </div>
+                          </div>
+
+                          <!-- Step 2: Variant picker (shown after model selected) -->
+                          <div id="variant-picker-row" class="row g-3 mb-2 d-none">
                             <div class="col-md-4">
-                              <label class="form-label fw-semibold">Selling Price (GH₵)</label>
-                              <input id="input-unit-price" type="number" step="0.01" class="form-control" placeholder="0.00" autocomplete="off">
+                              <label class="form-label fw-semibold">Storage</label>
+                              <select id="receipt-storage-select" class="form-select" onchange="onStorageChange()">
+                                <option value="">— Select Storage —</option>
+                              </select>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-4">
+                              <label class="form-label fw-semibold">Color</label>
+                              <select id="receipt-color-select" class="form-select" onchange="onColorChange()">
+                                <option value="">— Select Color —</option>
+                              </select>
+                            </div>
+                            <div class="col-md-4">
+                              <label class="form-label fw-semibold">IMEI Unit</label>
+                              <select id="receipt-imei-select" class="form-select" onchange="onImeiUnitChange()">
+                                <option value="">— Select IMEI —</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          <!-- Step 3: Price display + Add button -->
+                          <div class="row g-3 align-items-end mt-1">
+                            <div class="col-md-6">
+                              <label class="form-label fw-semibold text-muted small">Selling Price</label>
+                              <div id="price-display" class="form-control bg-light text-success fw-bold fs-5" style="min-height:38px;">—</div>
+                              <input type="hidden" id="input-unit-price">
+                            </div>
+                            <div class="col-md-6">
                               <button type="button" class="btn btn-success w-100" onclick="addReceiptItem()">
                                 <i class="bi bi-plus-circle"></i> Add to Receipt
                               </button>
                             </div>
                           </div>
+
+                          <!-- Selected IMEI badge -->
                           <div id="selected-imei-info" class="mt-2 d-none">
                             <span class="badge bg-info fs-6"><i class="bi bi-upc-scan"></i> <span id="selected-imei-display"></span></span>
                             <span class="badge bg-secondary ms-1" id="selected-variant-display"></span>
@@ -1388,6 +1418,53 @@
                         </div>
                       </div>
 
+                      <!-- Trade-in Deduction (independent of payment method) -->
+                      <div class="mb-3">
+                        <div class="form-check form-switch mb-2">
+                          <input class="form-check-input" type="checkbox" id="tradein-toggle" onchange="toggleTradeInPanel()">
+                          <label class="form-check-label fw-semibold" for="tradein-toggle">
+                            <i class="bi bi-arrow-left-right text-warning"></i> Customer is trading in a device
+                          </label>
+                        </div>
+                        <div id="trade-in-div" class="d-none">
+                          <div class="card border-warning">
+                            <div class="card-header bg-warning bg-opacity-10 py-2">
+                              <strong class="small"><i class="bi bi-arrow-left-right"></i> Trade-in Device Details</strong>
+                            </div>
+                            <div class="card-body py-3">
+                              <div class="row g-2 mb-2">
+                                <div class="col-md-5">
+                                  <label class="form-label small fw-semibold mb-1">Device Model <span class="text-danger">*</span></label>
+                                  <input type="text" id="tradein-device-model" class="form-control form-control-sm" placeholder="e.g. iPhone 13 Pro" autocomplete="off">
+                                </div>
+                                <div class="col-md-4">
+                                  <label class="form-label small fw-semibold mb-1">IMEI <span class="text-muted fw-normal">(optional)</span></label>
+                                  <input type="text" id="tradein-imei-input" class="form-control form-control-sm font-monospace" placeholder="15-digit IMEI" autocomplete="off">
+                                </div>
+                                <div class="col-md-3">
+                                  <label class="form-label small fw-semibold mb-1">Condition</label>
+                                  <select class="form-select form-select-sm" id="tradein-condition-input">
+                                    <option value="excellent">Excellent</option>
+                                    <option value="good" selected>Good</option>
+                                    <option value="fair">Fair</option>
+                                    <option value="poor">Poor</option>
+                                  </select>
+                                </div>
+                              </div>
+                              <div class="row g-2 align-items-center">
+                                <div class="col-md-4">
+                                  <label class="form-label small fw-semibold mb-1">Trade-in Value (GH₵) <span class="text-danger">*</span></label>
+                                  <input type="number" id="tradein-value-input" class="form-control form-control-sm" step="0.01" min="0" placeholder="0.00" oninput="calculateChange()">
+                                </div>
+                                <div class="col-md-8 pt-3">
+                                  <div id="tradein-balance-info" class="small"></div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
                       <!-- Payment Method -->
                       <div class="mb-3">
                         <label class="form-label fw-semibold">Payment Method <span class="text-danger">*</span></label>
@@ -1404,9 +1481,6 @@
                           <button type="button" class="btn btn-outline-warning payment-method-btn" data-method="credit" onclick="selectPaymentMethod('credit')">
                             <i class="bi bi-clock-history"></i> Credit
                           </button>
-                          <button type="button" class="btn btn-outline-secondary payment-method-btn" data-method="trade_in" onclick="selectPaymentMethod('trade_in')">
-                            <i class="bi bi-arrow-left-right"></i> Trade-in
-                          </button>
                         </div>
                         <input type="hidden" id="payment-method" value="cash">
                         <div id="mobile-money-ref" class="d-none">
@@ -1418,38 +1492,6 @@
                         <div id="credit-note-div" class="d-none">
                           <div class="alert alert-warning mt-2 mb-0 py-2">
                             <i class="bi bi-exclamation-triangle"></i> Credit sale — customer owes the full amount.
-                          </div>
-                        </div>
-                        <div id="trade-in-div" class="d-none mt-2">
-                          <div class="card border-secondary">
-                            <div class="card-body py-2">
-                              <label class="form-label fw-semibold mb-1"><i class="bi bi-arrow-left-right"></i> Trade-in Device</label>
-                              <div class="row g-2 mb-2">
-                                <div class="col-md-6">
-                                  <input type="text" id="tradein-device-model" class="form-control form-control-sm" placeholder="Device model (e.g. iPhone 13 Pro)" autocomplete="off">
-                                </div>
-                                <div class="col-md-3">
-                                  <input type="text" id="tradein-imei-input" class="form-control form-control-sm font-monospace" placeholder="IMEI (optional)" autocomplete="off">
-                                </div>
-                                <div class="col-md-3">
-                                  <select class="form-select form-select-sm" id="tradein-condition-input">
-                                    <option value="excellent">Excellent</option>
-                                    <option value="good" selected>Good</option>
-                                    <option value="fair">Fair</option>
-                                    <option value="poor">Poor</option>
-                                  </select>
-                                </div>
-                              </div>
-                              <div class="row g-2 align-items-center">
-                                <div class="col-md-5">
-                                  <label class="form-label mb-0 small fw-semibold">Trade-in Value (GH₵)</label>
-                                  <input type="number" id="tradein-value-input" class="form-control form-control-sm" step="0.01" min="0" placeholder="0.00" oninput="calculateChange()">
-                                </div>
-                                <div class="col-md-7 pt-3">
-                                  <div id="tradein-balance-info" class="small text-muted"></div>
-                                </div>
-                              </div>
-                            </div>
                           </div>
                         </div>
                       </div>
@@ -1476,7 +1518,8 @@
                             <div class="col-6 text-end">
                               <div class="text-muted small">Subtotal: <strong id="receipt-subtotal">GH₵0.00</strong></div>
                               <div class="text-danger small">Discount: <strong id="receipt-discount-display">GH₵0.00</strong></div>
-                              <div class="text-muted small mb-1">Total Due:</div>
+                              <div class="text-warning small" id="tradein-total-line" style="display:none;">Trade-in: <strong id="receipt-tradein-display">-GH₵0.00</strong></div>
+                              <div class="text-muted small mb-1">Customer Pays:</div>
                               <div id="receipt-total" style="font-size:24px;font-weight:bold;color:#2c3e50;">GH₵0.00</div>
                             </div>
                           </div>
@@ -2179,6 +2222,12 @@
                       <option value="">All Models</option>
                     </select>
                   </div>
+                  <div class="col-md-2 d-flex gap-2 justify-content-end align-items-center">
+                    <span id="imei-selected-count" class="text-muted small d-none">0 selected</span>
+                    <button id="imei-bulk-delete-btn" class="btn btn-danger btn-sm d-none" onclick="bulkDeleteImei()">
+                      <i class="bi bi-trash"></i> Delete Selected
+                    </button>
+                  </div>
                 </div>
               </div>
               <div class="card-body p-0">
@@ -2186,6 +2235,7 @@
                   <table class="table table-hover mb-0">
                     <thead class="table-dark">
                       <tr>
+                        <th style="width:36px;"><input type="checkbox" id="imei-check-all" onchange="toggleImeiSelectAll(this.checked)" class="form-check-input"></th>
                         <th>IMEI</th>
                         <th>Model</th>
                         <th>Storage</th>
@@ -2270,6 +2320,15 @@
                       <option value="cancelled">Cancelled</option>
                     </select>
                   </div>
+                  <div class="col-md-5 d-flex gap-2 justify-content-end align-items-center">
+                    <span id="repair-selected-count" class="text-muted small d-none">0 selected</span>
+                    <button id="repair-bulk-delete-btn" class="btn btn-danger btn-sm d-none admin-only" onclick="bulkDeleteRepairs()">
+                      <i class="bi bi-trash"></i> Delete Selected
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm admin-only" onclick="toggleRepairSelectAll()" id="repair-select-all-btn" title="Select / Deselect all">
+                      <i class="bi bi-check2-square"></i> Select All
+                    </button>
+                  </div>
                 </div>
               </div>
               <div class="card-body p-0">
@@ -2277,6 +2336,7 @@
                   <table class="table table-hover mb-0">
                     <thead class="table-dark">
                       <tr>
+                        <th class="admin-only" style="width:36px;"><input type="checkbox" id="repair-check-all" onchange="toggleRepairSelectAll(this.checked)" class="form-check-input"></th>
                         <th>Job #</th>
                         <th>Customer</th>
                         <th>Device</th>
@@ -2302,12 +2362,17 @@
               <h2><i class="bi bi-arrow-left-right"></i> Trade-ins</h2>
               <div>
                 <button class="btn btn-success me-2" onclick="openNewTradeInModal()">
-                  <i class="bi bi-plus-circle"></i> New Trade-in
+                  <i class="bi bi-plus-circle"></i> Standalone Trade-in
                 </button>
                 <button class="btn btn-outline-primary" onclick="refreshWithFeedback(this, loadTradeIns)">
                   <i class="bi bi-arrow-clockwise"></i> Refresh
                 </button>
               </div>
+            </div>
+            <div class="alert alert-info py-2 mb-3">
+              <i class="bi bi-info-circle"></i>
+              <strong>Trade-in as part of a purchase?</strong> Use <a href="#" onclick="showSection('receipts');return false;"><i class="bi bi-receipt"></i> Create Receipt</a> — tick "Customer is trading in a device" right there.<br>
+              Use <strong>Standalone Trade-in</strong> only when a customer is selling/trading a phone <em>without</em> buying a new one.
             </div>
 
             <!-- Summary Cards -->
@@ -2359,6 +2424,15 @@
                       <option value="cancelled">Cancelled</option>
                     </select>
                   </div>
+                  <div class="col-md-5 d-flex gap-2 justify-content-end align-items-center">
+                    <span id="tradein-selected-count" class="text-muted small d-none">0 selected</span>
+                    <button id="tradein-bulk-delete-btn" class="btn btn-danger btn-sm d-none admin-only" onclick="bulkDeleteTradeIns()">
+                      <i class="bi bi-trash"></i> Delete Selected
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm admin-only" onclick="toggleTradeInSelectAll()" title="Select / Deselect all">
+                      <i class="bi bi-check2-square"></i> Select All
+                    </button>
+                  </div>
                 </div>
               </div>
               <div class="card-body p-0">
@@ -2366,6 +2440,7 @@
                   <table class="table table-hover mb-0">
                     <thead class="table-dark">
                       <tr>
+                        <th class="admin-only" style="width:36px;"><input type="checkbox" id="tradein-check-all" onchange="toggleTradeInSelectAll(this.checked)" class="form-check-input"></th>
                         <th>Customer</th>
                         <th>Phone</th>
                         <th>Device</th>
@@ -2390,10 +2465,17 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
               <h2><i class="bi bi-shield-check"></i> Warranties</h2>
               <div>
+                <button class="btn btn-success me-2" onclick="openAddWarrantyModal()">
+                  <i class="bi bi-plus-circle"></i> Add Warranty
+                </button>
                 <button class="btn btn-outline-primary" onclick="refreshWithFeedback(this, loadWarranties)">
                   <i class="bi bi-arrow-clockwise"></i> Refresh
                 </button>
               </div>
+            </div>
+            <div class="alert alert-info py-2 mb-3">
+              <i class="bi bi-info-circle"></i>
+              Warranties are created <strong>automatically</strong> when a receipt is saved for a phone with an IMEI. The default warranty period is set in <a href="#" onclick="showSection('settings');return false;">System Settings</a>.
             </div>
             <div class="card">
               <div class="card-header">
@@ -2408,6 +2490,15 @@
                       <option value="expired">Expired</option>
                     </select>
                   </div>
+                  <div class="col-md-5 d-flex gap-2 justify-content-end align-items-center">
+                    <span id="warranty-selected-count" class="text-muted small d-none">0 selected</span>
+                    <button id="warranty-bulk-delete-btn" class="btn btn-danger btn-sm d-none admin-only" onclick="bulkDeleteWarranties()">
+                      <i class="bi bi-trash"></i> Delete Selected
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm admin-only" onclick="toggleWarrantySelectAll()" title="Select / Deselect all">
+                      <i class="bi bi-check2-square"></i> Select All
+                    </button>
+                  </div>
                 </div>
               </div>
               <div class="card-body p-0">
@@ -2415,6 +2506,7 @@
                   <table class="table table-hover mb-0">
                     <thead class="table-dark">
                       <tr>
+                        <th class="admin-only" style="width:36px;"><input type="checkbox" id="warranty-check-all" onchange="toggleWarrantySelectAll(this.checked)" class="form-check-input"></th>
                         <th>IMEI</th>
                         <th>Product</th>
                         <th>Customer</th>
@@ -2423,6 +2515,7 @@
                         <th>End Date</th>
                         <th>Days Left</th>
                         <th>Status</th>
+                        <th>Actions</th>
                       </tr>
                     </thead>
                     <tbody id="tbl-warranties"></tbody>
@@ -3136,9 +3229,9 @@
         <div class="row align-items-center">
           <div class="col-md-6">
             <div class="d-flex align-items-center gap-2">
-              <img src="assets/logo.png" alt="ShelfSense POS" style="height: 40px; width: auto; background: white; padding: 3px; border-radius: 6px;" onerror="this.style.display='none'">
+              <img src="assets/logo.png" alt="Apple City POS" style="height: 40px; width: auto; background: white; padding: 3px; border-radius: 6px;" onerror="this.style.display='none'">
               <div>
-                <div style="font-size: 13px; font-weight: 700; color: #fff;">ShelfSense POS</div>
+                <div style="font-size: 13px; font-weight: 700; color: #fff;">Apple City POS</div>
                 <div style="font-size: 11px; color: #adb5bd;">Track Stock. Prevent Loss. Grow Profit.</div>
               </div>
             </div>
@@ -4846,6 +4939,194 @@
     }
 
 
+    // ── Variant picker state ──────────────────────────────────────────
+    let _variantPickerUnits = []; // all in_stock IMEI units for current product
+
+    async function loadVariantPicker(productId) {
+      const pickerRow = document.getElementById('variant-picker-row');
+      const storageSelect = document.getElementById('receipt-storage-select');
+      const colorSelect = document.getElementById('receipt-color-select');
+      const imeiSelect = document.getElementById('receipt-imei-select');
+      const priceInput = document.getElementById('input-unit-price');
+      const selectedProductId = document.getElementById('selected-receipt-product-id');
+
+      // Reset
+      storageSelect.innerHTML = '<option value="">— Select Storage —</option>';
+      colorSelect.innerHTML = '<option value="">— Select Color —</option>';
+      imeiSelect.innerHTML = '<option value="">— Select IMEI —</option>';
+      selectedProductId.dataset.imei = '';
+      selectedProductId.dataset.imeiUnitId = '';
+      selectedProductId.dataset.variantLabel = '';
+      document.getElementById('selected-imei-info').classList.add('d-none');
+
+      try {
+        const data = await apiCall(`api/imei.php?product_id=${productId}&status=in_stock`);
+        _variantPickerUnits = data.items || [];
+      } catch(e) {
+        _variantPickerUnits = [];
+      }
+
+      if (_variantPickerUnits.length === 0) {
+        // No IMEI units — hide picker, let staff enter price manually
+        pickerRow.classList.add('d-none');
+        return;
+      }
+
+      // Populate unique storage options
+      const storages = [...new Set(_variantPickerUnits.map(u => u.storage || '').filter(Boolean))].sort();
+      if (storages.length > 0) {
+        storages.forEach(s => {
+          const opt = document.createElement('option');
+          opt.value = s; opt.textContent = s;
+          storageSelect.appendChild(opt);
+        });
+        // Auto-select if only one
+        if (storages.length === 1) {
+          storageSelect.value = storages[0];
+          onStorageChange();
+        }
+      } else {
+        // No storage variants — skip straight to IMEI
+        storageSelect.closest('.col-md-4').classList.add('d-none');
+        colorSelect.closest('.col-md-4').classList.add('d-none');
+        populateImeiSelect(_variantPickerUnits, priceInput);
+      }
+
+      pickerRow.classList.remove('d-none');
+    }
+
+    function onStorageChange() {
+      const storage = document.getElementById('receipt-storage-select').value;
+      const colorSelect = document.getElementById('receipt-color-select');
+      const imeiSelect = document.getElementById('receipt-imei-select');
+      const priceInput = document.getElementById('input-unit-price');
+      const selectedProductId = document.getElementById('selected-receipt-product-id');
+
+      colorSelect.innerHTML = '<option value="">— Select Color —</option>';
+      imeiSelect.innerHTML = '<option value="">— Select IMEI —</option>';
+      selectedProductId.dataset.imei = '';
+      selectedProductId.dataset.imeiUnitId = '';
+      selectedProductId.dataset.variantLabel = '';
+      document.getElementById('selected-imei-info').classList.add('d-none');
+
+      if (!storage) return;
+
+      const filtered = _variantPickerUnits.filter(u => (u.storage || '') === storage);
+      const colors = [...new Set(filtered.map(u => u.color || '').filter(Boolean))].sort();
+
+      if (colors.length > 0) {
+        colors.forEach(c => {
+          const opt = document.createElement('option');
+          opt.value = c; opt.textContent = c;
+          colorSelect.appendChild(opt);
+        });
+        if (colors.length === 1) {
+          colorSelect.value = colors[0];
+          onColorChange();
+        }
+      } else {
+        // No color variants for this storage — go straight to IMEI
+        populateImeiSelect(filtered, priceInput);
+      }
+    }
+
+    function onColorChange() {
+      const storage = document.getElementById('receipt-storage-select').value;
+      const color = document.getElementById('receipt-color-select').value;
+      const priceInput = document.getElementById('input-unit-price');
+      const selectedProductId = document.getElementById('selected-receipt-product-id');
+
+      document.getElementById('receipt-imei-select').innerHTML = '<option value="">— Select IMEI —</option>';
+      selectedProductId.dataset.imei = '';
+      selectedProductId.dataset.imeiUnitId = '';
+      selectedProductId.dataset.variantLabel = '';
+      document.getElementById('selected-imei-info').classList.add('d-none');
+
+      if (!color) return;
+
+      const filtered = _variantPickerUnits.filter(u =>
+        (u.storage || '') === storage && (u.color || '') === color
+      );
+      populateImeiSelect(filtered, priceInput);
+    }
+
+    function populateImeiSelect(units, priceInput) {
+      const imeiSelect = document.getElementById('receipt-imei-select');
+      imeiSelect.innerHTML = '<option value="">— Select IMEI —</option>';
+      units.forEach(u => {
+        const opt = document.createElement('option');
+        opt.value = u.id;
+        opt.dataset.imei = u.imei;
+        opt.dataset.price = u.selling_price || 0;
+        opt.dataset.storage = u.storage || '';
+        opt.dataset.color = u.color || '';
+        opt.textContent = u.imei + (u.selling_price ? ` — GH₵${parseFloat(u.selling_price).toFixed(2)}` : '');
+        imeiSelect.appendChild(opt);
+      });
+      // Auto-select if only one unit
+      if (units.length === 1) {
+        imeiSelect.value = units[0].id;
+        onImeiUnitChange();
+      }
+    }
+
+    function onImeiUnitChange() {
+      const imeiSelect = document.getElementById('receipt-imei-select');
+      const selectedProductId = document.getElementById('selected-receipt-product-id');
+      const priceInput = document.getElementById('input-unit-price');
+      const priceDisplay = document.getElementById('price-display');
+      const opt = imeiSelect.options[imeiSelect.selectedIndex];
+
+      if (!imeiSelect.value) {
+        selectedProductId.dataset.imei = '';
+        selectedProductId.dataset.imeiUnitId = '';
+        selectedProductId.dataset.variantLabel = '';
+        priceInput.value = '';
+        if (priceDisplay) priceDisplay.textContent = '—';
+        document.getElementById('selected-imei-info').classList.add('d-none');
+        return;
+      }
+
+      const imei = opt.dataset.imei || '';
+      const storage = opt.dataset.storage || '';
+      const color = opt.dataset.color || '';
+      const price = parseFloat(opt.dataset.price) || 0;
+      const variantLabel = [storage, color].filter(Boolean).join(' / ');
+
+      selectedProductId.dataset.imei = imei;
+      selectedProductId.dataset.imeiUnitId = imeiSelect.value;
+      selectedProductId.dataset.variantLabel = variantLabel;
+
+      priceInput.value = price > 0 ? price.toFixed(2) : '';
+      if (priceDisplay) priceDisplay.textContent = price > 0 ? `GH₵${price.toFixed(2)}` : '—';
+
+      // Show badge
+      const imeiInfo = document.getElementById('selected-imei-info');
+      document.getElementById('selected-imei-display').textContent = imei;
+      document.getElementById('selected-variant-display').textContent = variantLabel || 'No variant';
+      imeiInfo.classList.remove('d-none');
+    }
+
+    function resetVariantPicker() {
+      _variantPickerUnits = [];
+      const pickerRow = document.getElementById('variant-picker-row');
+      if (pickerRow) {
+        pickerRow.classList.add('d-none');
+        // Restore hidden cols in case they were hidden
+        pickerRow.querySelectorAll('.col-md-4').forEach(c => c.classList.remove('d-none'));
+      }
+      const storageSelect = document.getElementById('receipt-storage-select');
+      const colorSelect = document.getElementById('receipt-color-select');
+      const imeiSelect = document.getElementById('receipt-imei-select');
+      if (storageSelect) storageSelect.innerHTML = '<option value="">— Select Storage —</option>';
+      if (colorSelect) colorSelect.innerHTML = '<option value="">— Select Color —</option>';
+      if (imeiSelect) imeiSelect.innerHTML = '<option value="">— Select IMEI —</option>';
+      const priceDisplay = document.getElementById('price-display');
+      if (priceDisplay) priceDisplay.textContent = '—';
+      const priceInput = document.getElementById('input-unit-price');
+      if (priceInput) priceInput.value = '';
+    }
+
     function addReceiptItem() {
       const productSearchInput = document.getElementById('receipt-product-search');
       const selectedProductId  = document.getElementById('selected-receipt-product-id');
@@ -4856,7 +5137,7 @@
       const productName = productSearchInput.value.trim();
 
       if (!productId || !productName) { alert('Please search and select an iPhone model first.'); productSearchInput.focus(); return; }
-      if (unitPrice <= 0) { alert('Please enter a selling price.'); priceInput.focus(); return; }
+      if (unitPrice <= 0) { alert('Please select an IMEI unit — the price will be filled automatically.'); return; }
 
       const imei         = selectedProductId.dataset.imei || '';
       const imeiUnitId   = parseInt(selectedProductId.dataset.imeiUnitId) || null;
@@ -4868,6 +5149,7 @@
 
       updateReceiptDisplay();
 
+      // Clear the picker
       productSearchInput.value = '';
       selectedProductId.value = '';
       selectedProductId.dataset.imei = '';
@@ -4877,6 +5159,7 @@
       document.getElementById('receipt-product-suggestions').style.display = 'none';
       const imeiInfo = document.getElementById('selected-imei-info');
       if (imeiInfo) imeiInfo.classList.add('d-none');
+      resetVariantPicker();
     }
 
     function removeReceiptItem(index) {
@@ -4888,7 +5171,10 @@
       const tbody = document.getElementById('receipt-items');
       tbody.innerHTML = receiptItems.map((item, index) => `
         <tr>
-          <td><strong>${item.product_name}</strong></td>
+          <td>
+            <strong>${item.product_name}</strong>
+            ${item.variant_label ? `<br><small class="text-primary">${item.variant_label}</small>` : ''}
+          </td>
           <td>${item.imei ? `<code class="small">${item.imei}</code>` : '<span class="text-muted">—</span>'}</td>
           <td><small class="text-muted">${item.variant_label || '—'}</small></td>
           <td>${formatCurrency(item.unit_price)}</td>
@@ -4945,22 +5231,38 @@
       `;
     }
 
+    function toggleTradeInPanel() {
+      const toggle = document.getElementById('tradein-toggle');
+      const panel  = document.getElementById('trade-in-div');
+      if (toggle.checked) {
+        panel.classList.remove('d-none');
+        document.getElementById('tradein-value-input')?.focus();
+      } else {
+        panel.classList.add('d-none');
+        // Clear trade-in fields and recalculate
+        const tiVal = document.getElementById('tradein-value-input');
+        if (tiVal) tiVal.value = '';
+        const balInfo = document.getElementById('tradein-balance-info');
+        if (balInfo) balInfo.innerHTML = '';
+        calculateChange();
+      }
+    }
+
     function selectPaymentMethod(method) {
       document.getElementById('payment-method').value = method;
       document.querySelectorAll('.payment-method-btn').forEach(btn => {
         btn.classList.remove('active','btn-success','btn-primary','btn-info','btn-warning','btn-secondary');
         const m = btn.dataset.method;
-        btn.classList.add('btn-outline-' + (m==='cash'?'success':m==='mobile_money'?'primary':m==='card'?'info':m==='trade_in'?'secondary':'warning'));
+        btn.classList.add('btn-outline-' + (m==='cash'?'success':m==='mobile_money'?'primary':m==='card'?'info':'warning'));
       });
       const activeBtn = document.querySelector(`.payment-method-btn[data-method="${method}"]`);
       if (activeBtn) {
-        activeBtn.classList.remove('btn-outline-success','btn-outline-primary','btn-outline-info','btn-outline-warning','btn-outline-secondary');
-        activeBtn.classList.add('active','btn-'+(method==='cash'?'success':method==='mobile_money'?'primary':method==='card'?'info':method==='trade_in'?'secondary':'warning'));
+        activeBtn.classList.remove('btn-outline-success','btn-outline-primary','btn-outline-info','btn-outline-warning');
+        activeBtn.classList.add('active','btn-'+(method==='cash'?'success':method==='mobile_money'?'primary':method==='card'?'info':'warning'));
       }
       document.getElementById('mobile-money-ref').classList.toggle('d-none', method!=='mobile_money');
       document.getElementById('card-ref').classList.toggle('d-none', method!=='card');
       document.getElementById('credit-note-div').classList.toggle('d-none', method!=='credit');
-      document.getElementById('trade-in-div').classList.toggle('d-none', method!=='trade_in');
       const cashSection = document.getElementById('cash-received-section');
       const changeLabel = document.getElementById('change-label');
       if (method==='credit') {
@@ -4971,10 +5273,6 @@
         cashSection.classList.add('d-none');
         if (changeLabel) changeLabel.textContent='Amount Paid:';
         document.getElementById('cash-received').value='0';
-      } else if (method==='trade_in') {
-        cashSection.classList.remove('d-none');
-        if (changeLabel) changeLabel.textContent='Balance to Pay (Cash):';
-        document.getElementById('cash-received').value='';
       } else {
         cashSection.classList.remove('d-none');
         if (changeLabel) changeLabel.textContent='Change to Give:';
@@ -4991,8 +5289,8 @@
     }
 
     function getTradeInValue() {
-      const method = document.getElementById('payment-method')?.value || 'cash';
-      if (method !== 'trade_in') return 0;
+      const toggle = document.getElementById('tradein-toggle');
+      if (!toggle || !toggle.checked) return 0;
       return parseFloat(document.getElementById('tradein-value-input')?.value) || 0;
     }
 
@@ -5011,23 +5309,43 @@
       if (discountEl) discountEl.textContent = discount>0 ? `-${formatCurrency(discount)}` : formatCurrency(0);
       document.getElementById('receipt-total').textContent = formatCurrency(total);
 
-      // Update trade-in balance info
+      // Show/hide trade-in line in totals
+      const tradeInLine = document.getElementById('tradein-total-line');
+      const tradeInDisplay = document.getElementById('receipt-tradein-display');
+      if (tradeInLine && tradeInDisplay) {
+        if (tradeIn > 0) {
+          tradeInLine.style.display = '';
+          tradeInDisplay.textContent = `-${formatCurrency(tradeIn)}`;
+        } else {
+          tradeInLine.style.display = 'none';
+        }
+      }
+
+      // Trade-in balance info inside the panel
       const balanceInfo = document.getElementById('tradein-balance-info');
-      if (balanceInfo && paymentMethod === 'trade_in' && tradeIn > 0) {
-        const remaining = Math.max(0, subtotal - discount - tradeIn);
-        balanceInfo.innerHTML = remaining > 0
-          ? `<span class="text-warning fw-semibold">Customer still pays: <strong>${formatCurrency(remaining)}</strong></span>`
-          : `<span class="text-success fw-semibold">✅ Trade-in covers full amount!</span>`;
+      if (balanceInfo) {
+        const toggle = document.getElementById('tradein-toggle');
+        if (toggle && toggle.checked && tradeIn > 0) {
+          const remaining = Math.max(0, subtotal - discount - tradeIn);
+          if (remaining <= 0) {
+            balanceInfo.innerHTML = `<span class="text-success fw-semibold"><i class="bi bi-check-circle"></i> Trade-in covers the full amount — no cash needed!</span>`;
+          } else {
+            balanceInfo.innerHTML = `<span class="text-warning fw-semibold"><i class="bi bi-arrow-right"></i> Customer still pays: <strong class="fs-6">${formatCurrency(remaining)}</strong></span>`;
+          }
+        } else {
+          balanceInfo.innerHTML = '';
+        }
       }
 
       const changeEl = document.getElementById('receipt-change');
-      if (paymentMethod==='credit') { changeEl.textContent=formatCurrency(total); changeEl.style.color='#dc3545'; }
-      else if (paymentMethod==='mobile_money'||paymentMethod==='card') { changeEl.textContent=formatCurrency(total); changeEl.style.color='#0d6efd'; }
-      else if (paymentMethod==='trade_in') {
-        changeEl.textContent = cashReceived > 0 ? formatCurrency(Math.max(0, change)) : formatCurrency(total);
-        changeEl.style.color = cashReceived >= total && cashReceived > 0 ? '#28a745' : '#fd7e14';
+      if (paymentMethod==='credit') {
+        changeEl.textContent=formatCurrency(total); changeEl.style.color='#dc3545';
+      } else if (paymentMethod==='mobile_money'||paymentMethod==='card') {
+        changeEl.textContent=formatCurrency(total); changeEl.style.color='#0d6efd';
+      } else {
+        changeEl.textContent=formatCurrency(Math.max(0,change));
+        changeEl.style.color=cashReceived>=total&&cashReceived>0?'#28a745':cashReceived>0?'#dc3545':'#6c757d';
       }
-      else { changeEl.textContent=formatCurrency(Math.max(0,change)); changeEl.style.color=cashReceived>=total&&cashReceived>0?'#28a745':cashReceived>0?'#dc3545':'#6c757d'; }
 
       updateReceiptPreview();
     }
@@ -5038,6 +5356,10 @@
       document.getElementById('cash-received').value='';
       document.getElementById('discount-value').value='';
       document.getElementById('discount-type').value='fixed';
+      // Reset trade-in toggle and fields
+      const tiToggle = document.getElementById('tradein-toggle');
+      if (tiToggle) tiToggle.checked = false;
+      document.getElementById('trade-in-div')?.classList.add('d-none');
       const tiDevice = document.getElementById('tradein-device-model');
       const tiImei = document.getElementById('tradein-imei-input');
       const tiVal = document.getElementById('tradein-value-input');
@@ -5051,6 +5373,12 @@
       selectPaymentMethod('cash');
       updateReceiptDisplay();
       document.getElementById('receipt-preview').innerHTML='<p class="text-muted text-center small">Add items to see preview</p>';
+      // Reset variant picker
+      resetVariantPicker();
+      const selPid = document.getElementById('selected-receipt-product-id');
+      if (selPid) { selPid.value=''; selPid.dataset.imei=''; selPid.dataset.imeiUnitId=''; selPid.dataset.variantLabel=''; }
+      const imeiInfo = document.getElementById('selected-imei-info');
+      if (imeiInfo) imeiInfo.classList.add('d-none');
     }
 
     // Handle Enter key in confirmation input and ensure input is focusable
@@ -5225,7 +5553,80 @@
         // Debounce search - wait 300ms after user stops typing
         searchTimeout = setTimeout(async () => {
           try {
-            // Server-side search
+            // If search term is numeric (likely an IMEI), search IMEI units directly
+            const isImeiSearch = /^\d{6,}$/.test(searchTerm);
+
+            if (isImeiSearch) {
+              const imeiData = await apiCall(`api/imei.php?q=${encodeURIComponent(searchTerm)}&status=in_stock`);
+              const imeiUnits = (imeiData.items || []).filter(u => u.status === 'in_stock');
+
+              if (imeiUnits.length > 0) {
+                suggestionsDiv.innerHTML = imeiUnits.map(u => {
+                  const variantLabel = [u.storage, u.color].filter(Boolean).join(' / ');
+                  return `<div class="suggestion-item suggestion-imei p-2 border-bottom" style="cursor:pointer;"
+                        data-id="${u.product_id}"
+                        data-name="${u.product_name}"
+                        data-price="${u.selling_price || 0}"
+                        data-imei="${u.imei}"
+                        data-imei-unit-id="${u.id}"
+                        data-variant-label="${variantLabel}"
+                        data-has-expiry="0">
+                    <span class="badge bg-info me-1"><i class="bi bi-upc-scan"></i> IMEI</span>
+                    <strong>${u.product_name}</strong><br>
+                    <small class="text-muted font-monospace">${u.imei}</small>
+                    ${variantLabel ? `<span class="badge bg-secondary ms-1">${variantLabel}</span>` : ''}
+                    ${u.selling_price ? `<span class="ms-1 text-success fw-semibold">GH₵${parseFloat(u.selling_price).toFixed(2)}</span>` : ''}
+                  </div>`;
+                }).join('');
+                suggestionsDiv.style.display = 'block';
+
+                // Click handler for IMEI results — pre-fills everything directly
+                suggestionsDiv.querySelectorAll('.suggestion-imei').forEach(item => {
+                  item.addEventListener('mouseenter', function() {
+                    suggestionsDiv.querySelectorAll('.suggestion-item').forEach(el => { el.style.backgroundColor = 'white'; el.style.color = 'black'; });
+                    this.style.backgroundColor = '#0d6efd'; this.style.color = 'white';
+                  });
+                  item.addEventListener('click', function() {
+                    const searchInput = document.getElementById('receipt-product-search');
+                    const selPid = document.getElementById('selected-receipt-product-id');
+                    const priceInput = document.getElementById('input-unit-price');
+                    const priceDisplay = document.getElementById('price-display');
+
+                    const imei = this.dataset.imei;
+                    const imeiUnitId = this.dataset.imeiUnitId;
+                    const variantLabel = this.dataset.variantLabel;
+                    const price = parseFloat(this.dataset.price) || 0;
+
+                    searchInput.value = this.dataset.name;
+                    selPid.value = this.dataset.id;
+                    selPid.dataset.imei = imei;
+                    selPid.dataset.imeiUnitId = imeiUnitId;
+                    selPid.dataset.variantLabel = variantLabel;
+                    if (price > 0) {
+                      priceInput.value = price.toFixed(2);
+                      if (priceDisplay) priceDisplay.textContent = `GH₵${price.toFixed(2)}`;
+                    } else {
+                      priceInput.value = '';
+                      if (priceDisplay) priceDisplay.textContent = '—';
+                    }
+
+                    // Show badge
+                    document.getElementById('selected-imei-display').textContent = imei;
+                    document.getElementById('selected-variant-display').textContent = variantLabel || 'No variant';
+                    document.getElementById('selected-imei-info').classList.remove('d-none');
+
+                    // Hide variant picker — IMEI already fully resolved
+                    document.getElementById('variant-picker-row').classList.add('d-none');
+
+                    suggestionsDiv.style.display = 'none';
+                    selectedIndex = -1;
+                  });
+                });
+                return; // Don't fall through to product search
+              }
+            }
+
+            // Server-side product search
             const data = await apiCall(`api/products.php?q=${encodeURIComponent(searchTerm)}&pageSize=50`);
             currentFilteredProducts = data.items || [];
             
@@ -5342,9 +5743,11 @@
                     } catch(e) { /* silent */ }
                   }
 
-                  // Update price and load units
-                  document.getElementById('input-unit-price').value = productPrice;
-                  loadReceiptProductUnits(productId);
+                  // Clear price display until IMEI is selected, then load variant picker
+                  document.getElementById('input-unit-price').value = '';
+                  const pd = document.getElementById('price-display');
+                  if (pd) pd.textContent = '— select IMEI —';
+                  loadVariantPicker(productId);
                 });
               });
             } else {
@@ -5544,11 +5947,13 @@
           <!-- Items List -->
           <div style="font-size: 8px; margin: 3px 0;">
             ${receipt.items ? receipt.items.map(item => `
-              <div style="margin-bottom: 3px;">
-                <div style="word-wrap: break-word;">${item.product_name || 'Product'}</div>
+              <div style="margin-bottom: 4px;">
+                <div style="font-weight: bold; word-wrap: break-word;">${item.product_name || 'Product'}</div>
+                ${item.variant_label ? `<div style="color: #555; font-size: 7.5px;">${item.variant_label}</div>` : ''}
+                ${item.imei ? `<div style="color: #555; font-size: 7.5px; font-family: 'Courier New', monospace;">IMEI: ${item.imei}</div>` : ''}
                 <div style="display: flex; justify-content: space-between; margin-top: 1px;">
-                  <span>${item.quantity} ${item.unit_abbreviation || item.unit_name || 'unit'}${item.quantity > 1 ? 's' : ''} x GH₵${item.unit_price.toFixed(2)}</span>
-                  <span>GH₵${item.total_price.toFixed(2)}</span>
+                  <span>${item.quantity} unit${item.quantity > 1 ? 's' : ''} x GH₵${parseFloat(item.unit_price).toFixed(2)}</span>
+                  <span>GH₵${parseFloat(item.total_price).toFixed(2)}</span>
                 </div>
               </div>
             `).join('') : ''}
@@ -7054,7 +7459,10 @@
           }
         }
 
-        if (paymentMethod === 'trade_in') {
+        // Trade-in validation (toggle-based, independent of payment method)
+        const tradeInToggle = document.getElementById('tradein-toggle');
+        const hasTradeIn = tradeInToggle && tradeInToggle.checked;
+        if (hasTradeIn) {
           const tradeInDevice = document.getElementById('tradein-device-model')?.value.trim();
           if (!tradeInDevice) {
             alert('Please enter the trade-in device model.');
@@ -7066,16 +7474,7 @@
             document.getElementById('tradein-value-input').focus();
             return;
           }
-          // If there's a remaining balance, cash received is required
-          if (total > 0 && (!cashReceived || cashReceived < total)) {
-            if (!cashReceived || cashReceived <= 0) {
-              alert(`Trade-in value: GH₵${tradeInValue.toFixed(2)}\nRemaining balance: GH₵${total.toFixed(2)}\n\nPlease enter the cash amount for the remaining balance.`);
-              document.getElementById('cash-received').focus();
-              return;
-            }
-          }
         }
-        
         const formData = new FormData(this);
         const receiptData = Object.fromEntries(formData);
         
@@ -7119,24 +7518,26 @@
           : paymentMethod === 'card'
           ? (document.getElementById('card-reference').value || '')
           : '';
-        receiptData.cash_received = paymentMethod === 'trade_in' ? (cashReceived || 0) : cashReceived;
+        receiptData.cash_received = cashReceived;
         receiptData.change_given = paymentMethod === 'credit' ? 0 : Math.max(0, (cashReceived || 0) - total);
 
-        // Trade-in data
-        if (paymentMethod === 'trade_in') {
-          receiptData.trade_in_value = tradeInValue;
-          receiptData.trade_in_device = document.getElementById('tradein-device-model')?.value.trim() || '';
-          // Create the trade-in record first, then link it
+        // Trade-in data — create record and link to receipt
+        if (hasTradeIn && tradeInValue > 0) {
+          const tradeInDevice = document.getElementById('tradein-device-model')?.value.trim() || '';
+          const tradeInImei   = document.getElementById('tradein-imei-input')?.value.trim() || '';
+          const tradeInCond   = document.getElementById('tradein-condition-input')?.value || 'good';
+          receiptData.trade_in_value  = tradeInValue;
+          receiptData.trade_in_device = tradeInDevice;
           try {
             const tiRes = await apiCall('api/trade-ins.php', {
               method: 'POST',
               body: JSON.stringify({
-                customer_name: receiptData.customer_name,
+                customer_name:  receiptData.customer_name,
                 customer_phone: receiptData.customer_phone,
-                device_model: receiptData.trade_in_device,
-                imei: document.getElementById('tradein-imei-input')?.value.trim() || '',
-                condition: document.getElementById('tradein-condition-input')?.value || 'good',
-                agreed_value: tradeInValue,
+                device_model:   tradeInDevice,
+                imei:           tradeInImei,
+                condition:      tradeInCond,
+                agreed_value:   tradeInValue,
                 notes: `Trade-in for receipt ${receiptData.invoice_number}`
               })
             });
@@ -7156,18 +7557,15 @@
             body: JSON.stringify(receiptData)
           });
           
-          // Show success message with options
-          const printNow = confirm('Receipt created successfully!\n\nWould you like to view and print it now?');
           AppLogger.action('RECEIPT', `Receipt created: #${result.invoice_number || result.id} | Total: ${receiptData.items?.length || 0} items | Amount: GH₵${receiptData.items?.reduce((s,i) => s + i.total_price, 0).toFixed(2) || '0.00'} | Customer: ${receiptData.customer_name}`);
 
-          // Auto-create/find customer for every receipt (builds customer database for loyalty)
+          // Auto-create/find customer
           if (customerName) {
             try {
               const customersData = await apiCall('api/customers.php');
               let customer = (customersData.items || []).find(c =>
                 (customerPhone && c.phone === customerPhone) || c.name.toLowerCase() === customerName.toLowerCase()
               );
-
               if (!customer) {
                 const newCust = await apiCall('api/customers.php', {
                   method: 'POST',
@@ -7175,8 +7573,6 @@
                 });
                 customer = { id: newCust.id };
               }
-
-              // If credit sale, also record the debt
               if (paymentMethod === 'credit') {
                 await apiCall('api/customers.php?action=credit_sale', {
                   method: 'PUT',
@@ -7193,10 +7589,33 @@
               console.error('Failed to auto-record customer/credit:', creditErr);
             }
           }
-          
-          if (printNow && result.id) {
-            // View and print the newly created receipt
-            viewAndPrintReceipt(result.id);
+
+          // Auto-register warranties for any items that have an IMEI
+          const itemsWithImei = receiptItems.filter(i => i.imei);
+          if (itemsWithImei.length > 0) {
+            registerWarrantiesForReceipt(result.id, itemsWithImei, customerName, customerPhone);
+          }
+
+          // If trade-in was done, offer to add the traded phone to inventory
+          if (hasTradeIn && receiptData.trade_in_id) {
+            const addToStock = confirm(
+              `Receipt created!\n\n` +
+              `Trade-in: ${receiptData.trade_in_device} (GH₵${tradeInValue.toFixed(2)})\n\n` +
+              `Would you like to add the traded-in phone to your inventory now?`
+            );
+            if (addToStock) {
+              await addTradeInToInventory(
+                receiptData.trade_in_id,
+                receiptData.trade_in_device,
+                document.getElementById('tradein-imei-input')?.value.trim() || '',
+                document.getElementById('tradein-condition-input')?.value || 'good'
+              );
+            }
+            const printNow = confirm('Would you like to view and print the receipt?');
+            if (printNow && result.id) viewAndPrintReceipt(result.id);
+          } else {
+            const printNow = confirm('Receipt created successfully!\n\nWould you like to view and print it now?');
+            if (printNow && result.id) viewAndPrintReceipt(result.id);
           }
           
           clearReceipt();
@@ -7787,21 +8206,18 @@
     }
 
     async function quickAddProduct(productId, productName, unitPrice) {
-      // Set product in search field and trigger unit load
+      // Set product in search field and load variant picker
       const searchInput = document.getElementById('receipt-product-search');
       const selectedProductId = document.getElementById('selected-receipt-product-id');
       searchInput.value = productName;
       selectedProductId.value = productId;
-      document.getElementById('input-unit-price').value = unitPrice;
+      document.getElementById('input-unit-price').value = '';
+      const pd = document.getElementById('price-display');
+      if (pd) pd.textContent = '— select IMEI —';
       document.getElementById('receipt-product-suggestions').style.display = 'none';
-      await loadReceiptProductUnits(productId);
-      // Focus quantity for immediate entry
-      setTimeout(() => {
-        const qty = document.getElementById('input-quantity');
-        qty.value = 1;
-        qty.focus();
-        qty.select();
-      }, 150);
+      await loadVariantPicker(productId);
+      // Scroll to the variant picker
+      document.getElementById('variant-picker-row')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
     // Global keyboard shortcuts for receipt section
@@ -8257,34 +8673,84 @@
     }
     function fmtDateShort(d){ return d ? new Date(d).toLocaleDateString('en-GH',{day:'2-digit',month:'short',year:'numeric'}) : '—'; }
 
+    // Render issue_description as a bullet list (stored as newline-separated)
+    function formatIssueList(text, compact = false) {
+      if (!text) return '—';
+      const issues = text.split('\n').map(s => s.trim()).filter(Boolean);
+      if (issues.length === 0) return '—';
+      if (compact) {
+        // For table cells — show as comma-separated badges
+        return issues.map(i => `<span class="badge bg-danger bg-opacity-75 me-1 mb-1" style="font-size:10px;font-weight:500;">${i}</span>`).join('');
+      }
+      // For detail view — full bullet list
+      return `<ul class="mb-0 ps-3">${issues.map(i => `<li>${i}</li>`).join('')}</ul>`;
+    }
+
     // ============================================================
     // DASHBOARD - Active Repairs widget
     // ============================================================
     async function loadActiveRepairsDashboard() {
       try {
-        const [rcv, inp, rdy] = await Promise.all([
-          apiCall('api/repairs.php?status=received').catch(()=>({items:[]})),
-          apiCall('api/repairs.php?status=in_repair').catch(()=>({items:[]})),
-          apiCall('api/repairs.php?status=ready').catch(()=>({items:[]}))
-        ]);
-        const active   = (rcv.items||[]).length + (inp.items||[]).length;
-        const rdyCount = (rdy.items||[]).length;
+        // Single call — get all non-collected, non-cancelled jobs
+        const data = await apiCall('api/repairs.php').catch(()=>({items:[]}));
+        const all = (data.items||[]).filter(r => !['collected','cancelled'].includes(r.status));
+
+        const active   = all.filter(r => r.status !== 'ready').length;
+        const rdyCount = all.filter(r => r.status === 'ready').length;
+
         const elA = document.getElementById('active-repairs');
         const elR = document.getElementById('ready-repairs');
         if (elA) elA.textContent = active;
         if (elR) elR.textContent = rdyCount;
+
         const badge = document.getElementById('repairs-badge');
-        if (badge) { badge.textContent = active + rdyCount; badge.style.display = (active+rdyCount)>0?'inline':'none'; }
+        if (badge) {
+          badge.textContent = active + rdyCount;
+          badge.style.display = (active + rdyCount) > 0 ? 'inline' : 'none';
+        }
+
         const list = document.getElementById('active-repairs-list');
         if (!list) return;
-        const all = [...(rcv.items||[]),...(inp.items||[]),...(rdy.items||[])].slice(0,5);
-        list.innerHTML = all.length === 0
-          ? '<p class="text-muted small mb-0">No active repairs</p>'
-          : all.map(r=>`<div class="d-flex justify-content-between align-items-center border-bottom py-2">
-              <div><strong>${r.job_number}</strong> — ${r.customer_name}<br>
-              <small class="text-muted">${r.device_model}${r.imei?' · '+r.imei:''}</small></div>
-              <span class="badge bg-${repairStatusColor(r.status)}">${r.status.replace(/_/g,' ')}</span>
-            </div>`).join('');
+
+        if (all.length === 0) {
+          list.innerHTML = '<p class="text-muted small mb-0 text-center py-2">No active repairs</p>';
+          return;
+        }
+
+        // Sort: ready first, then by received date (oldest first = waiting longest)
+        all.sort((a, b) => {
+          if (a.status === 'ready' && b.status !== 'ready') return -1;
+          if (b.status === 'ready' && a.status !== 'ready') return 1;
+          return new Date(a.created_at) - new Date(b.created_at);
+        });
+
+        list.innerHTML = all.slice(0, 8).map(r => {
+          const daysWaiting = Math.floor((Date.now() - new Date(r.created_at)) / 86400000);
+          const waitBadge = daysWaiting >= 7
+            ? `<span class="badge bg-danger ms-1">${daysWaiting}d</span>`
+            : daysWaiting >= 3
+              ? `<span class="badge bg-warning text-dark ms-1">${daysWaiting}d</span>`
+              : `<span class="badge bg-light text-muted ms-1">${daysWaiting}d</span>`;
+          return `
+            <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+              <div style="min-width:0;">
+                <div class="d-flex align-items-center gap-1 flex-wrap">
+                  <strong>${r.job_number}</strong>
+                  <span class="badge bg-${repairStatusColor(r.status)}">${r.status.replace(/_/g,' ')}</span>
+                  ${waitBadge}
+                </div>
+                <div class="text-muted small text-truncate">${r.customer_name} · ${r.device_model}</div>
+                ${r.total_charge > 0 ? `<div class="small text-success fw-semibold">${formatCurrency(r.total_charge)}</div>` : ''}
+              </div>
+              <button class="btn btn-sm btn-outline-primary ms-2 flex-shrink-0" onclick="showSection('repairs')" title="Go to Repairs">
+                <i class="bi bi-arrow-right"></i>
+              </button>
+            </div>`;
+        }).join('');
+
+        if (all.length > 8) {
+          list.innerHTML += `<div class="text-center mt-2"><a href="#" onclick="showSection('repairs');return false;" class="small text-muted">+${all.length - 8} more jobs</a></div>`;
+        }
       } catch(e){ console.error('loadActiveRepairsDashboard',e); }
     }
 
@@ -8310,6 +8776,7 @@
           return;
         }
         tbody.innerHTML = items.map(u=>`<tr>
+          <td><input type="checkbox" class="form-check-input imei-row-check" value="${u.id}" onchange="updateImeiSelection()" ${u.status==='sold'?'disabled title="Sold units cannot be deleted"':''}></td>
           <td><code>${u.imei}</code></td>
           <td>${u.product_name}</td>
           <td>${u.storage||'—'}</td>
@@ -8319,7 +8786,9 @@
           <td>${u.supplier_name||'—'}</td>
           <td><span class="badge bg-${u.status==='in_stock'?'success':'secondary'}">${u.status==='in_stock'?'In Stock':'Sold'}</span></td>
           <td>
-            ${u.status==='in_stock'?`<button class="btn btn-sm btn-outline-danger" onclick="deleteImeiUnit(${u.id},'${u.imei}')"><i class="bi bi-trash"></i></button>`:''}
+            ${u.status==='in_stock'
+              ? `<button class="btn btn-sm btn-outline-danger" onclick="deleteImeiUnit(${u.id},'${u.imei}')"><i class="bi bi-trash"></i></button>`
+              : '<span class="text-muted small">Sold</span>'}
           </td>
         </tr>`).join('');
       } catch(e){ console.error('loadImeiRegistry',e); }
@@ -8551,6 +9020,79 @@
       } catch(e){ alert('Failed: '+e.message); }
     }
 
+    function updateImeiSelection() {
+      const checked = document.querySelectorAll('.imei-row-check:checked');
+      const total   = document.querySelectorAll('.imei-row-check:not([disabled])');
+      const countEl = document.getElementById('imei-selected-count');
+      const bulkBtn = document.getElementById('imei-bulk-delete-btn');
+      const allChk  = document.getElementById('imei-check-all');
+      countEl.textContent = `${checked.length} selected`;
+      countEl.classList.toggle('d-none', checked.length === 0);
+      bulkBtn.classList.toggle('d-none', checked.length === 0);
+      if (allChk) allChk.indeterminate = checked.length > 0 && checked.length < total.length;
+      if (allChk) allChk.checked = total.length > 0 && checked.length === total.length;
+    }
+
+    function toggleImeiSelectAll(checked) {
+      const boxes = document.querySelectorAll('.imei-row-check:not([disabled])');
+      const allChk = document.getElementById('imei-check-all');
+      const newState = checked !== undefined ? checked : !(allChk && allChk.checked);
+      boxes.forEach(b => b.checked = newState);
+      if (allChk) allChk.checked = newState;
+      updateImeiSelection();
+    }
+
+    async function bulkDeleteImei() {
+      const checked = [...document.querySelectorAll('.imei-row-check:checked')].map(b => b.value);
+      if (checked.length === 0) return;
+      if (!confirm(`Delete ${checked.length} selected IMEI unit${checked.length > 1 ? 's' : ''}?\n\nSold units will be skipped. This cannot be undone.`)) return;
+      try {
+        const res = await apiCall(`api/imei.php?ids=${checked.join(',')}`, { method: 'DELETE' });
+        loadImeiRegistry(); loadStock();
+        if (res.deleted < checked.length) alert(`${res.deleted} unit${res.deleted !== 1 ? 's' : ''} deleted. Some may have been skipped (sold units cannot be deleted).`);
+      } catch(e) { alert('Failed: ' + e.message); }
+    }
+
+    async function deleteTradeIn(id, customerName, deviceModel) {
+      if (!confirm(`Delete trade-in record?\n\nCustomer: ${customerName}\nDevice: ${deviceModel}\n\nThis cannot be undone.`)) return;
+      try {
+        await apiCall(`api/trade-ins.php?id=${id}`, { method: 'DELETE' });
+        loadTradeIns();
+      } catch(e) { alert('Failed: ' + e.message); }
+    }
+
+    function updateTradeInSelection() {
+      const checked = document.querySelectorAll('.tradein-row-check:checked');
+      const total   = document.querySelectorAll('.tradein-row-check');
+      const countEl = document.getElementById('tradein-selected-count');
+      const bulkBtn = document.getElementById('tradein-bulk-delete-btn');
+      const allChk  = document.getElementById('tradein-check-all');
+      countEl.textContent = `${checked.length} selected`;
+      countEl.classList.toggle('d-none', checked.length === 0);
+      bulkBtn.classList.toggle('d-none', checked.length === 0);
+      if (allChk) allChk.indeterminate = checked.length > 0 && checked.length < total.length;
+      if (allChk) allChk.checked = total.length > 0 && checked.length === total.length;
+    }
+
+    function toggleTradeInSelectAll(checked) {
+      const boxes = document.querySelectorAll('.tradein-row-check');
+      const allChk = document.getElementById('tradein-check-all');
+      const newState = checked !== undefined ? checked : !(allChk && allChk.checked);
+      boxes.forEach(b => b.checked = newState);
+      if (allChk) allChk.checked = newState;
+      updateTradeInSelection();
+    }
+
+    async function bulkDeleteTradeIns() {
+      const checked = [...document.querySelectorAll('.tradein-row-check:checked')].map(b => b.value);
+      if (checked.length === 0) return;
+      if (!confirm(`Delete ${checked.length} selected trade-in record${checked.length > 1 ? 's' : ''}?\n\nThis cannot be undone.`)) return;
+      try {
+        await apiCall(`api/trade-ins.php?ids=${checked.join(',')}`, { method: 'DELETE' });
+        loadTradeIns();
+      } catch(e) { alert('Failed: ' + e.message); }
+    }
+
     // ============================================================
     // REPAIRS & SERVICE
     // ============================================================
@@ -8585,22 +9127,66 @@
           tbody.innerHTML='<tr><td colspan="10" class="text-center text-muted py-4">No repair jobs found</td></tr>';
           return;
         }
-        tbody.innerHTML = items.map(r=>`<tr>
+        tbody.innerHTML = items.map(r=>`<tr data-repair-id="${r.id}">
+          <td class="admin-only"><input type="checkbox" class="form-check-input repair-row-check" value="${r.id}" onchange="updateRepairSelection()"></td>
           <td><strong>${r.job_number}</strong></td>
           <td>${r.customer_name}<br><small class="text-muted">${r.customer_phone||''}</small></td>
           <td>${r.device_model}</td>
           <td><code class="small">${r.imei||'—'}</code></td>
-          <td><small>${r.issue_description}</small></td>
+          <td><small>${formatIssueList(r.issue_description, true)}</small></td>
           <td>${formatCurrency(r.total_charge)}</td>
           <td><span class="badge bg-${r.payment_status==='paid'?'success':'danger'}">${r.payment_status}</span></td>
           <td><span class="badge bg-${repairStatusColor(r.status)}">${r.status.replace(/_/g,' ')}</span></td>
           <td><small>${fmtDateShort(r.created_at)}</small></td>
           <td>
             <button class="btn btn-sm btn-outline-primary me-1" onclick="openRepairDetail(${r.id})" title="View/Edit"><i class="bi bi-eye"></i></button>
-            <button class="btn btn-sm btn-outline-success" onclick="quickUpdateRepairStatus(${r.id},'${r.status}')" title="Update Status"><i class="bi bi-arrow-right-circle"></i></button>
+            <button class="btn btn-sm btn-outline-success me-1" onclick="quickUpdateRepairStatus(${r.id},'${r.status}')" title="Next Status"><i class="bi bi-arrow-right-circle"></i></button>
+            <button class="btn btn-sm btn-outline-danger admin-only" onclick="deleteRepair(${r.id},'${r.job_number}')" title="Delete"><i class="bi bi-trash"></i></button>
           </td>
         </tr>`).join('');
       } catch(e){ console.error('loadRepairs',e); }
+    }
+
+    async function deleteRepair(id, jobNumber) {
+      if (!confirm(`Delete job card ${jobNumber}?\n\nThis will permanently remove the job and all its parts. This cannot be undone.`)) return;
+      try {
+        await apiCall(`api/repairs.php?id=${id}`, { method: 'DELETE' });
+        loadRepairs();
+      } catch(e) { alert('Failed to delete: ' + e.message); }
+    }
+
+    function updateRepairSelection() {
+      const checked = document.querySelectorAll('.repair-row-check:checked');
+      const total   = document.querySelectorAll('.repair-row-check');
+      const countEl = document.getElementById('repair-selected-count');
+      const bulkBtn = document.getElementById('repair-bulk-delete-btn');
+      const allChk  = document.getElementById('repair-check-all');
+
+      countEl.textContent = `${checked.length} selected`;
+      countEl.classList.toggle('d-none', checked.length === 0);
+      bulkBtn.classList.toggle('d-none', checked.length === 0);
+      if (allChk) allChk.indeterminate = checked.length > 0 && checked.length < total.length;
+      if (allChk) allChk.checked = checked.length === total.length && total.length > 0;
+    }
+
+    function toggleRepairSelectAll(checked) {
+      const boxes = document.querySelectorAll('.repair-row-check');
+      const allChk = document.getElementById('repair-check-all');
+      // If called from button (no arg), toggle based on current state
+      const newState = checked !== undefined ? checked : !(allChk && allChk.checked);
+      boxes.forEach(b => b.checked = newState);
+      if (allChk) allChk.checked = newState;
+      updateRepairSelection();
+    }
+
+    async function bulkDeleteRepairs() {
+      const checked = [...document.querySelectorAll('.repair-row-check:checked')].map(b => b.value);
+      if (checked.length === 0) return;
+      if (!confirm(`Delete ${checked.length} selected job card${checked.length > 1 ? 's' : ''}?\n\nThis cannot be undone.`)) return;
+      try {
+        await apiCall(`api/repairs.php?ids=${checked.join(',')}`, { method: 'DELETE' });
+        loadRepairs();
+      } catch(e) { alert('Failed to delete: ' + e.message); }
     }
 
     function openNewRepairModal() {
@@ -8621,8 +9207,28 @@
               <input type="text" class="form-control" id="rep-device-model" placeholder="e.g. iPhone 15 Pro Max"></div>
             <div class="col-md-6"><label class="form-label fw-semibold">IMEI</label>
               <input type="text" class="form-control font-monospace" id="rep-imei" maxlength="15"></div>
-            <div class="col-12"><label class="form-label fw-semibold">Issue Description *</label>
-              <textarea class="form-control" id="rep-issue" rows="2" placeholder="Describe the fault..."></textarea></div>
+            <div class="col-12"><label class="form-label fw-semibold">Issues Reported <span class="text-danger">*</span></label>
+              <div class="border rounded p-2 mb-2" style="background:#f8f9fa;">
+                <div class="row g-1">
+                  ${[
+                    'Screen cracked / broken','Screen not displaying','Touch not responding',
+                    'Battery draining fast','Phone not charging','Charging port damaged',
+                    'Speaker not working','Microphone not working','Camera not working',
+                    'Phone not turning on','Overheating','Water damage',
+                    'Face ID not working','Buttons not working','Wi-Fi / Bluetooth issues',
+                    'Software / iOS issue'
+                  ].map(issue => `
+                  <div class="col-md-6 col-lg-4">
+                    <div class="form-check">
+                      <input class="form-check-input rep-issue-check" type="checkbox" value="${issue}" id="issue-${issue.replace(/[^a-z]/gi,'_')}">
+                      <label class="form-check-label small" for="issue-${issue.replace(/[^a-z]/gi,'_')}">${issue}</label>
+                    </div>
+                  </div>`).join('')}
+                </div>
+              </div>
+              <input type="text" class="form-control form-control-sm" id="rep-issue-other" placeholder="Other issues (optional — add anything not listed above)">
+              <input type="hidden" id="rep-issue">
+            </div>
             <div class="col-md-4"><label class="form-label fw-semibold">Labour Cost (GH₵)</label>
               <input type="number" class="form-control" id="rep-labour" step="0.01" min="0" value="0" oninput="updateRepairTotal()"></div>
             <div class="col-md-4"><label class="form-label fw-semibold">Parts Cost (GH₵)</label>
@@ -8655,12 +9261,20 @@
     async function submitNewRepair() {
       const errEl = document.getElementById('rep-modal-error');
       errEl.classList.add('d-none');
+
+      // Build issue list from checkboxes + other field
+      const checked = [...document.querySelectorAll('.rep-issue-check:checked')].map(c => c.value);
+      const other = document.getElementById('rep-issue-other')?.value.trim();
+      if (other) checked.push(other);
+      const issueText = checked.join('\n');
+      if (document.getElementById('rep-issue')) document.getElementById('rep-issue').value = issueText;
+
       const payload = {
         customer_name:  document.getElementById('rep-customer-name').value.trim(),
         customer_phone: document.getElementById('rep-customer-phone').value.trim(),
         device_model:   document.getElementById('rep-device-model').value.trim(),
         imei:           document.getElementById('rep-imei').value.trim(),
-        issue_description: document.getElementById('rep-issue').value.trim(),
+        issue_description: issueText,
         labor_cost:     parseFloat(document.getElementById('rep-labour').value)||0,
         parts_cost:     parseFloat(document.getElementById('rep-parts-cost').value)||0,
         total_charge:   parseFloat(document.getElementById('rep-total').value)||0,
@@ -8668,7 +9282,7 @@
         notes:          document.getElementById('rep-notes').value.trim()
       };
       if (!payload.customer_name||!payload.device_model||!payload.issue_description){
-        errEl.textContent='Customer name, device model and issue are required.';
+        errEl.textContent='Customer name, device model and at least one issue are required.';
         errEl.classList.remove('d-none'); return;
       }
       try {
@@ -8703,8 +9317,11 @@
                 <strong>IMEI:</strong> <code>${r.imei||'—'}</code></div>
               <div class="col-md-6"><strong>Customer:</strong> ${r.customer_name}<br>
                 <strong>Phone:</strong> ${r.customer_phone||'—'}</div>
-              <div class="col-12"><strong>Issue:</strong> ${r.issue_description}</div>
-              ${r.diagnosis?`<div class="col-12"><strong>Diagnosis:</strong> ${r.diagnosis}</div>`:''}
+              <div class="col-12">
+                <strong>Issues Reported:</strong>
+                <div class="mt-1">${formatIssueList(r.issue_description)}</div>
+              </div>
+              ${r.diagnosis?`<div class="col-12"><strong>Diagnosis / Notes:</strong><div class="mt-1">${r.diagnosis.replace(/\n/g,'<br>')}</div></div>`:''}
             </div>
             <div class="row g-3 mb-3">
               <div class="col-md-4"><label class="form-label fw-semibold">Status</label>
@@ -8788,7 +9405,8 @@
         if (elComp) elComp.textContent = completed;
         if (elStk)  elStk.textContent  = inStock;
         if (elVal)  elVal.textContent   = formatCurrency(totalVal);
-        tbody.innerHTML = items.map(t=>`<tr>
+        tbody.innerHTML = items.map(t=>`<tr data-tradein-id="${t.id}">
+          <td class="admin-only"><input type="checkbox" class="form-check-input tradein-row-check" value="${t.id}" onchange="updateTradeInSelection()"></td>
           <td>${t.customer_name}</td>
           <td>${t.customer_phone||'—'}</td>
           <td>${t.device_model}</td>
@@ -8801,8 +9419,9 @@
           <td>
             <button class="btn btn-sm btn-outline-primary me-1" onclick="openTradeInDetail(${t.id})" title="Edit"><i class="bi bi-pencil"></i></button>
             ${t.status==='pending'?`<button class="btn btn-sm btn-outline-success me-1" onclick="completeTradeIn(${t.id})" title="Mark Complete"><i class="bi bi-check-circle"></i></button>`:''}
-            ${t.status==='completed' && !t.added_to_inventory ?`<button class="btn btn-sm btn-outline-info" onclick="addTradeInToInventory(${t.id},'${t.device_model.replace(/'/g,"\\'")}','${t.imei||''}','${t.condition}')" title="Add to Inventory"><i class="bi bi-upc-scan"></i> Stock</button>`:''}
+            ${t.status==='completed' && !t.added_to_inventory ?`<button class="btn btn-sm btn-outline-info me-1" onclick="addTradeInToInventory(${t.id},'${t.device_model.replace(/'/g,"\\'")}','${t.imei||''}','${t.condition}')" title="Add to Inventory"><i class="bi bi-upc-scan"></i></button>`:''}
             ${t.added_to_inventory ? `<span class="badge bg-info"><i class="bi bi-check"></i> In Stock</span>` : ''}
+            <button class="btn btn-sm btn-outline-danger admin-only" onclick="deleteTradeIn(${t.id},'${t.customer_name.replace(/'/g,"\\'")}','${t.device_model.replace(/'/g,"\\'")}')"><i class="bi bi-trash"></i></button>
           </td>
         </tr>`).join('');
       } catch(e){ console.error('loadTradeIns',e); }
@@ -9098,31 +9717,194 @@
         const items = data.items||[];
         if (!tbody) return;
         if (items.length===0){
-          tbody.innerHTML='<tr><td colspan="8" class="text-center text-muted py-4">No warranties found</td></tr>';
+          tbody.innerHTML='<tr><td colspan="10" class="text-center text-muted py-4">No warranties found</td></tr>';
           return;
         }
+        const isAdmin = currentUser && currentUser.role === 'admin';
         tbody.innerHTML = items.map(w=>{
           const days = parseInt(w.days_remaining)||0;
           const expired = days < 0;
           const urgent  = !expired && days <= 30;
           const rowCls  = expired?'table-danger':urgent?'table-warning':'';
-          const badge   = expired
+          const daysBadge = expired
             ? '<span class="badge bg-danger">Expired</span>'
             : urgent
               ? `<span class="badge bg-warning text-dark">${days}d left</span>`
               : `<span class="badge bg-success">${days}d left</span>`;
+          const statusBadge = w.status === 'claimed'
+            ? '<span class="badge bg-secondary">Claimed</span>'
+            : expired
+              ? '<span class="badge bg-danger">Expired</span>'
+              : '<span class="badge bg-success">Active</span>';
           return `<tr class="${rowCls}">
+            <td class="admin-only"><input type="checkbox" class="form-check-input warranty-row-check" value="${w.id}" onchange="updateWarrantySelection()"></td>
             <td><code class="small">${w.imei}</code></td>
             <td>${w.product_name}</td>
             <td>${w.customer_name||'—'}</td>
             <td>${w.customer_phone||'—'}</td>
             <td>${fmtDateShort(w.start_date)}</td>
             <td>${fmtDateShort(w.end_date)}</td>
-            <td>${badge}</td>
-            <td><span class="badge bg-${expired?'danger':'success'}">${expired?'Expired':'Active'}</span></td>
+            <td>${daysBadge}</td>
+            <td>${statusBadge}</td>
+            <td>
+              ${!expired && w.status !== 'claimed' ? `<button class="btn btn-sm btn-outline-warning me-1" onclick="claimWarranty(${w.id})" title="Mark as Claimed"><i class="bi bi-tools"></i> Claim</button>` : ''}
+              ${isAdmin ? `<button class="btn btn-sm btn-outline-info me-1" onclick="extendWarranty(${w.id}, ${w.warranty_months})" title="Extend Warranty"><i class="bi bi-calendar-plus"></i></button>` : ''}
+              ${isAdmin ? `<button class="btn btn-sm btn-outline-danger" onclick="deleteWarranty(${w.id})" title="Delete"><i class="bi bi-trash"></i></button>` : ''}
+            </td>
           </tr>`;
         }).join('');
       } catch(e){ console.error('loadWarranties',e); }
+    }
+
+    async function claimWarranty(id) {
+      if (!confirm('Mark this warranty as claimed?\n\nThis means the customer has used their warranty for a repair.')) return;
+      try {
+        await apiCall(`api/warranties.php?id=${id}`, {
+          method: 'PUT',
+          body: JSON.stringify({ status: 'claimed' })
+        });
+        loadWarranties();
+      } catch(e) { alert('Failed: ' + e.message); }
+    }
+
+    async function extendWarranty(id, currentMonths) {
+      const extra = prompt(`Current warranty: ${currentMonths} month(s).\n\nHow many additional months to add?`, '3');
+      if (!extra || isNaN(parseInt(extra)) || parseInt(extra) <= 0) return;
+      const newMonths = currentMonths + parseInt(extra);
+      try {
+        await apiCall(`api/warranties.php?id=${id}`, {
+          method: 'PUT',
+          body: JSON.stringify({ warranty_months: newMonths })
+        });
+        loadWarranties();
+      } catch(e) { alert('Failed: ' + e.message); }
+    }
+
+    async function deleteWarranty(id) {
+      if (!confirm('Delete this warranty record? This cannot be undone.')) return;
+      try {
+        await apiCall(`api/warranties.php?id=${id}`, { method: 'DELETE' });
+        loadWarranties();
+      } catch(e) { alert('Failed: ' + e.message); }
+    }
+
+    function updateWarrantySelection() {
+      const checked = document.querySelectorAll('.warranty-row-check:checked');
+      const total   = document.querySelectorAll('.warranty-row-check');
+      const countEl = document.getElementById('warranty-selected-count');
+      const bulkBtn = document.getElementById('warranty-bulk-delete-btn');
+      const allChk  = document.getElementById('warranty-check-all');
+      countEl.textContent = `${checked.length} selected`;
+      countEl.classList.toggle('d-none', checked.length === 0);
+      bulkBtn.classList.toggle('d-none', checked.length === 0);
+      if (allChk) allChk.indeterminate = checked.length > 0 && checked.length < total.length;
+      if (allChk) allChk.checked = total.length > 0 && checked.length === total.length;
+    }
+
+    function toggleWarrantySelectAll(checked) {
+      const boxes = document.querySelectorAll('.warranty-row-check');
+      const allChk = document.getElementById('warranty-check-all');
+      const newState = checked !== undefined ? checked : !(allChk && allChk.checked);
+      boxes.forEach(b => b.checked = newState);
+      if (allChk) allChk.checked = newState;
+      updateWarrantySelection();
+    }
+
+    async function bulkDeleteWarranties() {
+      const checked = [...document.querySelectorAll('.warranty-row-check:checked')].map(b => b.value);
+      if (checked.length === 0) return;
+      if (!confirm(`Delete ${checked.length} selected warranty record${checked.length > 1 ? 's' : ''}?\n\nThis cannot be undone.`)) return;
+      try {
+        await apiCall(`api/warranties.php?ids=${checked.join(',')}`, { method: 'DELETE' });
+        loadWarranties();
+      } catch(e) { alert('Failed: ' + e.message); }
+    }
+
+    function openAddWarrantyModal() {
+      let existing = document.getElementById('addWarrantyModal');
+      if (existing) existing.remove();
+      const modal = document.createElement('div');
+      modal.className = 'modal fade'; modal.id = 'addWarrantyModal'; modal.tabIndex = -1;
+      modal.innerHTML = `<div class="modal-dialog"><div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-shield-plus"></i> Add Warranty Manually</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-info py-2 small mb-3">
+            <i class="bi bi-info-circle"></i> Use this for phones sold before the system was set up, or to manually register a warranty.
+          </div>
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label fw-semibold">IMEI <span class="text-danger">*</span></label>
+              <input type="text" class="form-control font-monospace" id="aw-imei" maxlength="15" placeholder="15-digit IMEI">
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold">Product Name <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="aw-product" placeholder="e.g. iPhone 15 Pro Max 256GB Black">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Customer Name</label>
+              <input type="text" class="form-control" id="aw-customer-name">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Customer Phone</label>
+              <input type="text" class="form-control" id="aw-customer-phone">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Start Date <span class="text-danger">*</span></label>
+              <input type="date" class="form-control" id="aw-start-date" value="${new Date().toISOString().split('T')[0]}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Warranty Months <span class="text-danger">*</span></label>
+              <input type="number" class="form-control" id="aw-months" value="12" min="1" max="60">
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold">Receipt ID <span class="text-muted fw-normal small">(optional)</span></label>
+              <input type="number" class="form-control" id="aw-receipt-id" placeholder="Leave blank if unknown">
+            </div>
+          </div>
+          <div id="aw-error" class="alert alert-danger d-none mt-3"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-success" onclick="submitAddWarranty()">
+            <i class="bi bi-shield-check"></i> Add Warranty
+          </button>
+        </div>
+      </div></div>`;
+      document.body.appendChild(modal);
+      new bootstrap.Modal(modal).show();
+    }
+
+    async function submitAddWarranty() {
+      const errEl = document.getElementById('aw-error');
+      errEl.classList.add('d-none');
+      const imei        = document.getElementById('aw-imei').value.trim();
+      const productName = document.getElementById('aw-product').value.trim();
+      const startDate   = document.getElementById('aw-start-date').value;
+      const months      = parseInt(document.getElementById('aw-months').value) || 12;
+      const receiptId   = parseInt(document.getElementById('aw-receipt-id').value) || 1; // API requires receipt_id
+
+      if (!imei || !/^\d{15}$/.test(imei)) { errEl.textContent = 'Please enter a valid 15-digit IMEI.'; errEl.classList.remove('d-none'); return; }
+      if (!productName) { errEl.textContent = 'Product name is required.'; errEl.classList.remove('d-none'); return; }
+
+      try {
+        await apiCall('api/warranties.php', {
+          method: 'POST',
+          body: JSON.stringify({
+            receipt_id:     receiptId,
+            imei,
+            product_name:   productName,
+            customer_name:  document.getElementById('aw-customer-name').value.trim(),
+            customer_phone: document.getElementById('aw-customer-phone').value.trim(),
+            warranty_months: months,
+            start_date:     startDate
+          })
+        });
+        bootstrap.Modal.getInstance(document.getElementById('addWarrantyModal')).hide();
+        loadWarranties();
+      } catch(e) { errEl.textContent = 'Failed: ' + e.message; errEl.classList.remove('d-none'); }
     }
 
     // Called automatically after a receipt is created to register warranties

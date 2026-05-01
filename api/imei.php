@@ -193,6 +193,68 @@ try {
         if (($_SESSION['role'] ?? '') !== 'admin') {
             http_response_code(403); echo json_encode(['error' => 'Admin only']); exit;
         }
+
+        // Bulk delete: ?ids=1,2,3
+        if (isset($_GET['ids'])) {
+            $ids = array_filter(array_map('intval', explode(',', $_GET['ids'])));
+            if (empty($ids)) { http_response_code(400); echo json_encode(['error' => 'No valid ids']); exit; }
+
+            $pdo->beginTransaction();
+            try {
+                $placeholders = implode(',', array_fill(0, count($ids), '?'));
+                // Fetch all units to adjust stock
+                $units = $pdo->prepare("SELECT product_id, status, variant_id FROM imei_units WHERE id IN ($placeholders) AND status != 'sold'");
+                $units->execute($ids);
+                $toDelete = $units->fetchAll();
+
+                if (empty($toDelete)) {
+                    $pdo->rollBack();
+                    http_response_code(409);
+                    echo json_encode(['error' => 'All selected units are sold and cannot be deleted']);
+                    exit;
+                }
+
+                $deleteIds = array_column($toDelete, null);
+                $delPlaceholders = implode(',', array_fill(0, count($toDelete), '?'));
+                // Re-fetch IDs of non-sold units
+                $nonSoldIds = [];
+                foreach ($toDelete as $u) { $nonSoldIds[] = $u['product_id']; } // reuse product_ids for stock update
+
+                // Delete the non-sold units
+                $pdo->prepare("DELETE FROM imei_units WHERE id IN ($placeholders) AND status != 'sold'")->execute($ids);
+
+                // Adjust stock counts
+                $productCounts = [];
+                foreach ($toDelete as $u) {
+                    $pid = (int)$u['product_id'];
+                    $productCounts[$pid] = ($productCounts[$pid] ?? 0) + 1;
+                }
+                foreach ($productCounts as $pid => $count) {
+                    $pdo->prepare('UPDATE stock SET quantity = MAX(0, quantity - ?) WHERE product_id = ?')->execute([$count, $pid]);
+                }
+
+                // Clean up orphaned variants
+                foreach ($toDelete as $u) {
+                    if ($u['variant_id']) {
+                        $chk = $pdo->prepare('SELECT COUNT(*) FROM imei_units WHERE variant_id = ?');
+                        $chk->execute([$u['variant_id']]);
+                        if ((int)$chk->fetchColumn() === 0) {
+                            $pdo->prepare('DELETE FROM product_variants WHERE id = ?')->execute([$u['variant_id']]);
+                        }
+                    }
+                }
+
+                $pdo->commit();
+                echo json_encode(['deleted' => count($toDelete)]);
+            } catch (Throwable $e) {
+                $pdo->rollBack();
+                http_response_code(500);
+                echo json_encode(['error' => $e->getMessage()]);
+            }
+            exit;
+        }
+
+        // Single delete
         $id = (int)($_GET['id'] ?? 0);
         if ($id <= 0) { http_response_code(400); echo json_encode(['error' => 'id required']); exit; }
 
@@ -209,7 +271,6 @@ try {
             $pdo->prepare('DELETE FROM imei_units WHERE id = ?')->execute([$id]);
             $pdo->prepare('UPDATE stock SET quantity = MAX(0, quantity - 1) WHERE product_id = ?')->execute([$unit['product_id']]);
 
-            // Clean up variant if no more IMEI units reference it
             if ($unit['variant_id']) {
                 $chkVariant = $pdo->prepare('SELECT COUNT(*) FROM imei_units WHERE variant_id = ?');
                 $chkVariant->execute([$unit['variant_id']]);

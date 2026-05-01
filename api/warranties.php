@@ -89,6 +89,11 @@ try {
         foreach (['status', 'notes', 'warranty_months'] as $f) {
             if (array_key_exists($f, $data)) { $fields[] = "$f = ?"; $params[] = $data[$f]; }
         }
+        // Recalculate end_date if warranty_months changed
+        if (isset($data['warranty_months'])) {
+            $fields[] = "end_date = date(start_date, '+' || ? || ' months')";
+            $params[] = max(1, (int)$data['warranty_months']);
+        }
         if (empty($fields)) { http_response_code(400); echo json_encode(['error' => 'Nothing to update']); exit; }
         $params[] = $id;
         $pdo->prepare('UPDATE warranties SET ' . implode(', ', $fields) . ' WHERE id = ?')->execute($params);
@@ -96,8 +101,25 @@ try {
         exit;
     }
 
-    http_response_code(405);
-    echo json_encode(['error' => 'Method not allowed']);
+    if ($method === 'DELETE') {
+        if (($_SESSION['role'] ?? '') !== 'admin') { http_response_code(403); echo json_encode(['error' => 'Admin only']); exit; }
+
+        // Bulk delete: ?ids=1,2,3
+        if (isset($_GET['ids'])) {
+            $ids = array_filter(array_map('intval', explode(',', $_GET['ids'])));
+            if (empty($ids)) { http_response_code(400); echo json_encode(['error' => 'No valid ids']); exit; }
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            $pdo->prepare("DELETE FROM warranties WHERE id IN ($placeholders)")->execute($ids);
+            echo json_encode(['deleted' => count($ids)]);
+            exit;
+        }
+
+        $id = (int)($_GET['id'] ?? 0);
+        if ($id <= 0) { http_response_code(400); echo json_encode(['error' => 'id required']); exit; }
+        $pdo->prepare('DELETE FROM warranties WHERE id = ?')->execute([$id]);
+        echo json_encode(['deleted' => 1]);
+        exit;
+    }
 } catch (Throwable $e) {
     http_response_code(500);
     echo json_encode(['error' => $e->getMessage()]);

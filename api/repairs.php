@@ -189,8 +189,22 @@ try {
 
     if ($method === 'DELETE') {
         if (($_SESSION['role'] ?? '') !== 'admin') { http_response_code(403); echo json_encode(['error' => 'Admin only']); exit; }
+
+        // Bulk delete: ?ids=1,2,3
+        if (isset($_GET['ids'])) {
+            $ids = array_filter(array_map('intval', explode(',', $_GET['ids'])));
+            if (empty($ids)) { http_response_code(400); echo json_encode(['error' => 'No valid ids']); exit; }
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            $pdo->prepare("DELETE FROM repair_parts WHERE repair_id IN ($placeholders)")->execute($ids);
+            $pdo->prepare("DELETE FROM repairs WHERE id IN ($placeholders)")->execute($ids);
+            echo json_encode(['deleted' => count($ids)]);
+            exit;
+        }
+
+        // Single delete: ?id=1
         $id = (int)($_GET['id'] ?? 0);
         if ($id <= 0) { http_response_code(400); echo json_encode(['error' => 'id required']); exit; }
+        $pdo->prepare('DELETE FROM repair_parts WHERE repair_id = ?')->execute([$id]);
         $pdo->prepare('DELETE FROM repairs WHERE id = ?')->execute([$id]);
         echo json_encode(['deleted' => 1]);
         exit;

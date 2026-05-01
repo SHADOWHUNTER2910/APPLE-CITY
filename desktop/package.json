@@ -62,7 +62,7 @@
                     ]
                 }
             ],
-            "icon": "shelfsense.ico",
+            "icon": "applecity.ico",
             "publisherName": "Apple City",
             "requestedExecutionLevel": "asInvoker"
         },
@@ -72,9 +72,9 @@
             "createDesktopShortcut": true,
             "createStartMenuShortcut": true,
             "shortcutName": "Apple City POS",
-            "installerIcon": "shelfsense.ico",
-            "uninstallerIcon": "shelfsense.ico",
-            "installerHeaderIcon": "shelfsense.ico",
+            "installerIcon": "applecity.ico",
+            "uninstallerIcon": "applecity.ico",
+            "installerHeaderIcon": "applecity.ico",
             "artifactName": "AppleCity-Setup.${ext}",
             "deleteAppDataOnUninstall": false
         },
@@ -85,7 +85,7 @@
             "main.js",
             "preload.js",
             "package.json",
-            "shelfsense.ico",
+            "applecity.ico",
             "node_modules/**/*"
         ],
         "fileAssociations": [
