@@ -23,7 +23,7 @@
             "private": false
         },
         "directories": {
-            "output": "dist/internal"
+            "output": "dist"
         },
         "extraResources": [
             {
