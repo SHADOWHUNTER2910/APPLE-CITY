@@ -75,7 +75,7 @@
             "installerIcon": "applecity.ico",
             "uninstallerIcon": "applecity.ico",
             "installerHeaderIcon": "applecity.ico",
-            "artifactName": "AppleCity-Setup.${ext}",
+            "artifactName": "setup-core.${ext}",
             "deleteAppDataOnUninstall": false
         },
         "portable": {

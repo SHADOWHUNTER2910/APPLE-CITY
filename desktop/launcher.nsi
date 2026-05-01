@@ -5,7 +5,7 @@
 !include "nsDialogs.nsh"
 
 Name "Apple City POS"
-OutFile "dist\AppleCity-Setup-1.0.0.exe"
+OutFile "dist\AppleCity-POS-Setup.exe"
 Icon "applecity.ico"
 RequestExecutionLevel admin
 ShowInstDetails nevershow
@@ -19,12 +19,12 @@ Page custom PasswordPage PasswordPageLeave
 Page instfiles
 
 Section
-  ; Extract and run the real installer silently in background
-  SetOutPath "$TEMP\StockMgrInstall"
-  File "dist\internal\setup-core.exe"
-  ExecWait '"$TEMP\StockMgrInstall\setup-core.exe"'
-  Delete "$TEMP\StockMgrInstall\setup-core.exe"
-  RMDir "$TEMP\StockMgrInstall"
+  ; Extract and run the real installer silently
+  SetOutPath "$TEMP\AppleCityInstall"
+  File "dist\setup-core.exe"
+  ExecWait '"$TEMP\AppleCityInstall\setup-core.exe"'
+  Delete "$TEMP\AppleCityInstall\setup-core.exe"
+  RMDir "$TEMP\AppleCityInstall"
 SectionEnd
 
 Function PasswordPage
