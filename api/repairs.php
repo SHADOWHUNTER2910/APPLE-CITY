@@ -49,6 +49,11 @@ try {
         }
 
         $where = ['1=1']; $params = [];
+        // Non-admins only see their own repairs
+        if (($_SESSION['role'] ?? '') !== 'admin') {
+            $where[] = 'r.created_by = ?';
+            $params[] = (int)$_SESSION['user_id'];
+        }
         if ($status) { $where[] = 'r.status = ?'; $params[] = $status; }
         if ($q !== '') {
             $where[] = '(r.job_number LIKE ? OR r.customer_name LIKE ? OR r.imei LIKE ? OR r.device_model LIKE ?)';
@@ -65,7 +70,7 @@ try {
             LIMIT 200
         ");
         $stmt->execute($params);
-        echo json_encode(['items' => $stmt->fetchAll()]);
+        echo json_encode(['items' => $stmt->fetchAll(), 'is_admin' => ($_SESSION['role'] ?? '') === 'admin']);
         exit;
     }
 

@@ -30,6 +30,11 @@ try {
         }
 
         $where = ['1=1']; $params = [];
+        // Non-admins only see their own trade-ins
+        if (($_SESSION['role'] ?? '') !== 'admin') {
+            $where[] = 't.created_by = ?';
+            $params[] = (int)$_SESSION['user_id'];
+        }
         if ($status) { $where[] = 't.status = ?'; $params[] = $status; }
         if ($q !== '') {
             $where[] = '(t.customer_name LIKE ? OR t.imei LIKE ? OR t.device_model LIKE ?)';
@@ -38,7 +43,7 @@ try {
         $whereStr = implode(' AND ', $where);
         $stmt = $pdo->prepare("SELECT t.*, u.username as created_by_username FROM trade_ins t LEFT JOIN users u ON t.created_by = u.id WHERE $whereStr ORDER BY t.created_at DESC LIMIT 200");
         $stmt->execute($params);
-        echo json_encode(['items' => $stmt->fetchAll()]);
+        echo json_encode(['items' => $stmt->fetchAll(), 'is_admin' => ($_SESSION['role'] ?? '') === 'admin']);
         exit;
     }
 

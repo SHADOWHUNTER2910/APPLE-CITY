@@ -2297,7 +2297,7 @@
           <!-- Repairs & Service Section -->
           <div id="section-repairs" class="content-section hidden">
             <div class="d-flex justify-content-between align-items-center mb-4">
-              <h2><i class="bi bi-tools"></i> Repairs & Service</h2>
+              <h2 id="repairs-section-title"><i class="bi bi-tools"></i> Repairs & Service</h2>
               <div>
                 <button class="btn btn-success me-2" onclick="openNewRepairModal()">
                   <i class="bi bi-plus-circle"></i> New Job Card
@@ -2386,6 +2386,7 @@
                         <th>Payment</th>
                         <th>Status</th>
                         <th>Date</th>
+                        <th class="admin-only">Staff</th>
                         <th>Actions</th>
                       </tr>
                     </thead>
@@ -2399,7 +2400,7 @@
           <!-- Trade-ins Section -->
           <div id="section-trade-ins" class="content-section hidden">
             <div class="d-flex justify-content-between align-items-center mb-4">
-              <h2><i class="bi bi-arrow-left-right"></i> Trade-ins</h2>
+              <h2 id="tradein-section-title"><i class="bi bi-arrow-left-right"></i> Trade-ins</h2>
               <div>
                 <button class="btn btn-success me-2" onclick="openNewTradeInModal()">
                   <i class="bi bi-plus-circle"></i> Standalone Trade-in
@@ -2490,6 +2491,7 @@
                         <th>Status</th>
                         <th>Receipt</th>
                         <th>Date</th>
+                        <th class="admin-only">Staff</th>
                         <th>Actions</th>
                       </tr>
                     </thead>
@@ -9159,6 +9161,13 @@
       try {
         const data = await apiCall(url);
         const items = data.items||[];
+        const isAdmin = currentUser && currentUser.role === 'admin';
+
+        // Update section title
+        const titleEl = document.getElementById('repairs-section-title');
+        if (titleEl) titleEl.innerHTML = isAdmin
+          ? '<i class="bi bi-tools"></i> Repairs & Service (All Staff)'
+          : '<i class="bi bi-tools"></i> My Repairs & Service';
         // Summary counts
         const counts = {received:0,in_repair:0,diagnosing:0,awaiting_parts:0,ready:0};
         let revenue30 = 0;
@@ -9192,6 +9201,7 @@
           <td><span class="badge bg-${r.payment_status==='paid'?'success':'danger'}">${r.payment_status}</span></td>
           <td><span class="badge bg-${repairStatusColor(r.status)}">${r.status.replace(/_/g,' ')}</span></td>
           <td><small>${fmtDateShort(r.created_at)}</small></td>
+          ${isAdmin ? `<td><span class="badge bg-secondary">${r.created_by_username||'—'}</span></td>` : ''}
           <td>
             <button class="btn btn-sm btn-outline-primary me-1" onclick="openRepairDetail(${r.id})" title="View/Edit"><i class="bi bi-eye"></i></button>
             <button class="btn btn-sm btn-outline-success me-1" onclick="quickUpdateRepairStatus(${r.id},'${r.status}')" title="Next Status"><i class="bi bi-arrow-right-circle"></i></button>
@@ -9439,9 +9449,17 @@
         const data = await apiCall(url);
         const tbody = document.getElementById('tbl-trade-ins');
         const items = data.items||[];
+        const isAdmin = currentUser && currentUser.role === 'admin';
+
+        // Update section title
+        const titleEl = document.getElementById('tradein-section-title');
+        if (titleEl) titleEl.innerHTML = isAdmin
+          ? '<i class="bi bi-arrow-left-right"></i> Trade-ins (All Staff)'
+          : '<i class="bi bi-arrow-left-right"></i> My Trade-ins';
+
         if (!tbody) return;
         if (items.length===0){
-          tbody.innerHTML='<tr><td colspan="9" class="text-center text-muted py-4">No trade-ins found</td></tr>';
+          tbody.innerHTML=`<tr><td colspan="${isAdmin?12:11}" class="text-center text-muted py-4">No trade-ins found</td></tr>`;
           return;
         }
         const condColor = {excellent:'success',good:'primary',fair:'warning',poor:'danger'};
@@ -9470,6 +9488,7 @@
           <td><span class="badge bg-${t.status==='completed'?'success':t.status==='cancelled'?'danger':'warning'}">${t.status}</span></td>
           <td>${t.linked_receipt_id ? `<small class="text-muted">Receipt #${t.linked_receipt_id}</small>` : '<small class="text-muted">—</small>'}</td>
           <td><small>${fmtDateShort(t.created_at)}</small></td>
+          ${isAdmin ? `<td><span class="badge bg-secondary">${t.created_by_username||'—'}</span></td>` : ''}
           <td>
             <button class="btn btn-sm btn-outline-primary me-1" onclick="openTradeInDetail(${t.id})" title="Edit"><i class="bi bi-pencil"></i></button>
             ${t.status==='pending'?`<button class="btn btn-sm btn-outline-success me-1" onclick="completeTradeIn(${t.id})" title="Mark Complete"><i class="bi bi-check-circle"></i></button>`:''}
