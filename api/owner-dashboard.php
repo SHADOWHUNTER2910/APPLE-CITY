@@ -20,10 +20,16 @@ try {
     // ── LIVE RECEIPT FEED ─────────────────────────────────────────
     if ($action === 'live_receipts') {
         $limit = (int)($_GET['limit'] ?? 20);
-        $since = $_GET['since'] ?? null; // ISO datetime for polling
+        $since = $_GET['since'] ?? null;
         $query = 'SELECT r.id, r.invoice_number, r.customer_name, r.total, r.total_profit,
-                         r.payment_method, r.created_at, r.created_by_username,
-                         GROUP_CONCAT(ri.product_name || " x" || ri.quantity, ", ") as items
+                         r.payment_method, r.trade_in_value, r.trade_in_device,
+                         r.created_at, r.created_by_username,
+                         GROUP_CONCAT(
+                             ri.product_name ||
+                             CASE WHEN ri.variant_label IS NOT NULL AND ri.variant_label != "" THEN " (" || ri.variant_label || ")" ELSE "" END ||
+                             CASE WHEN ri.imei IS NOT NULL THEN " [" || ri.imei || "]" ELSE "" END,
+                             ", "
+                         ) as items
                   FROM receipts r
                   LEFT JOIN receipt_items ri ON ri.receipt_id = r.id';
         $params = [];
@@ -79,29 +85,164 @@ try {
     }
 
     // ── PRICE CONTROL ─────────────────────────────────────────────
+    // Shows products with their IMEI units (storage/color/price per unit)
     if ($action === 'products') {
         $q = $_GET['q'] ?? '';
+        $like = '%' . $q . '%';
+        // Get products
         $stmt = $pdo->prepare('
-            SELECT p.id, p.name, p.sku,
-                   p.unit_price, p.cost_price
+            SELECT p.id, p.name, p.sku
             FROM products p
             WHERE p.id != 0 AND p.sku != "DELETED"
               AND (? = "" OR p.name LIKE ? OR p.sku LIKE ?)
-            GROUP BY p.id ORDER BY p.name ASC LIMIT 30
+            ORDER BY p.name ASC LIMIT 30
         ');
-        $like = '%' . $q . '%';
         $stmt->execute([$q, $like, $like]);
-        echo json_encode(['items' => $stmt->fetchAll()]);
+        $products = $stmt->fetchAll();
+
+        // For each product, get its in-stock IMEI units with variant info
+        $unitStmt = $pdo->prepare('
+            SELECT u.id, u.imei, u.storage, u.color, u.selling_price, u.cost_price
+            FROM imei_units u
+            WHERE u.product_id = ? AND u.status = "in_stock"
+            ORDER BY u.storage, u.color, u.selling_price
+        ');
+        foreach ($products as &$p) {
+            $unitStmt->execute([$p['id']]);
+            $p['imei_units'] = $unitStmt->fetchAll();
+        }
+        unset($p);
+        echo json_encode(['items' => $products]);
         exit;
     }
 
+    // Update selling price on a specific IMEI unit
+    if ($action === 'update_imei_price' && $method === 'POST') {
+        $data     = json_decode(file_get_contents('php://input'), true) ?? [];
+        $imeiId   = (int)($data['imei_id'] ?? 0);
+        $newPrice = (float)($data['selling_price'] ?? 0);
+        if ($imeiId <= 0 || $newPrice <= 0) { http_response_code(400); echo json_encode(['error' => 'Invalid input']); exit; }
+        $pdo->prepare('UPDATE imei_units SET selling_price = ? WHERE id = ?')->execute([$newPrice, $imeiId]);
+        // Also update the variant selling price if this unit has one
+        $pdo->prepare('UPDATE product_variants SET selling_price = ? WHERE id = (SELECT variant_id FROM imei_units WHERE id = ?)')->execute([$newPrice, $imeiId]);
+        echo json_encode(['success' => true]);
+        exit;
+    }
+
+    // Legacy: keep update_price for backward compat but now updates product base price
     if ($action === 'update_price' && $method === 'POST') {
-        $data = json_decode(file_get_contents('php://input'), true) ?? [];
-        $unitId   = (int)($data['unit_id'] ?? 0);
+        $data      = json_decode(file_get_contents('php://input'), true) ?? [];
         $productId = (int)($data['product_id'] ?? 0);
-        $newPrice = (float)($data['unit_price'] ?? 0);
+        $newPrice  = (float)($data['unit_price'] ?? 0);
         if ($productId <= 0 || $newPrice <= 0) { http_response_code(400); echo json_encode(['error' => 'Invalid input']); exit; }
         $pdo->prepare('UPDATE products SET unit_price = ? WHERE id = ?')->execute([$newPrice, $productId]);
+        echo json_encode(['success' => true]);
+        exit;
+    }
+
+    // ── REPAIRS SUMMARY ───────────────────────────────────────────
+    if ($action === 'repairs') {
+        $stmt = $pdo->query('
+            SELECT
+                COUNT(CASE WHEN status NOT IN ("collected","cancelled") THEN 1 END) as active,
+                COUNT(CASE WHEN status = "ready" THEN 1 END) as ready,
+                COUNT(CASE WHEN status = "collected" THEN 1 END) as collected_total,
+                COALESCE(SUM(CASE WHEN DATE(created_at) = DATE("now") THEN total_charge ELSE 0 END),0) as revenue_today,
+                COALESCE(SUM(CASE WHEN DATE(created_at) >= DATE("now","-30 days") THEN total_charge ELSE 0 END),0) as revenue_30d
+            FROM repairs
+        ');
+        $summary = $stmt->fetch();
+
+        $stmt = $pdo->query('
+            SELECT id, job_number, customer_name, device_model, imei, status,
+                   total_charge, payment_status, created_at
+            FROM repairs
+            WHERE status NOT IN ("collected","cancelled")
+            ORDER BY
+                CASE status WHEN "ready" THEN 0 ELSE 1 END,
+                created_at ASC
+            LIMIT 20
+        ');
+        $active_jobs = $stmt->fetchAll();
+        echo json_encode(['summary' => $summary, 'active_jobs' => $active_jobs]);
+        exit;
+    }
+
+    // ── TRADE-INS SUMMARY ─────────────────────────────────────────
+    if ($action === 'trade_ins') {
+        $stmt = $pdo->query('
+            SELECT
+                COUNT(CASE WHEN status="pending" THEN 1 END) as pending,
+                COUNT(CASE WHEN status="completed" THEN 1 END) as completed,
+                COALESCE(SUM(CASE WHEN DATE(created_at) = DATE("now") THEN agreed_value ELSE 0 END),0) as value_today,
+                COALESCE(SUM(CASE WHEN DATE(created_at) >= DATE("now","-30 days") THEN agreed_value ELSE 0 END),0) as value_30d
+            FROM trade_ins
+        ');
+        $summary = $stmt->fetch();
+
+        $stmt = $pdo->query('
+            SELECT id, customer_name, device_model, imei, condition,
+                   agreed_value, status, added_to_inventory, created_at
+            FROM trade_ins
+            ORDER BY created_at DESC LIMIT 15
+        ');
+        $items = $stmt->fetchAll();
+        echo json_encode(['summary' => $summary, 'items' => $items]);
+        exit;
+    }
+
+    // ── WARRANTIES SUMMARY ────────────────────────────────────────
+    if ($action === 'warranties') {
+        $stmt = $pdo->query('
+            SELECT
+                COUNT(CASE WHEN end_date >= DATE("now") AND status != "claimed" THEN 1 END) as active,
+                COUNT(CASE WHEN end_date < DATE("now") THEN 1 END) as expired,
+                COUNT(CASE WHEN status = "claimed" THEN 1 END) as claimed,
+                COUNT(CASE WHEN end_date >= DATE("now") AND end_date <= DATE("now","+30 days") AND status != "claimed" THEN 1 END) as expiring_soon
+            FROM warranties
+        ');
+        $summary = $stmt->fetch();
+
+        // Expiring soon
+        $stmt = $pdo->query('
+            SELECT imei, product_name, customer_name, end_date,
+                   CAST((julianday(end_date) - julianday("now")) AS INTEGER) as days_left
+            FROM warranties
+            WHERE end_date >= DATE("now") AND end_date <= DATE("now","+30 days") AND status != "claimed"
+            ORDER BY end_date ASC LIMIT 10
+        ');
+        $expiring = $stmt->fetchAll();
+        echo json_encode(['summary' => $summary, 'expiring_soon' => $expiring]);
+        exit;
+    }
+
+    // Bulk update selling price for all in-stock IMEI units of a product+variant
+    if ($action === 'update_imei_variant_price' && $method === 'POST') {
+        $data       = json_decode(file_get_contents('php://input'), true) ?? [];
+        $productId  = (int)($data['product_id'] ?? 0);
+        $variantKey = trim((string)($data['variant_key'] ?? ''));
+        $newPrice   = (float)($data['selling_price'] ?? 0);
+        if ($productId <= 0 || $newPrice <= 0) { http_response_code(400); echo json_encode(['error' => 'Invalid input']); exit; }
+
+        // Parse variant key "storage / color"
+        $parts   = explode(' / ', $variantKey, 2);
+        $storage = trim($parts[0] ?? '');
+        $color   = trim($parts[1] ?? '');
+        $storageVal = $storage === '—' ? null : $storage;
+        $colorVal   = $color   === '—' ? null : $color;
+
+        // Update all in-stock IMEI units matching this product + variant
+        $pdo->prepare('UPDATE imei_units SET selling_price = ? WHERE product_id = ? AND status = "in_stock"
+                        AND (storage = ? OR (storage IS NULL AND ? IS NULL))
+                        AND (color = ? OR (color IS NULL AND ? IS NULL))')
+            ->execute([$newPrice, $productId, $storageVal, $storageVal, $colorVal, $colorVal]);
+
+        // Also update the product_variants table
+        $pdo->prepare('UPDATE product_variants SET selling_price = ? WHERE product_id = ?
+                        AND (storage = ? OR (storage IS NULL AND ? IS NULL))
+                        AND (color = ? OR (color IS NULL AND ? IS NULL))')
+            ->execute([$newPrice, $productId, $storageVal, $storageVal, $colorVal, $colorVal]);
+
         echo json_encode(['success' => true]);
         exit;
     }
@@ -273,6 +414,18 @@ try {
     $today = date('Y-m-d');
     $stmt = $pdo->prepare('SELECT COUNT(*) as receipts, COALESCE(SUM(total),0) as revenue, COALESCE(SUM(total_profit),0) as profit, COALESCE(SUM(total_cost),0) as cost, CASE WHEN SUM(total)>0 THEN ROUND((SUM(total_profit)/SUM(total))*100,1) ELSE 0 END as margin FROM receipts WHERE DATE(created_at) = ?');
     $stmt->execute([$today]); $today_summary = $stmt->fetch();
+
+    // Repair revenue today
+    $stmt = $pdo->prepare('SELECT COALESCE(SUM(total_charge),0) as repair_revenue, COUNT(*) as repair_count FROM repairs WHERE DATE(created_at) = ? AND payment_status = "paid"');
+    $stmt->execute([$today]); $repair_today = $stmt->fetch();
+    $today_summary['repair_revenue'] = (float)$repair_today['repair_revenue'];
+    $today_summary['repair_count']   = (int)$repair_today['repair_count'];
+
+    // Active repairs count
+    $stmt = $pdo->query('SELECT COUNT(*) FROM repairs WHERE status NOT IN ("collected","cancelled")');
+    $today_summary['active_repairs'] = (int)$stmt->fetchColumn();
+    $stmt = $pdo->query('SELECT COUNT(*) FROM repairs WHERE status = "ready"');
+    $today_summary['ready_repairs'] = (int)$stmt->fetchColumn();
 
     $yesterday = date('Y-m-d', strtotime('-1 day'));
     $stmt = $pdo->prepare('SELECT COALESCE(SUM(total),0) as revenue, COALESCE(SUM(total_profit),0) as profit FROM receipts WHERE DATE(created_at) = ?');

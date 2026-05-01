@@ -74,8 +74,8 @@
     <!-- ── TAB: OVERVIEW ── -->
     <div id="tab-overview" class="tab-content-owner active">
 
-      <!-- Today Snapshot -->
-      <div class="row g-2 mb-2">
+      <!-- Stats Cards Row 1 -->
+        <div class="row g-2 mb-2">
         <div class="col-6"><div class="card-dark">
           <div class="stat-label">💰 Revenue Today</div>
           <div class="stat-val text-success" id="ov-revenue">GH₵0</div>
@@ -101,6 +101,19 @@
         <div class="col-3"><div class="card-dark text-center">
           <div class="stat-label">Debt</div>
           <div class="stat-val" style="color:#f97316;" id="ov-debt">GH₵0</div>
+        </div></div>
+        <!-- Repairs row -->
+        <div class="col-4"><div class="card-dark text-center" onclick="switchTab('repairs')" style="cursor:pointer;">
+          <div class="stat-label">🔧 Active Jobs</div>
+          <div class="stat-val text-warning" id="ov-active-repairs">0</div>
+        </div></div>
+        <div class="col-4"><div class="card-dark text-center" onclick="switchTab('repairs')" style="cursor:pointer;">
+          <div class="stat-label">✅ Ready</div>
+          <div class="stat-val text-success" id="ov-ready-repairs">0</div>
+        </div></div>
+        <div class="col-4"><div class="card-dark text-center">
+          <div class="stat-label">🔧 Repair Rev.</div>
+          <div class="stat-val" style="color:#a78bfa;" id="ov-repair-revenue">GH₵0</div>
         </div></div>
       </div>
 
@@ -138,6 +151,39 @@
         <textarea id="whatsapp-summary" readonly class="input-dark" style="height:140px;resize:none;"></textarea>
         <button class="btn-dark-primary mt-2" onclick="copySummary()"><i class="bi bi-whatsapp"></i> Copy & Share on WhatsApp</button>
       </div>
+    </div>
+
+    <!-- ── TAB: REPAIRS ── -->
+    <div id="tab-repairs" class="tab-content-owner">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <strong style="font-size:13px;">🔧 Repairs & Service</strong>
+        <button class="btn-sm-dark" onclick="loadRepairsTab()"><i class="bi bi-arrow-clockwise"></i></button>
+      </div>
+      <div class="row g-2 mb-3" id="repairs-summary-cards"></div>
+      <div class="section-title">Active Jobs</div>
+      <div id="repairs-active-list"></div>
+    </div>
+
+    <!-- ── TAB: TRADE-INS ── -->
+    <div id="tab-tradeins" class="tab-content-owner">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <strong style="font-size:13px;">🔄 Trade-ins</strong>
+        <button class="btn-sm-dark" onclick="loadTradeInsTab()"><i class="bi bi-arrow-clockwise"></i></button>
+      </div>
+      <div class="row g-2 mb-3" id="tradeins-summary-cards"></div>
+      <div class="section-title">Recent Trade-ins</div>
+      <div id="tradeins-list"></div>
+    </div>
+
+    <!-- ── TAB: WARRANTIES ── -->
+    <div id="tab-warranties" class="tab-content-owner">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <strong style="font-size:13px;">🛡️ Warranties</strong>
+        <button class="btn-sm-dark" onclick="loadWarrantiesTab()"><i class="bi bi-arrow-clockwise"></i></button>
+      </div>
+      <div class="row g-2 mb-3" id="warranties-summary-cards"></div>
+      <div class="section-title">⚠️ Expiring Within 30 Days</div>
+      <div id="warranties-expiring-list"></div>
     </div>
 
     <!-- ── TAB: LIVE RECEIPTS ── -->
@@ -205,6 +251,9 @@
     </button>
     <button onclick="switchTab('live')" id="nav-live">
       <i class="bi bi-receipt"></i><span>Live</span>
+    </button>
+    <button onclick="switchTab('repairs')" id="nav-repairs">
+      <i class="bi bi-tools"></i><span>Repairs</span>
     </button>
     <button onclick="switchTab('alerts')" id="nav-alerts">
       <i class="bi bi-bell"></i><span>Alerts</span>
@@ -283,6 +332,9 @@ function loadCurrentTab(){
   else if(currentTab==='staff') loadStaff();
   else if(currentTab==='alerts') loadAlerts();
   else if(currentTab==='financial') loadFinancial();
+  else if(currentTab==='repairs') loadRepairsTab();
+  else if(currentTab==='tradeins') loadTradeInsTab();
+  else if(currentTab==='warranties') loadWarrantiesTab();
 }
 
   // ── OVERVIEW ─────────────────────────────────────────────────────
@@ -304,7 +356,9 @@ async function loadOverview(){
   document.getElementById('ov-debt').textContent     = fmt(d.total_debt);
   document.getElementById('ov-rev-trend').innerHTML  = trend(d.today?.revenue, d.yesterday?.revenue);
   document.getElementById('ov-prof-trend').innerHTML = trend(d.today?.profit, d.yesterday?.profit);
-
+  document.getElementById('ov-active-repairs').textContent  = d.today?.active_repairs||0;
+  document.getElementById('ov-ready-repairs').textContent   = d.today?.ready_repairs||0;
+  document.getElementById('ov-repair-revenue').textContent  = fmt(d.today?.repair_revenue||0);
   // 7-day bars with profit overlay
   const tr = d.weekly_trend||[], maxR = Math.max(...tr.map(t=>parseFloat(t.revenue)),1);
   document.getElementById('weekly-bars').innerHTML = tr.map(t=>{
@@ -390,7 +444,8 @@ async function loadLiveReceipts(){
           <div>
             <div class="name">${r.customer_name||'Walk-in'} <small style="color:#64748b;">#${r.invoice_number}</small></div>
             <div class="sub">${r.items||''}</div>
-            <div class="sub">${fmtDate(r.created_at)} · ${r.created_by_username||''} · ${r.payment_method}</div>
+            ${r.trade_in_value>0?`<div style="color:#60a5fa;font-size:11px;">Trade-in: ${r.trade_in_device||'device'} (${fmt(r.trade_in_value)})</div>`:''}
+            <div class="sub">${fmtDate(r.created_at)} · ${r.created_by_username||''} · ${(r.payment_method||'').replace('_',' ')}</div>
           </div>
           <div style="text-align:right;">
             <div style="color:#22c55e;font-weight:700;">${fmt(r.total)}</div>
@@ -444,25 +499,46 @@ function searchProducts(){
     const el = document.getElementById('price-list');
     if((d.items||[]).length===0){ el.innerHTML='<div class="list-item" style="color:#64748b;">No products found</div>'; return; }
     el.innerHTML = d.items.map(p=>{
-      const units = p.units ? p.units.split('||').map(u=>{ const [id,name,price,cost]=u.split('|'); return {id,name,price,cost}; }) : [];
+      const units = p.imei_units || [];
+      if(units.length === 0){
+        return `<div class="card-dark mb-2">
+          <div class="name">${p.name} <small style="color:#64748b;">${p.sku}</small></div>
+          <div class="sub" style="color:#64748b;">No IMEI units in stock</div>
+        </div>`;
+      }
+      // Group by storage/color variant
+      const variantMap = {};
+      units.forEach(u => {
+        const key = [u.storage||'—', u.color||'—'].join(' / ');
+        if(!variantMap[key]) variantMap[key] = { storage: u.storage, color: u.color, price: u.selling_price, cost: u.cost_price, count: 0, sample_id: u.id };
+        variantMap[key].count++;
+      });
       return `<div class="card-dark mb-2">
-        <div class="name mb-1">${p.name} <small style="color:#64748b;">${p.sku}</small></div>
-        ${units.map(u=>`<div class="d-flex align-items-center gap-2 mb-1">
-          <span style="color:#94a3b8;font-size:12px;flex:1;">${u.name}</span>
-          <input type="number" step="0.01" value="${parseFloat(u.price).toFixed(2)}"
-            id="price-${u.id}" class="input-dark" style="width:90px;padding:5px 8px;">
-          <button class="btn-dark-success" onclick="updatePrice(${u.id})" style="padding:5px 10px;font-size:12px;">Save</button>
-        </div>`).join('')}
+        <div class="name mb-2">${p.name} <small style="color:#64748b;">${p.sku}</small></div>
+        ${Object.entries(variantMap).map(([key, v])=>`
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <div style="flex:1;">
+              <div style="font-size:12px;color:#94a3b8;">${key} <span style="color:#64748b;">(${v.count} unit${v.count>1?'s':''})</span></div>
+              <div style="font-size:10px;color:#64748b;">Cost: ${fmt(v.cost)}</div>
+            </div>
+            <input type="number" step="0.01" value="${parseFloat(v.price).toFixed(2)}"
+              id="price-${v.sample_id}" class="input-dark" style="width:90px;padding:5px 8px;">
+            <button class="btn-dark-success" onclick="updateImeiVariantPrice(${p.id},'${key.replace(/'/g,"\\'")}',this)" style="padding:5px 10px;font-size:12px;">Save</button>
+          </div>`).join('')}
       </div>`;
     }).join('');
   }, 400);
 }
 
-async function updatePrice(unitId){
-  const val = parseFloat(document.getElementById('price-'+unitId).value);
+async function updateImeiVariantPrice(productId, variantKey, btn){
+  // Find the input — it's the sibling input before this button
+  const input = btn.previousElementSibling;
+  const val = parseFloat(input?.value);
   if(!val||val<=0){ alert('Enter a valid price'); return; }
-  const d = await api('update_price',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({unit_id:unitId,unit_price:val})});
-  if(d?.success){ const btn=document.querySelector(`button[onclick="updatePrice(${unitId})"]`); if(btn){btn.textContent='✓';btn.style.background='#16a34a';setTimeout(()=>{btn.textContent='Save';btn.style.background='';},2000);} }
+  // Update all in-stock IMEI units for this product+variant
+  const d = await api('update_imei_variant_price',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({product_id:productId, variant_key:variantKey, selling_price:val})});
+  if(d?.success){ btn.textContent='✓'; btn.style.background='#16a34a'; setTimeout(()=>{btn.textContent='Save';btn.style.background='';},2000); }
   else alert('Failed to update price');
 }
 
@@ -491,6 +567,129 @@ async function toggleStaff(userId, newStatus, btn){
   const d = await api('toggle_staff',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:userId,status:newStatus})});
   if(d?.success) loadStaff();
   else alert(d?.error||'Failed');
+}
+
+// ── REPAIRS TAB ───────────────────────────────────────────────────
+async function loadRepairsTab(){
+  const d = await api('repairs');
+  if(!d) return;
+  const s = d.summary||{};
+  document.getElementById('repairs-summary-cards').innerHTML = `
+    <div class="col-6"><div class="card-dark text-center">
+      <div class="stat-label">🔧 Active Jobs</div>
+      <div class="stat-val text-warning">${s.active||0}</div>
+    </div></div>
+    <div class="col-6"><div class="card-dark text-center">
+      <div class="stat-label">✅ Ready to Collect</div>
+      <div class="stat-val text-success">${s.ready||0}</div>
+    </div></div>
+    <div class="col-6"><div class="card-dark text-center">
+      <div class="stat-label">💰 Revenue Today</div>
+      <div class="stat-val" style="color:#a78bfa;">${fmt(s.revenue_today)}</div>
+    </div></div>
+    <div class="col-6"><div class="card-dark text-center">
+      <div class="stat-label">📅 Revenue (30d)</div>
+      <div class="stat-val" style="color:#a78bfa;">${fmt(s.revenue_30d)}</div>
+    </div></div>`;
+  const statusColor = {received:'#94a3b8',diagnosing:'#38bdf8',awaiting_parts:'#fbbf24',in_repair:'#60a5fa',ready:'#4ade80',collected:'#334155',cancelled:'#ef4444'};
+  document.getElementById('repairs-active-list').innerHTML = (d.active_jobs||[]).length===0
+    ? '<div class="list-item" style="color:#22c55e;"><i class="bi bi-check-circle"></i> No active jobs</div>'
+    : d.active_jobs.map(r=>{
+        const days = Math.floor((Date.now()-new Date(r.created_at))/86400000);
+        const dayColor = days>=7?'#ef4444':days>=3?'#fbbf24':'#64748b';
+        return `<div class="list-item">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <div class="name">${r.job_number} — ${r.customer_name}</div>
+              <div class="sub">${r.device_model}${r.imei?' · '+r.imei:''}</div>
+              ${r.total_charge>0?`<div style="color:#4ade80;font-size:11px;">${fmt(r.total_charge)} · ${r.payment_status}</div>`:''}
+            </div>
+            <div style="text-align:right;">
+              <span style="background:${statusColor[r.status]||'#334155'};color:white;border-radius:12px;padding:2px 8px;font-size:10px;">${r.status.replace(/_/g,' ')}</span>
+              <div style="color:${dayColor};font-size:10px;margin-top:3px;">${days}d waiting</div>
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+}
+
+// ── TRADE-INS TAB ─────────────────────────────────────────────────
+async function loadTradeInsTab(){
+  const d = await api('trade_ins');
+  if(!d) return;
+  const s = d.summary||{};
+  document.getElementById('tradeins-summary-cards').innerHTML = `
+    <div class="col-6"><div class="card-dark text-center">
+      <div class="stat-label">⏳ Pending</div>
+      <div class="stat-val text-warning">${s.pending||0}</div>
+    </div></div>
+    <div class="col-6"><div class="card-dark text-center">
+      <div class="stat-label">✅ Completed</div>
+      <div class="stat-val text-success">${s.completed||0}</div>
+    </div></div>
+    <div class="col-6"><div class="card-dark text-center">
+      <div class="stat-label">💰 Value Today</div>
+      <div class="stat-val text-info">${fmt(s.value_today)}</div>
+    </div></div>
+    <div class="col-6"><div class="card-dark text-center">
+      <div class="stat-label">📅 Value (30d)</div>
+      <div class="stat-val text-info">${fmt(s.value_30d)}</div>
+    </div></div>`;
+  const condColor = {excellent:'#4ade80',good:'#60a5fa',fair:'#fbbf24',poor:'#ef4444'};
+  document.getElementById('tradeins-list').innerHTML = (d.items||[]).length===0
+    ? '<div class="list-item" style="color:#64748b;">No trade-ins yet</div>'
+    : d.items.map(t=>`<div class="list-item">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="name">${t.customer_name}</div>
+            <div class="sub">${t.device_model}${t.imei?' · '+t.imei:''}</div>
+            <div style="font-size:10px;margin-top:2px;">
+              <span style="color:${condColor[t.condition]||'#94a3b8'};">${t.condition}</span>
+              ${t.added_to_inventory?'<span style="color:#4ade80;margin-left:6px;">✓ In Stock</span>':''}
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div style="color:#4ade80;font-weight:700;">${fmt(t.agreed_value)}</div>
+            <span style="background:${t.status==='completed'?'#16a34a':t.status==='cancelled'?'#dc2626':'#d97706'};color:white;border-radius:12px;padding:2px 8px;font-size:10px;">${t.status}</span>
+          </div>
+        </div>
+      </div>`).join('');
+}
+
+// ── WARRANTIES TAB ────────────────────────────────────────────────
+async function loadWarrantiesTab(){
+  const d = await api('warranties');
+  if(!d) return;
+  const s = d.summary||{};
+  document.getElementById('warranties-summary-cards').innerHTML = `
+    <div class="col-3"><div class="card-dark text-center">
+      <div class="stat-label">✅ Active</div>
+      <div class="stat-val text-success">${s.active||0}</div>
+    </div></div>
+    <div class="col-3"><div class="card-dark text-center">
+      <div class="stat-label">⚠️ Expiring</div>
+      <div class="stat-val text-warning">${s.expiring_soon||0}</div>
+    </div></div>
+    <div class="col-3"><div class="card-dark text-center">
+      <div class="stat-label">🔧 Claimed</div>
+      <div class="stat-val" style="color:#a78bfa;">${s.claimed||0}</div>
+    </div></div>
+    <div class="col-3"><div class="card-dark text-center">
+      <div class="stat-label">❌ Expired</div>
+      <div class="stat-val text-danger">${s.expired||0}</div>
+    </div></div>`;
+  document.getElementById('warranties-expiring-list').innerHTML = (d.expiring_soon||[]).length===0
+    ? '<div class="list-item" style="color:#22c55e;"><i class="bi bi-check-circle"></i> No warranties expiring soon</div>'
+    : d.expiring_soon.map(w=>`<div class="list-item">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <div class="name">${w.product_name}</div>
+            <div class="sub">${w.customer_name||'—'} · <code style="font-size:10px;">${w.imei}</code></div>
+            <div class="sub">Expires: ${w.end_date}</div>
+          </div>
+          <span style="background:${w.days_left<=7?'#dc2626':'#d97706'};color:white;border-radius:12px;padding:3px 9px;font-size:11px;">${w.days_left}d left</span>
+        </div>
+      </div>`).join('');
 }
 
 // ── WHATSAPP ──────────────────────────────────────────────────────
