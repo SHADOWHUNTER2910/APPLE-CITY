@@ -438,14 +438,28 @@ function createWindow() {
   });
 
   // ── Focus Fix ─────────────────────────────────────────────────────
+  // Re-focus webContents whenever the window gains OS focus
   mainWindow.on('focus', () => {
     mainWindow.webContents.focus();
+  });
+
+  // Also handle restore from minimized state
+  mainWindow.on('restore', () => {
+    setTimeout(() => {
+      mainWindow.webContents.focus();
+    }, 100);
   });
   // ──────────────────────────────────────────────────────────────────
 
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
     mainWindow.focus();
+    // Force OS-level focus on Windows — this is the key fix for the
+    // "must minimize/maximize to get focus" bug in packaged Electron apps
+    if (process.platform === 'win32') {
+      mainWindow.minimize();
+      mainWindow.restore();
+    }
     mainWindow.webContents.focus();
 
     // Inject renderer-side fix only if inputs are actually broken

@@ -5428,7 +5428,9 @@
     // UNIVERSAL INPUT STABILITY FIX FOR ELECTRON
     // Prevents input freezing across ALL sections and modals
     // ========================================
-    
+    // UNIVERSAL INPUT STABILITY FIX FOR ELECTRON
+    // ========================================
+
     // Core function: re-activate all inputs in a given container
     function reactivateInputs(container) {
       container = container || document;
@@ -5441,7 +5443,7 @@
       });
     }
 
-    // Intercept every mousedown on the page — if user clicks an input, force-activate it
+    // Intercept every mousedown — if user clicks an input, force-activate it
     document.addEventListener('mousedown', function(e) {
       const el = e.target;
       if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT')) {
@@ -5456,18 +5458,16 @@
     document.addEventListener('DOMContentLoaded', function() {
 
       // 1. Universal fix for ALL modals — focus first input when shown
-      document.querySelectorAll('.modal').forEach(function(modal) {
-        modal.addEventListener('shown.bs.modal', function() {
-          reactivateInputs(modal);
-          setTimeout(function() {
-            const firstField = modal.querySelector(
-              'input:not([readonly]):not([type="hidden"]):not([type="file"]):not([disabled]), textarea:not([readonly]):not([disabled])'
-            );
-            if (firstField) {
-              firstField.focus();
-            }
-          }, 150);
-        });
+      // Use event delegation so dynamically created modals are also covered
+      document.addEventListener('shown.bs.modal', function(e) {
+        const modal = e.target;
+        reactivateInputs(modal);
+        setTimeout(function() {
+          const firstField = modal.querySelector(
+            'input:not([readonly]):not([type="hidden"]):not([type="file"]):not([disabled]), textarea:not([readonly]):not([disabled])'
+          );
+          if (firstField) firstField.focus();
+        }, 150);
       });
 
       // 2. Delete confirmation modal — Enter key + click focus
@@ -5483,13 +5483,10 @@
         });
       }
 
-      // 3. Window focus — re-activate everything visible
+      // 3. Window focus — re-activate everything visible immediately
       window.addEventListener('focus', function() {
-        // Re-activate all inputs in the currently visible section
-        const visibleSection = document.querySelector('.content-section:not(.hidden)');
-        if (visibleSection) reactivateInputs(visibleSection);
-
-        // Re-activate inputs in any open modal
+        reactivateInputs(document);
+        // Also re-focus the active element if it's an input that lost focus
         const openModal = document.querySelector('.modal.show');
         if (openModal) {
           reactivateInputs(openModal);
@@ -5503,10 +5500,15 @@
         }
       });
 
-      // 4. Continuous safety net — re-activate all inputs every 5 seconds
-      setInterval(function() {
-        reactivateInputs(document);
-      }, 5000);
+      // 4. Page visibility change — fires when user alt-tabs back to the app
+      document.addEventListener('visibilitychange', function() {
+        if (!document.hidden) {
+          setTimeout(function() { reactivateInputs(document); }, 100);
+        }
+      });
+
+      // 5. Safety net — re-activate every 3 seconds (reduced from 5s for faster recovery)
+      setInterval(function() { reactivateInputs(document); }, 3000);
 
     });
 
