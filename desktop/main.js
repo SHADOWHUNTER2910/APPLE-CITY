@@ -506,9 +506,11 @@ function createWindow() {
     windowCreated = false;
   });
 
-  // Open DevTools in development
+  // Open DevTools in development — delayed so window focus is established first
   if (!app.isPackaged) {
-    mainWindow.webContents.openDevTools();
+    mainWindow.webContents.once('did-finish-load', () => {
+      setTimeout(() => mainWindow.webContents.openDevTools({ mode: 'detach' }), 1000);
+    });
   }
 }
 
