@@ -1700,7 +1700,8 @@
                   <div class="d-flex justify-content-between align-items-center">
                     <div>
                       <h3 id="analytics-revenue" class="mb-0">GH₵0.00</h3>
-                      <p class="mb-0">Today's Revenue</p>
+                      <p class="mb-0">Sales Revenue</p>
+                      <small id="analytics-repair-revenue" class="opacity-75" style="font-size:11px;"></small>
                     </div>
                     <i class="bi bi-cash-coin display-4 opacity-50"></i>
                   </div>
@@ -1729,6 +1730,45 @@
                 </div>
               </div>
               <div class="col-md-3">
+                <div class="stat-card" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <h3 id="analytics-repair-rev" class="mb-0">GH₵0.00</h3>
+                      <p class="mb-0">Repair Revenue</p>
+                      <small id="analytics-repair-jobs" class="opacity-75" style="font-size:11px;"></small>
+                    </div>
+                    <i class="bi bi-tools display-4 opacity-50"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- Trade-in + Combined row -->
+            <div class="row mb-4">
+              <div class="col-md-4">
+                <div class="stat-card info">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <h3 id="analytics-tradein-value" class="mb-0">GH₵0.00</h3>
+                      <p class="mb-0">Trade-in Value</p>
+                      <small id="analytics-tradein-count" class="opacity-75" style="font-size:11px;"></small>
+                    </div>
+                    <i class="bi bi-arrow-left-right display-4 opacity-50"></i>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="stat-card" style="background: linear-gradient(135deg, #f7971e 0%, #ffd200 100%);">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <h3 id="analytics-combined-revenue" class="mb-0">GH₵0.00</h3>
+                      <p class="mb-0">Combined Revenue</p>
+                      <small class="opacity-75" style="font-size:11px;">Sales + Repairs</small>
+                    </div>
+                    <i class="bi bi-bar-chart display-4 opacity-50"></i>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-4">
                 <div class="stat-card warning">
                   <div class="d-flex justify-content-between align-items-center">
                     <div>
@@ -6609,17 +6649,31 @@
     }
 
     function updateProfitCards(summary, lowProfitCount) {
-      // Update revenue card
       document.getElementById('analytics-revenue').textContent = formatCurrency(summary.total_income || 0);
-      
-      // Update profit card
-      document.getElementById('analytics-profit').textContent = formatCurrency(summary.total_profit || 0);
-      
-      // Update profit margin card
-      document.getElementById('analytics-margin').textContent = (summary.profit_margin || 0) + '%';
-      
-      // Update low profit items card
+      document.getElementById('analytics-profit').textContent  = formatCurrency(summary.total_profit || 0);
+      document.getElementById('analytics-margin').textContent  = (summary.profit_margin || 0) + '%';
       document.getElementById('analytics-low-profit').textContent = lowProfitCount || 0;
+
+      // Repair revenue
+      const repairRev = summary.repair_revenue || 0;
+      const repairJobs = summary.repair_jobs || 0;
+      document.getElementById('analytics-repair-rev').textContent = formatCurrency(repairRev);
+      document.getElementById('analytics-repair-jobs').textContent = repairJobs > 0 ? `${repairJobs} paid job${repairJobs !== 1 ? 's' : ''}` : 'No paid jobs today';
+      // Small label under sales revenue
+      if (repairRev > 0) {
+        document.getElementById('analytics-repair-revenue').textContent = `+ ${formatCurrency(repairRev)} repairs`;
+      } else {
+        document.getElementById('analytics-repair-revenue').textContent = '';
+      }
+
+      // Trade-ins
+      const tiValue = summary.trade_in_value || 0;
+      const tiCount = summary.trade_in_count || 0;
+      document.getElementById('analytics-tradein-value').textContent = formatCurrency(tiValue);
+      document.getElementById('analytics-tradein-count').textContent = tiCount > 0 ? `${tiCount} trade-in${tiCount !== 1 ? 's' : ''}` : 'No trade-ins today';
+
+      // Combined revenue
+      document.getElementById('analytics-combined-revenue').textContent = formatCurrency(summary.combined_revenue || (parseFloat(summary.total_income || 0) + repairRev));
     }
 
     function updateMostProfitableProducts(products) {

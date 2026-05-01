@@ -27,13 +27,14 @@ try {
                 // Daily dashboard analytics
                 $analytics = [];
                 
-                // Today's sales summary with profit
+                // Today's sales summary with profit (receipts only)
                 $stmt = $pdo->prepare('
                     SELECT 
                         COUNT(*) as total_receipts,
                         COALESCE(SUM(total), 0) as total_income,
                         COALESCE(SUM(total_cost), 0) as total_cost,
                         COALESCE(SUM(total_profit), 0) as total_profit,
+                        COALESCE(SUM(trade_in_value), 0) as total_trade_in_value,
                         CASE 
                             WHEN SUM(total) > 0 THEN ROUND((SUM(total_profit) / SUM(total)) * 100, 2)
                             ELSE 0 
@@ -44,6 +45,37 @@ try {
                 ');
                 $stmt->execute([$date]);
                 $analytics['daily_summary'] = $stmt->fetch();
+
+                // Repair revenue today (paid jobs)
+                $stmt = $pdo->prepare('
+                    SELECT
+                        COUNT(*) as repair_jobs,
+                        COALESCE(SUM(total_charge), 0) as repair_revenue,
+                        COALESCE(SUM(labor_cost), 0) as labor_revenue,
+                        COALESCE(SUM(parts_cost), 0) as parts_revenue
+                    FROM repairs
+                    WHERE DATE(created_at) = ? AND payment_status = "paid"
+                ');
+                $stmt->execute([$date]);
+                $repairToday = $stmt->fetch();
+                $analytics['daily_summary']['repair_revenue']  = (float)$repairToday['repair_revenue'];
+                $analytics['daily_summary']['repair_jobs']     = (int)$repairToday['repair_jobs'];
+
+                // Trade-ins today
+                $stmt = $pdo->prepare('
+                    SELECT COUNT(*) as trade_in_count,
+                           COALESCE(SUM(agreed_value), 0) as trade_in_value
+                    FROM trade_ins WHERE DATE(created_at) = ?
+                ');
+                $stmt->execute([$date]);
+                $tradeInToday = $stmt->fetch();
+                $analytics['daily_summary']['trade_in_count'] = (int)$tradeInToday['trade_in_count'];
+                $analytics['daily_summary']['trade_in_value'] = (float)$tradeInToday['trade_in_value'];
+
+                // Combined total revenue (sales + repairs)
+                $analytics['daily_summary']['combined_revenue'] =
+                    (float)$analytics['daily_summary']['total_income'] +
+                    (float)$analytics['daily_summary']['repair_revenue'];
                 
                 // Top selling products today with profit (discount-adjusted)
                 $stmt = $pdo->prepare('
@@ -351,7 +383,7 @@ try {
                 $period = (int)($_GET['period'] ?? 30);
                 $startDate = date('Y-m-d', strtotime("-{$period} days"));
 
-                // 30-day profit trend
+                // 30-day profit trend (sales + repairs combined)
                 $stmt = $pdo->prepare('
                     SELECT DATE(created_at) as date,
                            COALESCE(SUM(total),0) as revenue,
@@ -362,7 +394,36 @@ try {
                     GROUP BY DATE(created_at) ORDER BY date ASC
                 ');
                 $stmt->execute([$startDate]);
-                $profitTrend = $stmt->fetchAll();
+                $salesTrend = $stmt->fetchAll();
+
+                // Repair revenue per day
+                $stmt = $pdo->prepare('
+                    SELECT DATE(created_at) as date,
+                           COALESCE(SUM(total_charge),0) as repair_revenue,
+                           COUNT(*) as repair_jobs
+                    FROM repairs WHERE DATE(created_at) >= ? AND payment_status = "paid"
+                    GROUP BY DATE(created_at)
+                ');
+                $stmt->execute([$startDate]);
+                $repairTrend = [];
+                foreach ($stmt->fetchAll() as $r) $repairTrend[$r['date']] = $r;
+
+                // Merge repair revenue into profit trend
+                $profitTrend = array_map(function($day) use ($repairTrend) {
+                    $repairRev = (float)($repairTrend[$day['date']]['repair_revenue'] ?? 0);
+                    $day['repair_revenue'] = $repairRev;
+                    $day['combined_revenue'] = (float)$day['revenue'] + $repairRev;
+                    return $day;
+                }, $salesTrend);
+
+                // Add repair-only days not in sales trend
+                foreach ($repairTrend as $date => $r) {
+                    $found = array_filter($profitTrend, fn($d) => $d['date'] === $date);
+                    if (empty($found)) {
+                        $profitTrend[] = ['date'=>$date,'revenue'=>0,'cost'=>0,'profit'=>0,'receipts'=>0,'repair_revenue'=>(float)$r['repair_revenue'],'combined_revenue'=>(float)$r['repair_revenue']];
+                    }
+                }
+                usort($profitTrend, fn($a,$b) => strcmp($a['date'],$b['date']));
 
                 // Expiry loss estimation (expired batches that were deleted = lost stock)
                 // We track this via stock movements with reference_type = 'expiry_deletion' or batch deletes
@@ -444,6 +505,21 @@ try {
                 ');
                 $stmt->execute([$startDate]);
                 $summary = $stmt->fetch();
+
+                // Add repair revenue to summary
+                $stmt = $pdo->prepare('SELECT COALESCE(SUM(total_charge),0) as repair_revenue, COUNT(*) as repair_jobs FROM repairs WHERE DATE(created_at) >= ? AND payment_status = "paid"');
+                $stmt->execute([$startDate]);
+                $repairSummary = $stmt->fetch();
+                $summary['repair_revenue'] = (float)$repairSummary['repair_revenue'];
+                $summary['repair_jobs']    = (int)$repairSummary['repair_jobs'];
+                $summary['combined_revenue'] = (float)$summary['total_revenue'] + (float)$repairSummary['repair_revenue'];
+
+                // Add trade-in summary
+                $stmt = $pdo->prepare('SELECT COUNT(*) as count, COALESCE(SUM(agreed_value),0) as total_value FROM trade_ins WHERE DATE(created_at) >= ?');
+                $stmt->execute([$startDate]);
+                $tiSummary = $stmt->fetch();
+                $summary['trade_in_count'] = (int)$tiSummary['count'];
+                $summary['trade_in_value'] = (float)$tiSummary['total_value'];
 
                 echo json_encode([
                     'profit_trend'    => $profitTrend,
